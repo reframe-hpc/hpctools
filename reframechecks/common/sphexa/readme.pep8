@@ -1,0 +1,3 @@
+autopep8 -dv sanity.py > eff.patch
+patch -b sanity.py -i eff.patch
+vimdiff sanity.py.orig sanity.py

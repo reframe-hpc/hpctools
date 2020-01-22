@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Mac
+.DS_Store
+.vscode
+
+# Sphinx documentation
+docs/source/_build/
+docs/source/html/
+doctrees/
+
+# jg
+*.EFF
+DEL
