@@ -1,0 +1,62 @@
+#!/bin/bash
+# to be used on laptop
+# or with docker run --rm -it readthedocs/build:latest bash
+
+# venv:
+python3.7 -mvirtualenv --system-site-packages --no-download \
+/Users/piccinal/.local/virtualenvJG/readthedocs
+XX=/Users/piccinal/.local/virtualenvJG/readthedocs
+# /home/docs/checkouts/readthedocs.org/user_builds/hpctools/envs/latest
+
+# install pip:
+$XX/bin/python -m pip install --upgrade --cache-dir $XX/.cache/pip pip
+
+# /home/docs/checkouts/readthedocs.org/user_builds/hpctools/envs/latest/bin/python \
+# -m pip install --upgrade --cache-dir \
+# /home/docs/checkouts/readthedocs.org/user_builds/hpctools/.cache/pip pip
+
+# install deps:
+cat <<EOF > $XX/requirementsJG.txt
+Pygments==2.3.1
+setuptools==41.0.1
+docutils==0.14
+mock==1.0.1
+pillow==5.4.1
+alabaster>=0.7,<0.8,!=0.7.5
+commonmark==0.8.1
+recommonmark==0.5.0
+sphinx<2
+sphinx-rtd-theme<0.5
+readthedocs-sphinx-ext<1.1
+EOF
+
+cat $XX/requirementsJG.txt
+
+$XX/bin/python -m pip install --upgrade --cache-dir $XX/.cache/pip -I -r $XX/requirementsJG.txt
+
+# /home/docs/checkouts/readthedocs.org/user_builds/hpctools/envs/latest/bin/python \
+# -m pip install --upgrade --cache-dir \
+# /home/docs/checkouts/readthedocs.org/user_builds/hpctools/.cache/pip -I \
+# -r requirements.txt
+
+# Pygments==2.3.1 setuptools==41.0.1 docutils==0.14 mock==1.0.1 pillow==5.4.1
+# alabaster>=0.7,<0.8,!=0.7.5 commonmark==0.8.1 recommonmark==0.5.0 sphinx<2
+# sphinx-rtd-theme<0.5 readthedocs-sphinx-ext<1.1
+
+# build:
+source $XX/bin/activate
+sphinx-build -T -d _build/doctrees-readthedocs -D language=en . _build/html
+
+# k=
+# docker cp ~/git/hpctools/hpctools.git $k:/tmp/hpctools
+
+# cd ; cp -a /tmp/hpctools . ;cd hpctools/docs/source/
+#python \
+#/home/docs/checkouts/readthedocs.org/user_builds/hpctools/envs/latest/bin/sphinx-build \
+#-T -d _build/doctrees-readthedocs -D language=en . _build/html
+
+# docker cp $k:/home/docs/hpctools/docs/source/_build/html /tmp/DEL/
+
+# -b readthedocs 
+
+deactivate

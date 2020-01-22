@@ -1,1 +1,5 @@
+# on readthedocs, the default sphinx version is 1.8, i need 2.x:
+# https://docs.readthedocs.io/en/stable/intro/import-guide.html#building-your-documentation
+# https://github.com/readthedocs/readthedocs.org/issues/3296
+# push to master OR build manually @ https://readthedocs.org/projects/hpctools/builds
 sphinx>2.3
