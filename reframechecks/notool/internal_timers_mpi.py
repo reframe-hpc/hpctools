@@ -14,8 +14,11 @@ import sphexa.sanity as sphs
 class SphExaNativeCheck(rfm.RegressionTest):
     '''
     This class runs the test code without any tool (mpi only), and reports
-    internal timers output. Degrees of freedom are number of mpi tasks,
-    size of the cube and number of simulation steps:
+    elapsed time from internal timers. 3 parameters can be set for simulation:
+
+    :arg mpitask: number of mpi tasks,
+    :arg cubesize: size of the cube in the 3D square patch test,
+    :arg steps: number of simulation steps.
 
     .. code-block:: none
 

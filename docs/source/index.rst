@@ -5,7 +5,7 @@ Welcome to the HPCTools documentation
 ======================================
 
 `ReFrame <https://github.com/eth-cscs/reframe>`__ is a framework for writing
-regression tests for HPC systems.  This repository showcases how to use ReFrame
+regression tests for HPC systems. This repository showcases how to use ReFrame
 together with HPC tools.
 
 
@@ -14,6 +14,7 @@ together with HPC tools.
    :hidden:
 
    Getting Started <started>
+   Sanity Functions Reference <sanity_functions_reference>
 
 .. this is a comment: `:maxdepth: 2`
 
