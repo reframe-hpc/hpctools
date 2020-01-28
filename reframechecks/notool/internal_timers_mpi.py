@@ -12,6 +12,7 @@ import sphexa.sanity as sphs
                           for steps in [0]
                           ])
 class SphExaNativeCheck(rfm.RegressionTest):
+# {{{
     '''
     This class runs the test code without any tool (mpi only), and reports
     elapsed time from internal timers. 3 parameters can be set for simulation:
@@ -24,26 +25,84 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
        A weak scaling study (normal partition <= 2400cn)
        --------------------------------------------------
-      weak cn	p/c	c	np        cubesize
-      weak 1     41000	24	984000        99      1million
-      weak 2     41000	48	1968000       125
-      weak 4     41000	96	3936000       157
-      weak 8     41000	192	7872000       198
-      weak 16	41000	384	15744000      250     10millions
-      weak 20	41000	480	19680000      269
-      weak 40	41000	960	39360000      340
-      weak 80	41000	1920	78720000      428
-      weak 160	41000	3840	157440000     539     100millions
-      weak 320	41000	7680	314880000     680
-      weak 640	41000	15360	629760000     857
-      weak 1280	41000	30720	1259520000   1079     1billion
-       --------------------------------------------------------------------
-      weak 2560	41000	61440	2519040000   1360
-      weak 5120	41000	122880	5038080000   1714
-      weak 10240	41000	245760	10076160000  2159    10billions
+      weak cn    p/c    c       np            cubesize
+      weak 1     41000  24      984000         99      1million
+      weak 2     41000  48      1968000       125
+      weak 4     41000  96      3936000       157
+      weak 8     41000  192     7872000       198
+      weak 16    41000  384     15744000      250     10millions
+      weak 20    41000  480     19680000      269
+      weak 40    41000  960     39360000      340
+      weak 80    41000  1920    78720000      428
+      weak 160   41000  3840    157440000     539     100millions
+      weak 320   41000  7680    314880000     680
+      weak 640   41000  15360   629760000     857
+      weak 1280  41000  30720   1259520000   1079     1billion
+      ------------------------------------------------------------
+      weak 2560  41000  61440   2519040000   1360
+      weak 5120  41000  122880  5038080000   1714
+      weak 10240 41000  245760  10076160000  2159    10billions
 
+    Typical output:
+
+    .. code-block:: none
+
+      starttime=1579725956
+      # domain::distribute: 0.0983208s
+      # mpi::synchronizeHalos: 0.0341479s
+      # domain::buildTree: 0.084004s
+      # updateTasks: 0.000900428s
+      # FindNeighbors: 0.354712s
+      # Density: 0.296224s
+      # EquationOfState: 0.00244751s
+      # mpi::synchronizeHalos: 0.0770191s
+      # IAD: 0.626564s
+      # mpi::synchronizeHalos: 0.344856s
+      # MomentumEnergyIAD: 1.05951s
+      # Timestep: 0.621583s
+      # UpdateQuantities: 0.00498222s
+      # EnergyConservation: 0.00137127s
+      # UpdateSmoothingLength: 0.00321161s
+      ### Check ### Global Tree Nodes: 1097, Particles: 40947, Halos: 109194
+      ### Check ### Computational domain: -49.5 49.5 -49.5 49.5 -50 50
+      ### Check ### Total Neighbors: 244628400, Avg neighbor count per particle: 244
+      ### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
+      ### Check ### Total energy: 2.08323e+10, (internal: 1e+06, cinetic: 2.08313e+10)
+      === Total time for iteration(0) 3.61153s
+      stoptime=1579725961
+
+    Typical performance reporting:
+
+    .. code-block:: none
+
+      PERFORMANCE REPORT
+      -----------------------------------------------
+      sphexa_timers_sqpatch_024mpi_001omp_100n_0steps
+      - daint:gpu
+         - PrgEnv-gnu
+            * num_tasks: 24
+            * Elapsed: 3.6201 s
+            * _Elapsed: 5 s
+            * domain_build: 0.0956 s
+            * mpi_synchronizeHalos: 0.4567 s
+            * BuildTree: 0 s
+            * FindNeighbors: 0.3547 s
+            * Density: 0.296 s
+            * EquationOfState: 0.0024 s
+            * IAD: 0.6284 s
+            * MomentumEnergyIAD: 1.0914 s
+            * Timestep: 0.6009 s
+            * UpdateQuantities: 0.0051 s
+            * EnergyConservation: 0.0012 s
+            * SmoothingLength: 0.0033 s
+            *
+            * %MomentumEnergyIAD: 30.15 %
+            * %Timestep: 16.6 %
+            * %mpi_synchronizeHalos: 12.62 %
+            * %FindNeighbors: 9.8 %
+            * %IAD: 17.36 %
     '''
-
+# }}}
     def __init__(self, mpitask, cubesize, steps):
         # {{{ pe
         self.descr = 'Strong scaling study'
@@ -132,7 +191,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'Elapsed':              sphs.seconds_elaps(self),
             '_Elapsed':             sphs.elapsed_time_from_date(self),
             #
-            'domain_build':         sphs.seconds_build(self),
+            'domain_distribute':    sphs.seconds_domaindistrib(self),
             'mpi_synchronizeHalos': sphs.seconds_halos(self),
             'BuildTree':            sphs.seconds_tree(self),
             'FindNeighbors':        sphs.seconds_neigh(self),
@@ -161,7 +220,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
                 'Elapsed': (0, None, None, 's'),
                 '_Elapsed': (0, None, None, 's'),
                 #
-                'domain_build': (0, None, None, 's'),
+                'domain_domaindistribute': (0, None, None, 's'),
                 'mpi_synchronizeHalos': (0, None, None, 's'),
                 'BuildTree': (0, None, None, 's'),
                 'FindNeighbors': (0, None, None, 's'),
