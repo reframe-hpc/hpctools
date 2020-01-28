@@ -220,7 +220,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
                 'Elapsed': (0, None, None, 's'),
                 '_Elapsed': (0, None, None, 's'),
                 #
-                'domain_domaindistribute': (0, None, None, 's'),
+                'domain_distribute': (0, None, None, 's'),
                 'mpi_synchronizeHalos': (0, None, None, 's'),
                 'BuildTree': (0, None, None, 's'),
                 'FindNeighbors': (0, None, None, 's'),
