@@ -14,7 +14,7 @@ at CSCS since 2016 and is being actively developed. All the tests used in this
 guide are freely available `here
 <https://github.com/eth-cscs/hpctools/tree/master/reframechecks>`__.
 
-This documentation will guide you through writing ReFrame tests to analyze the
+This page will guide you through writing ReFrame tests to analyze the
 performance of your code. You should be familiar with ReFrame, this link to the
 ReFrame `tutorial
 <https://reframe-hpc.readthedocs.io/en/stable/tutorial.html>`__ can serve as a
@@ -96,7 +96,6 @@ A typical output from ReFrame will look like this:
      Output dir prefix    : /scratch/snx3000tds/piccinal/output/
      Perf. logging prefix : /scratch/snx3000tds/piccinal/perflogs
  [==========] Running 1 check(s)
- [==========] Started on Fri Jan 24 16:09:09 2020
  
  [----------] started processing sphexa_timers_sqpatch_024mpi_001omp_100n_0steps (Strong scaling study)
  [ RUN      ] sphexa_timers_sqpatch_024mpi_001omp_100n_0steps on daint:gpu using PrgEnv-cray

@@ -14,6 +14,7 @@ together with HPC tools.
    :hidden:
 
    Getting Started <started>
+   Intel tools <intel>
    Sanity Functions Reference <sanity_functions_reference>
 
 .. this is a comment: `:maxdepth: 2`

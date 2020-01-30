@@ -17,6 +17,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
     '''
     This class runs the test code with Intel Inspector (mpi only):
     https://software.intel.com/en-us/inspector
+
     Available analysis types are: ``inspxe-cl -h collect``
 
     .. code-block:: none

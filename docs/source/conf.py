@@ -64,7 +64,9 @@ html_context = {
     'github_repo': 'hpctools',
 }
 # autodoc_default_flags is now deprecated. Please use autodoc_default_options instead:
-autodoc_default_flags = ['members']
+# http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_default_options
+# autodoc_default_flags = ['members']
+autodoc_default_options = {'members': True}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
