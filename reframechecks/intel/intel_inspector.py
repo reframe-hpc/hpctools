@@ -4,6 +4,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 sys.path.append(os.path.abspath('../common'))
 import sphexa.sanity as sphs
+import sphexa.sanity_intel as sphsintel
 
 
 @rfm.parameterized_test(*[[mpitask, cubesize, steps]
@@ -12,111 +13,59 @@ import sphexa.sanity as sphs
                           for steps in [0]
                           ])
 class SphExaNativeCheck(rfm.RegressionTest):
-# {{{
+    # {{{
     '''
-    This class runs the test code without any tool (mpi only), and reports
-    elapsed time from internal timers. 3 parameters can be set for simulation:
+    This class runs the test code with Intel Inspector (mpi only):
+    https://software.intel.com/en-us/inspector
+    Available analysis types are: ``inspxe-cl -h collect``
+
+    .. code-block:: none
+
+      mi1   Detect Leaks
+      mi2   Detect Memory Problems
+      mi3   Locate Memory Problems
+      ti1   Detect Deadlocks
+      ti2   Detect Deadlocks and Data Races
+      ti3   Locate Deadlocks and Data Races
+
+    3 parameters can be set for simulation:
 
     :arg mpitask: number of mpi tasks,
     :arg cubesize: size of the cube in the 3D square patch test,
     :arg steps: number of simulation steps.
-
-    .. code-block:: none
-
-       A weak scaling study (normal partition <= 2400cn)
-       --------------------------------------------------
-      weak cn    p/c    c       np            cubesize
-      weak 1     41000  24      984000         99      1million
-      weak 2     41000  48      1968000       125
-      weak 4     41000  96      3936000       157
-      weak 8     41000  192     7872000       198
-      weak 16    41000  384     15744000      250     10millions
-      weak 20    41000  480     19680000      269
-      weak 40    41000  960     39360000      340
-      weak 80    41000  1920    78720000      428
-      weak 160   41000  3840    157440000     539     100millions
-      weak 320   41000  7680    314880000     680
-      weak 640   41000  15360   629760000     857
-      weak 1280  41000  30720   1259520000   1079     1billion
-      ------------------------------------------------------------
-      weak 2560  41000  61440   2519040000   1360
-      weak 5120  41000  122880  5038080000   1714
-      weak 10240 41000  245760  10076160000  2159    10billions
-
-    Typical output:
-
-    .. code-block:: none
-
-      starttime=1579725956
-      # domain::distribute: 0.0983208s
-      # mpi::synchronizeHalos: 0.0341479s
-      # domain::buildTree: 0.084004s
-      # updateTasks: 0.000900428s
-      # FindNeighbors: 0.354712s
-      # Density: 0.296224s
-      # EquationOfState: 0.00244751s
-      # mpi::synchronizeHalos: 0.0770191s
-      # IAD: 0.626564s
-      # mpi::synchronizeHalos: 0.344856s
-      # MomentumEnergyIAD: 1.05951s
-      # Timestep: 0.621583s
-      # UpdateQuantities: 0.00498222s
-      # EnergyConservation: 0.00137127s
-      # UpdateSmoothingLength: 0.00321161s
-      ### Check ### Global Tree Nodes: 1097, Particles: 40947, Halos: 109194
-      ### Check ### Computational domain: -49.5 49.5 -49.5 49.5 -50 50
-      ### Check ### Total Neighbors: 244628400, Avg neighbor count per particle: 244
-      ### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
-      ### Check ### Total energy: 2.08323e+10, (internal: 1e+06, cinetic: 2.08313e+10)
-      === Total time for iteration(0) 3.61153s
-      stoptime=1579725961
 
     Typical performance reporting:
 
     .. code-block:: none
 
       PERFORMANCE REPORT
-      -----------------------------------------------
-      sphexa_timers_sqpatch_024mpi_001omp_100n_0steps
-      - daint:gpu
+      --------------------------------------------------
+      sphexa_inspector_sqpatch_024mpi_001omp_100n_0steps
+      - dom:gpu
          - PrgEnv-gnu
             * num_tasks: 24
-            * Elapsed: 3.6201 s
-            * _Elapsed: 5 s
-            * domain_build: 0.0956 s
-            * mpi_synchronizeHalos: 0.4567 s
-            * BuildTree: 0 s
-            * FindNeighbors: 0.3547 s
-            * Density: 0.296 s
-            * EquationOfState: 0.0024 s
-            * IAD: 0.6284 s
-            * MomentumEnergyIAD: 1.0914 s
-            * Timestep: 0.6009 s
-            * UpdateQuantities: 0.0051 s
-            * EnergyConservation: 0.0012 s
-            * SmoothingLength: 0.0033 s
-            *
-            * %MomentumEnergyIAD: 30.15 %
-            * %Timestep: 16.6 %
-            * %mpi_synchronizeHalos: 12.62 %
-            * %FindNeighbors: 9.8 %
-            * %IAD: 17.36 %
+            * Elapsed: 8.899 s
+            ...
+            * Memory not deallocated: 1
     '''
-# }}}
+    # }}}
+
     def __init__(self, mpitask, cubesize, steps):
         # {{{ pe
-        self.descr = 'Strong scaling study'
+        self.descr = 'Tool validation'
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
                                     'PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-pgi']
         #self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
-        self.tags = {'sph', 'hpctools'}
+        self.tags = {'sph', 'hpctools', 'cpu'}
 # }}}
 
 # {{{ compile
         self.testname = 'sqpatch'
+        self.modules = ['inspector/2020']
+        self.prebuild_cmd = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -132,7 +81,19 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.cxx = 'CC'
         self.sourcepath = '%s.cpp' % self.testname
-        self.executable = '%s.exe' % self.testname
+        self.tool = 'inspxe-cl'
+        self.executable = self.tool
+        # NOTE:
+        self.target_executable = './%s.exe' % self.testname
+
+# {{{ openmp:
+# 'PrgEnv-intel': ['-qopenmp'],
+# 'PrgEnv-gnu': ['-fopenmp'],
+# 'PrgEnv-pgi': ['-mp'],
+# 'PrgEnv-cray_classic': ['-homp'],
+# 'PrgEnv-cray': ['-fopenmp'],
+# # '-homp' if lang == 'F90' else '-fopenmp',
+# }}}
 
 # }}}
 
@@ -145,7 +106,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857
                      }
         cubesize = size_dict[mpitask]
-        self.name = 'sphexa_timers_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
+        self.name = 'sphexa_inspector_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
             self.testname, mpitask, ompthread, cubesize, steps)
         self.num_tasks = mpitask
         self.num_tasks_per_node = 24  # 72
@@ -167,7 +128,28 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
-        self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps]
+        # NOTE:
+        self.dir_rpt = 'rpt'
+        self.tool_opts = '-collect mi1 -trace-mpi -no-auto-finalize -r %s' % self.dir_rpt
+        self.executable_opts = [self.tool_opts, '%s' % self.target_executable,
+                                '-n %s' % cubesize, '-s %s' % steps, '2>&1']
+        self.version_rpt = 'version.rpt'
+        self.which_rpt = 'which.rpt'
+        self.summary_rpt = 'summary.rpt'
+        # NOTE:
+        self.pre_run = [
+            'module rm xalt',
+            'mv %s %s' % (self.executable, self.target_executable),
+            '%s --version &> %s' % (self.tool, self.version_rpt),
+            'which %s &> %s' % (self.tool, self.which_rpt),
+        ]
+        self.post_run = [
+            '%s -r %s.* -report=summary &> %s' %
+            (self.tool, self.dir_rpt, self.summary_rpt),
+            # '%s -report=problems &> %s' % (self.tool, self.problems_rpt),
+            # '%s -report=observations &> %s' %
+            # (self.tool, self.observations_rpt),
+        ]
 # }}}
 
 # {{{ sanity
@@ -175,14 +157,18 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found('Total time for iteration\(0\)', self.stdout),
+            # check the tool's version:
+            sn.assert_true(sphsintel.inspector_version(self)),
+            # check the summary report:
+            sn.assert_found(r'\d new problem\(s\) found', self.summary_rpt),
         ])
 # }}}
 
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run = ['echo starttime=`date +%s`']
-        self.post_run = ['echo stoptime=`date +%s`']
+        self.pre_run += ['echo starttime=`date +%s`']
+        self.post_run += ['echo stoptime=`date +%s`']
         #self.rpt = '%s.rpt' % self.testname
         # }}}
 
@@ -206,11 +192,16 @@ class SphExaNativeCheck(rfm.RegressionTest):
         }
         # top%
         self.perf_patterns.update({
-            '%MomentumEnergyIAD':       sphs.pctg_MomentumEnergyIAD(self),
-            '%Timestep':                sphs.pctg_Timestep(self),
-            '%mpi_synchronizeHalos':    sphs.pctg_mpi_synchronizeHalos(self),
-            '%FindNeighbors':           sphs.pctg_FindNeighbors(self),
-            '%IAD':                     sphs.pctg_IAD(self),
+            '%MomentumEnergyIAD':     sphs.pctg_MomentumEnergyIAD(self),
+            '%Timestep':              sphs.pctg_Timestep(self),
+            '%mpi_synchronizeHalos':  sphs.pctg_mpi_synchronizeHalos(self),
+            '%FindNeighbors':         sphs.pctg_FindNeighbors(self),
+            '%IAD':                   sphs.pctg_IAD(self),
+        })
+        # inspector
+        self.perf_patterns.update({
+            'Memory not deallocated': sphsintel.inspector_not_deallocated(self),
+            # 'Memory leak': self.inspector_leak,
         })
         # }}}
 
@@ -238,6 +229,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
                 '%mpi_synchronizeHalos': (0, None, None, '%'),
                 '%FindNeighbors': (0, None, None, '%'),
                 '%IAD': (0, None, None, '%'),
+                # intel inspector
+                'Memory not deallocated': (0, None, None, ''),
+                # 'Memory leak': (0, None, None, ''),
             }
         }
 # }}}
@@ -246,13 +240,3 @@ class SphExaNativeCheck(rfm.RegressionTest):
     @rfm.run_before('compile')
     def setflags(self):
         self.build_system.cxxflags = self.prgenv_flags[self.current_environ.name]
-
-# {{{
-# ok     def setup(self, partition, environ, **job_opts):
-# ok         super().setup(partition, environ, **job_opts)
-# ok         environ_name = self.current_environ.name
-# ok         prgenv_flags = self.prgenv_flags[environ_name]
-# ok         self.build_system.cxxflags = prgenv_flags
-# ---
-# ok     exec(open("../common/sphexa/performance.py").read())
-# }}}
