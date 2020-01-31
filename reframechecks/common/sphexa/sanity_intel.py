@@ -57,7 +57,6 @@ def inspector_not_deallocated(obj):
 # }}}
 
 # {{{ sanity_function: intel_advisor
-
 @sn.sanity_function
 def advisor_version(obj):
     '''Checks tool's version:
@@ -83,6 +82,20 @@ def advisor_version(obj):
 
 @sn.sanity_function
 def advisor_loop1_line(obj):
+    ''' Reports the line (fline) of the most time consuming loop
+
+    .. code-block::
+
+      > summary.rpt
+      ID / Function Call Sites and Loops / Total Time / Self Time /  Type
+      71 [loop in sphexa::sph::computeMomentumAndEnergyIADImpl<double,
+        ... sphexa::ParticlesData<double>> at momentumAndEnergyIAD.hpp:94]
+        ... 1.092s      0.736s              Scalar  momentumAndEnergyIAD.hpp:94
+      34 [loop in MPIDI_Cray_shared_mem_coll_bcast]
+        ... 0.596s      0.472s              Scalar  libmpich_gnu_82.so.3
+      etc.
+      returns: * advisor_loop1_line: 94 (momentumAndEnergyIAD.hpp)
+    '''
     regex = (r'\d+\s+\[loop in sphexa::(?P<funcname>.*) at (?P<filename>\S+):'
              r'(?P<fline>\d+)\]')
     rpt = os.path.join(obj.stagedir, obj.summary_rpt)
@@ -94,6 +107,21 @@ def advisor_loop1_line(obj):
 
 @sn.sanity_function
 def advisor_loop1_filename(obj):
+    ''' Reports the name of the source file (filename) of the most time
+    consuming loop
+
+    .. code-block::
+
+      > summary.rpt
+      ID / Function Call Sites and Loops / Total Time / Self Time /  Type
+      71 [loop in sphexa::sph::computeMomentumAndEnergyIADImpl<double,
+        ... sphexa::ParticlesData<double>> at momentumAndEnergyIAD.hpp:94]
+        ... 1.092s      0.736s              Scalar  momentumAndEnergyIAD.hpp:94
+      34 [loop in MPIDI_Cray_shared_mem_coll_bcast]
+        ... 0.596s      0.472s              Scalar  libmpich_gnu_82.so.3
+      etc.
+      returns: * advisor_loop1_line: 94 (momentumAndEnergyIAD.hpp)
+    '''
     # debug with: import pdb; pdb.set_trace()
     # also in rpt/e000/hs000/advisor-survey.txt
     regex = (r'\d+\s+\[loop in sphexa::(?P<funcname>.*) at (?P<filename>\S+):'
@@ -105,6 +133,21 @@ def advisor_loop1_filename(obj):
 
 @sn.sanity_function
 def advisor_elapsed(obj):
+    ''' Reports the elapsed time (sum of ``Self Time`` in seconds) measured by
+    the tool
+
+    .. code-block::
+
+      > summary.rpt
+      ID / Function Call Sites and Loops / Total Time / Self Time /  Type
+      71 [loop in sphexa::sph::computeMomentumAndEnergyIADImpl<double,
+        ... sphexa::ParticlesData<double>> at momentumAndEnergyIAD.hpp:94]
+        ... 1.092s      0.736s              Scalar  momentumAndEnergyIAD.hpp:94
+      34 [loop in MPIDI_Cray_shared_mem_coll_bcast]
+        ... 0.596s      0.472s              Scalar  libmpich_gnu_82.so.3
+      etc.
+      returns: * advisor_elapsed: 2.13 s
+    '''
     regex = r'\s+\d+\s+\[.*\]\s+(?P<inclusive>\S+)s\s+(?P<exclusive>\S+)s'
     rpt = os.path.join(obj.stagedir, obj.summary_rpt)
     return sn.round(sn.sum(sn.extractall(regex, rpt, 'exclusive', float)), 4)

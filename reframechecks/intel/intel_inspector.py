@@ -2,15 +2,15 @@ import os
 import sys
 import reframe as rfm
 import reframe.utility.sanity as sn
-sys.path.append(os.path.abspath('../common'))
+sys.path.append(os.path.abspath('../common'))  # noqa: E402
 import sphexa.sanity as sphs
 import sphexa.sanity_intel as sphsintel
 
 
-@rfm.parameterized_test(*[[mpitask, cubesize, steps]
+@rfm.parameterized_test(*[[mpitask, steps]
                           for mpitask in [24]
-                          for cubesize in [100]
                           for steps in [0]
+                          # for cubesize in [100]
                           ])
 class SphExaNativeCheck(rfm.RegressionTest):
     # {{{
@@ -29,10 +29,11 @@ class SphExaNativeCheck(rfm.RegressionTest):
       ti2   Detect Deadlocks and Data Races
       ti3   Locate Deadlocks and Data Races
 
-    3 parameters can be set for simulation:
+    2 parameters can be set for simulation:
 
-    :arg mpitask: number of mpi tasks,
-    :arg cubesize: size of the cube in the 3D square patch test,
+    :arg mpitask: number of mpi tasks; the size of the cube in the 3D
+         square patch test is set with a dictionary depending on mpitask,
+         but cubesize could also be on the list of parameters,
     :arg steps: number of simulation steps.
 
     Typical performance reporting:
@@ -51,13 +52,13 @@ class SphExaNativeCheck(rfm.RegressionTest):
     '''
     # }}}
 
-    def __init__(self, mpitask, cubesize, steps):
+    def __init__(self, mpitask, steps):
         # {{{ pe
         self.descr = 'Tool validation'
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
                                     'PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-pgi']
-        #self.valid_systems = ['daint:gpu', 'dom:gpu']
+        # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu'}
@@ -107,8 +108,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857
                      }
         cubesize = size_dict[mpitask]
-        self.name = 'sphexa_inspector_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
+        self.name = 'sphexa_inspector_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'. \
+            format(self.testname, mpitask, ompthread, cubesize, steps)
         self.num_tasks = mpitask
         self.num_tasks_per_node = 24  # 72
 # {{{ ht:
@@ -131,7 +132,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
         }
         # NOTE:
         self.dir_rpt = 'rpt'
-        self.tool_opts = '-collect mi1 -trace-mpi -no-auto-finalize -r %s' % self.dir_rpt
+        self.tool_opts = '-collect mi1 -trace-mpi -no-auto-finalize -r %s' \
+            % self.dir_rpt
         self.executable_opts = [self.tool_opts, '%s' % self.target_executable,
                                 '-n %s' % cubesize, '-s %s' % steps, '2>&1']
         self.version_rpt = 'version.rpt'
@@ -157,7 +159,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # sanity
         self.sanity_patterns = sn.all([
             # check the job output:
-            sn.assert_found('Total time for iteration\(0\)', self.stdout),
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
             # check the tool's version:
             sn.assert_true(sphsintel.inspector_version(self)),
             # check the summary report:
@@ -170,7 +172,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # use linux date as timer:
         self.pre_run += ['echo starttime=`date +%s`']
         self.post_run += ['echo stoptime=`date +%s`']
-        #self.rpt = '%s.rpt' % self.testname
+        # self.rpt = '%s.rpt' % self.testname
         # }}}
 
         # {{{ perf_patterns:
@@ -201,7 +203,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
         })
         # inspector
         self.perf_patterns.update({
-            'Memory not deallocated': sphsintel.inspector_not_deallocated(self),
+            'Memory not deallocated':
+            sphsintel.inspector_not_deallocated(self),
             # 'Memory leak': self.inspector_leak,
         })
         # }}}
@@ -240,4 +243,5 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        self.build_system.cxxflags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cxxflags = \
+            self.prgenv_flags[self.current_environ.name]

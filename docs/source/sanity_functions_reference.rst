@@ -4,18 +4,19 @@ Reference Guide
 
 .. comment: To avoid error with autodoc, use `autodoc_mock_imports = ['reframe']`
 
-Regression test classes
------------------------
+****************
+Regression tests
+****************
 
 internal_timers_mpi.py
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
 .. automodule:: reframechecks.notool.internal_timers_mpi
    :members:
    :show-inheritance:
 
-Shared sanity checks
-....................
+Sanity checks
+-------------
 
 .. automodule:: reframechecks.common.sphexa.sanity
    :members:
@@ -25,24 +26,30 @@ Shared sanity checks
  'reframechecks.notool'; the following exception was raised: No module named
  'sphexa'
 
-Link to specific method
-.......................
+.. Link to specific method
+ .. * automethod:: reframechecks/common/sphexa/sanity.py -> elapsed_time_from_date
+ .. automethod:: reframechecks.common.sphexa.sanity.elapsed_time_from_date
 
-.. * automethod:: reframechecks/common/sphexa/sanity.py -> elapsed_time_from_date
-
-.. automethod:: reframechecks.common.sphexa.sanity.elapsed_time_from_date
+Intel
+=====
 
 intel_inspector.py
-~~~~~~~~~~~~~~~~~~
+------------------
 
 .. automodule:: reframechecks.intel.intel_inspector
    :members:
    :show-inheritance:
 
-Shared sanity checks
-....................
+intel_advisor.py
+----------------
+
+.. automodule:: reframechecks.intel.intel_advisor
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
 
 .. automodule:: reframechecks.common.sphexa.sanity_intel
    :members:
    :show-inheritance:
-

@@ -2,7 +2,7 @@ import os
 import sys
 import reframe as rfm
 import reframe.utility.sanity as sn
-sys.path.append(os.path.abspath('../common'))
+sys.path.append(os.path.abspath('../common'))  # noqa: E402
 import sphexa.sanity as sphs
 import sphexa.sanity_intel as sphsintel
 
@@ -10,6 +10,7 @@ import sphexa.sanity_intel as sphsintel
 @rfm.parameterized_test(*[[mpitask, steps]
                           for mpitask in [24]
                           for steps in [0]
+                          # for cubesize in [100]
                           ])
 class SphExaNativeCheck(rfm.RegressionTest):
     # {{{
@@ -32,6 +33,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
     :arg mpitask: number of mpi tasks; the size of the cube in the 3D
          square patch test is set with a dictionary depending on mpitask,
+         but cubesize could also be on the list of parameters,
     :arg steps: number of simulation steps.
 
     Typical performance reporting:
@@ -57,7 +59,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
                                     'PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-pgi']
-        #self.valid_systems = ['daint:gpu', 'dom:gpu']
+        # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu'}
@@ -153,7 +155,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # sanity
         self.sanity_patterns = sn.all([
             # check the job output:
-            sn.assert_found('Total time for iteration\(0\)', self.stdout),
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
             # check the tool's version:
             sn.assert_true(sphsintel.advisor_version(self)),
             # check the summary report:
@@ -240,4 +242,5 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        self.build_system.cxxflags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cxxflags = \
+            self.prgenv_flags[self.current_environ.name]
