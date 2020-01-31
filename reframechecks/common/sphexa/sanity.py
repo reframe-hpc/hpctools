@@ -7,12 +7,12 @@ from reframe.core.fields import ScopedDict
 # {{{ TODO: stdout:
 # ### Check ### Global Tree Nodes: 1097, Particles: 40947, Halos: 109194
 # ### Check ### Computational domain: -49.5 49.5 -49.5 49.5 -50 50
-# ### Check ### Total Neighbors: 244628400, Avg neighbor count per particle: 244
+# ### Check ### Total Neighbors: 244628400, Avg neighbor count per particle:244
 # ### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
-# ### Check ### Total energy: 2.08323e+10, (internal: 1e+06, cinetic: 2.08313e+10)
+# ### Check ### Total energy: 2.08323e+10, (internal: 1e+06, cinetic: 2.03e+10)
 # }}}
 
- # {{{ sanity_function: date as timer
+# {{{ sanity_function: date as timer
 @sn.sanity_function
 def elapsed_time_from_date(self):
     '''Reports elapsed time in seconds using the linux date command:
@@ -41,27 +41,29 @@ def seconds_elaps(self):
       === Total time for iteration(0) 3.61153s
       reports: * Elapsed: 3.6115 s
     '''
-    regex = '^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
+    regex = r'^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
     # regex = r'^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_domaindistrib(self):
-    '''Reports `domain::distribute` time in seconds using the internal timer from the code
+    '''Reports `domain::distribute` time in seconds using the internal timer
+    from the code
 
     .. code-block::
 
       # domain::distribute: 0.0983208s
       reports: * domain_distribute: 0.0983 s
     '''
-    regex = '^# domain::distribute:\s+(?P<sec>.*)s'
+    regex = r'^# domain::distribute:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_halos(self):
-    '''Reports `mpi::synchronizeHalos` time in seconds using the internal timer from the code
+    '''Reports `mpi::synchronizeHalos` time in seconds using the internal timer
+    from the code
 
     .. code-block::
 
@@ -70,46 +72,49 @@ def seconds_halos(self):
       # mpi::synchronizeHalos: 0.344856s
       reports: * mpi_synchronizeHalos: 0.4560 s
     '''
-    regex = '^# mpi::synchronizeHalos:\s+(?P<sec>.*)s'
+    regex = r'^# mpi::synchronizeHalos:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_tree(self):
-    '''Reports `domain:BuildTree` time in seconds using the internal timer from the code
+    '''Reports `domain:BuildTree` time in seconds using the internal timer
+    from the code
 
     .. code-block::
 
       # domain::buildTree: 0.084004s
       reports: * BuildTree: 0 s
     '''
-    regex = '^# domain:BuildTree:\s+(?P<sec>.*)s'
+    regex = r'^# domain:BuildTree:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_updateTasks(self):
-    '''Reports `updateTasks` time in seconds using the internal timer from the code
+    '''Reports `updateTasks` time in seconds using the internal timer from the
+    code
 
     .. code-block::
 
       # updateTasks: 0.000900428s
       reports: ...
     '''
-    regex = '^# updateTasks:\s+(?P<sec>.*)s'
+    regex = r'^# updateTasks:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_neigh(self):
-    '''Reports `FindNeighbors` time in seconds using the internal timer from the code
+    '''Reports `FindNeighbors` time in seconds using the internal timer from
+    the code
 
     .. code-block::
 
       # FindNeighbors: 0.354712s
       reports: * FindNeighbors: 0.3547 s
     '''
-    regex = '^# FindNeighbors:\s+(?P<sec>.*)s'
+    regex = r'^# FindNeighbors:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
@@ -122,20 +127,21 @@ def seconds_denst(self):
       # Density: 0.296224s
       reports: * Density: 0.296 s
     '''
-    regex = '^# Density:\s+(?P<sec>.*)s'
+    regex = r'^# Density:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_state(self):
-    '''Reports `EquationOfState` time in seconds using the internal timer from the code
+    '''Reports `EquationOfState` time in seconds using the internal timer from
+    the code
 
     .. code-block::
 
       # EquationOfState: 0.00244751s
       reports: * EquationOfState: 0.0024 s
     '''
-    regex = '^# EquationOfState:\s+(?P<sec>.*)s'
+    regex = r'^# EquationOfState:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
@@ -148,13 +154,14 @@ def seconds_iad(self):
       # IAD: 0.626564s
       reports: * IAD: 0.6284 s
     '''
-    regex = '^# IAD:\s+(?P<sec>.*)s'
+    regex = r'^# IAD:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_energ(self):
-    '''Reports `MomentumEnergyIAD` time in seconds using the internal timer from the code
+    '''Reports `MomentumEnergyIAD` time in seconds using the internal timer
+    from the code
 
     .. code-block::
 
@@ -162,59 +169,63 @@ def seconds_energ(self):
        reports: * MomentumEnergyIAD: 1.0595 s
 
     '''
-    regex = '^# MomentumEnergyIAD:\s+(?P<sec>.*)s'
+    regex = r'^# MomentumEnergyIAD:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_step(self):
-    '''Reports `Timestep` time in seconds using the internal timer from the code
+    '''Reports `Timestep` time in seconds using the internal timer from the
+    code
 
     .. code-block::
 
       # Timestep: 0.621583s
       reports: * Timestep: 0.6215 s
     '''
-    regex = '^# Timestep:\s+(?P<sec>.*)s'
+    regex = r'^# Timestep:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_updat(self):
-    '''Reports `UpdateQuantities` time in seconds using the internal timer from the code
+    '''Reports `UpdateQuantities` time in seconds using the internal timer from
+    the code
 
     .. code-block::
 
       # UpdateQuantities: 0.00498222s
       reports: * UpdateQuantities: 0.0049 s
     '''
-    regex = '^# UpdateQuantities:\s+(?P<sec>.*)s'
+    regex = r'^# UpdateQuantities:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_consv(self):
-    '''Reports `EnergyConservation` time in seconds using the internal timer from the code
+    '''Reports `EnergyConservation` time in seconds using the internal timer
+    from the code
 
     .. code-block::
 
       # EnergyConservation: 0.00137127s
       reports: * EnergyConservation: 0.0013 s
     '''
-    regex = '^# EnergyConservation:\s+(?P<sec>.*)s'
+    regex = r'^# EnergyConservation:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 
 @sn.sanity_function
 def seconds_smoothinglength(self):
-    '''Reports `UpdateSmoothingLength` time in seconds using the internal timer from the code
+    '''Reports `UpdateSmoothingLength` time in seconds using the internal timer
+    from the code
 
     .. code-block::
 
       # UpdateSmoothingLength: 0.00321161s
       reports: * SmoothingLength: 0.0032 s
     '''
-    regex = '^# UpdateSmoothingLength:\s+(?P<sec>.*)s'
+    regex = r'^# UpdateSmoothingLength:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 # }}}
 
