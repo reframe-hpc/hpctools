@@ -73,19 +73,19 @@ A typical output from the ``--performance-report`` flag will look like this:
   :emphasize-lines: 9-10
 
 This report is generated from the data collected from the tool and processed in
-the ``self.perf_patterns`` part of the check: 
-
-.. literalinclude:: ../../reframechecks/intel/intel_advisor.py
-  :lines: 201-204
-  :emphasize-lines: 2-3
-
-This information (elapsed walltime, source filename and 
-line number) is extracted for mpi rank 0 with the 
-:meth:`advisor_elapsed <reframechecks.common.sphexa.sanity_intel.advisor_elapsed>`, 
-:meth:`advisor_loop1_filename <reframechecks.common.sphexa.sanity_intel.advisor_loop1_filename>`, 
-and :meth:`advisor_loop1_line <reframechecks.common.sphexa.sanity_intel.advisor_loop1_line>` methods.
+the ``self.perf_patterns`` part of the :class:`check <reframechecks.intel.intel_advisor>`.
+This information (elapsed walltime, source filename and line number) is
+extracted for mpi rank 0 with the :meth:`advisor_elapsed
+<reframechecks.common.sphexa.sanity_intel.advisor_elapsed>`,
+:meth:`advisor_loop1_filename
+<reframechecks.common.sphexa.sanity_intel.advisor_loop1_filename>`, and
+:meth:`advisor_loop1_line
+<reframechecks.common.sphexa.sanity_intel.advisor_loop1_line>` methods.
 Looking at the report with the tool gives more insight into the performance of
 the code:
+
+.. .. literalinclude:: ../../reframechecks/intel/intel_advisor.py
+  :lines: 201-204
 
 .. (:ref:`Fig.1 <link_to_myfig1>`) shows that...
 .. .. _link_to_myfig1:

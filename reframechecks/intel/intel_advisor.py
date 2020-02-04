@@ -159,7 +159,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
             # check the tool's version:
             sn.assert_true(sphsintel.advisor_version(self)),
             # check the summary report:
-            sn.assert_found(r'advixe: This data has been saved',
+            sn.assert_found(r'vtune: Executing actions 100 % done',
                             self.summary_rpt),
         ])
 # }}}
@@ -172,31 +172,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # }}}
 
         # {{{ perf_patterns:
-        self.perf_patterns = {
-            'Elapsed':              sphs.seconds_elaps(self),
-            '_Elapsed':             sphs.elapsed_time_from_date(self),
-            #
-            'domain_distribute':    sphs.seconds_domaindistrib(self),
-            'mpi_synchronizeHalos': sphs.seconds_halos(self),
-            'BuildTree':            sphs.seconds_tree(self),
-            'FindNeighbors':        sphs.seconds_neigh(self),
-            'Density':              sphs.seconds_denst(self),
-            'EquationOfState':      sphs.seconds_state(self),
-            'IAD':                  sphs.seconds_iad(self),
-            'MomentumEnergyIAD':    sphs.seconds_energ(self),
-            'Timestep':             sphs.seconds_step(self),
-            'UpdateQuantities':     sphs.seconds_updat(self),
-            'EnergyConservation':   sphs.seconds_consv(self),
-            'SmoothingLength':      sphs.seconds_smoothinglength(self),
-        }
-        # top%
-        self.perf_patterns.update({
-            '%MomentumEnergyIAD':     sphs.pctg_MomentumEnergyIAD(self),
-            '%Timestep':              sphs.pctg_Timestep(self),
-            '%mpi_synchronizeHalos':  sphs.pctg_mpi_synchronizeHalos(self),
-            '%FindNeighbors':         sphs.pctg_FindNeighbors(self),
-            '%IAD':                   sphs.pctg_IAD(self),
-        })
+        self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
         # tool
         self.perf_patterns.update({
             'advisor_elapsed': sphsintel.advisor_elapsed(self),
@@ -205,38 +181,42 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # }}}
 
         # {{{ reference:
+        self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
+        # tool
+        self.reference['*:advisor_elapsed'] = (0, None, None, 's')
         loop1_fname = sphsintel.advisor_loop1_filename(self)
-        self.reference = {
-            '*': {
-                'Elapsed': (0, None, None, 's'),
-                '_Elapsed': (0, None, None, 's'),
-                #
-                'domain_distribute': (0, None, None, 's'),
-                'mpi_synchronizeHalos': (0, None, None, 's'),
-                'BuildTree': (0, None, None, 's'),
-                'FindNeighbors': (0, None, None, 's'),
-                'Density': (0, None, None, 's'),
-                'EquationOfState': (0, None, None, 's'),
-                'IAD': (0, None, None, 's'),
-                'MomentumEnergyIAD': (0, None, None, 's'),
-                'Timestep': (0, None, None, 's'),
-                'UpdateQuantities': (0, None, None, 's'),
-                'EnergyConservation': (0, None, None, 's'),
-                'SmoothingLength': (0, None, None, 's'),
-                # top%
-                '%MomentumEnergyIAD': (0, None, None, '%'),
-                '%Timestep': (0, None, None, '%'),
-                '%mpi_synchronizeHalos': (0, None, None, '%'),
-                '%FindNeighbors': (0, None, None, '%'),
-                '%IAD': (0, None, None, '%'),
-                # tool
-                'advisor_elapsed': (0, None, None, 's'),
-                'advisor_loop1_line': (0, None, None, loop1_fname),
-                # NOTE: this also works:
-                # 'advisor_loop1_line': (0, None, None,
-                #   sphsintel.advisor_loop1_filename(self)),
-            }
-        }
+        self.reference['*:advisor_loop1_line'] = (0, None, None, loop1_fname)
+        # NOTE: this also works:
+        # 'advisor_loop1_line': (0, None, None,
+        #   sphsintel.advisor_loop1_filename(self)),
+#         self.reference = {
+#             '*': {
+#                 'Elapsed': (0, None, None, 's'),
+#                 '_Elapsed': (0, None, None, 's'),
+#                 #
+#                 'domain_distribute': (0, None, None, 's'),
+#                 'mpi_synchronizeHalos': (0, None, None, 's'),
+#                 'BuildTree': (0, None, None, 's'),
+#                 'FindNeighbors': (0, None, None, 's'),
+#                 'Density': (0, None, None, 's'),
+#                 'EquationOfState': (0, None, None, 's'),
+#                 'IAD': (0, None, None, 's'),
+#                 'MomentumEnergyIAD': (0, None, None, 's'),
+#                 'Timestep': (0, None, None, 's'),
+#                 'UpdateQuantities': (0, None, None, 's'),
+#                 'EnergyConservation': (0, None, None, 's'),
+#                 'SmoothingLength': (0, None, None, 's'),
+#                 # top%
+#                 '%MomentumEnergyIAD': (0, None, None, '%'),
+#                 '%Timestep': (0, None, None, '%'),
+#                 '%mpi_synchronizeHalos': (0, None, None, '%'),
+#                 '%FindNeighbors': (0, None, None, '%'),
+#                 '%IAD': (0, None, None, '%'),
+#                 # tool
+#                 'advisor_elapsed': (0, None, None, 's'),
+#                 'advisor_loop1_line': (0, None, None, loop1_fname),
+#             }
+#         }
 # }}}
 # }}}
 

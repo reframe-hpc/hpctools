@@ -260,3 +260,87 @@ def pctg_IAD(obj):
     return sn.round((100 * seconds_iad(obj) / seconds_elaps(obj)), 2)
 
 # }}}
+
+# {{{ sanity_function: perf patterns for internal timers
+@sn.sanity_function
+def basic_perf_patterns(obj):
+    '''Sets a set of basic perf_patterns to be shared between the tests.
+    The equivalent from inside the check is:
+
+    .. code-block:: python
+
+     perf_patterns = {
+         'Elapsed': sphs.seconds_elaps(self)
+         }
+    '''
+    perf_patterns = {
+        'Elapsed':              seconds_elaps(obj),
+        '_Elapsed':             elapsed_time_from_date(obj),
+        #
+        'domain_distribute':    seconds_domaindistrib(obj),
+        'mpi_synchronizeHalos': seconds_halos(obj),
+        'BuildTree':            seconds_tree(obj),
+        'FindNeighbors':        seconds_neigh(obj),
+        'Density':              seconds_denst(obj),
+        'EquationOfState':      seconds_state(obj),
+        'IAD':                  seconds_iad(obj),
+        'MomentumEnergyIAD':    seconds_energ(obj),
+        'Timestep':             seconds_step(obj),
+        'UpdateQuantities':     seconds_updat(obj),
+        'EnergyConservation':   seconds_consv(obj),
+        'SmoothingLength':      seconds_smoothinglength(obj),
+        }
+        # top%
+    perf_patterns.update({
+        '%MomentumEnergyIAD':    pctg_MomentumEnergyIAD(obj),
+        '%Timestep':             pctg_Timestep(obj),
+        '%mpi_synchronizeHalos': pctg_mpi_synchronizeHalos(obj),
+        '%FindNeighbors':        pctg_FindNeighbors(obj),
+        '%IAD':                  pctg_IAD(obj),
+        })
+    return perf_patterns
+# }}}
+
+# {{{ sanity_function: perf reference for internal timers
+@sn.sanity_function
+def basic_reference_scoped_d(self):
+    '''Sets a set of basic perf_reference to be shared between the tests.
+    The equivalent from inside the check is:
+
+    .. code-block:: python
+
+      self.reference = {
+          '*': {
+              'Elapsed': (0, None, None, 's'),
+          }
+      }
+    '''
+    myzero_s = (0, None, None, 's')
+    myzero_p = (0, None, None, '%')
+    self.myreference = ScopedDict({
+        '*': {
+            'Elapsed': myzero_s,
+            '_Elapsed': myzero_s,
+            # timers
+            'domain_distribute': myzero_s,
+            'mpi_synchronizeHalos': myzero_s,
+            'BuildTree': myzero_s,
+            'FindNeighbors': myzero_s,
+            'Density': myzero_s,
+            'EquationOfState': myzero_s,
+            'IAD': myzero_s,
+            'MomentumEnergyIAD': myzero_s,
+            'Timestep': myzero_s,
+            'UpdateQuantities': myzero_s,
+            'EnergyConservation': myzero_s,
+            'SmoothingLength': myzero_s,
+            # top%
+            '%MomentumEnergyIAD': myzero_p,
+            '%Timestep': myzero_p,
+            '%mpi_synchronizeHalos': myzero_p,
+            '%FindNeighbors': myzero_p,
+            '%IAD': myzero_p,
+            }
+        })
+    return self.myreference
+# }}}

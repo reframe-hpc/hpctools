@@ -53,3 +53,23 @@ Sanity checks
 .. automodule:: reframechecks.common.sphexa.sanity_intel
    :members:
    :show-inheritance:
+
+Score-P
+=======
+
+scorep_sampling+profiling.py
+----------------------------
+
+.. .. automodule:: reframechecks.scorep.scorep_sampling+profiling
+ A + in the filename breaks the documentation :-(
+
+.. automodule:: reframechecks.scorep.scorep_sampling_profiling
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. automodule:: reframechecks.common.sphexa.sanity_scorep
+   :members:
+   :show-inheritance:

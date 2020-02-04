@@ -46,15 +46,15 @@ A successful ReFrame output will look like the following:
  
  [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
 
-Several analyses are available:
+Looking into the :class:`Class <reframechecks.intel.intel_inspector>` shows how
+to setup and run the code with the tool. Several analyses are available:
 
 .. literalinclude:: ../../reframechecks/intel/intel_inspector.py
   :lines: 25-30
   :emphasize-lines: 1
 
-Looking into the :class:`Class <reframechecks.intel.intel_inspector>` shows how
-to setup and run the code with the tool. The ``mi1`` (memory leak) analysis is
-triggered by setting the ``executable_opts``:
+The ``mi1`` (memory leak) analysis is triggered by setting the
+``executable_opts``:
 
 .. literalinclude:: ../../reframechecks/intel/intel_inspector.py
   :language: python
@@ -78,13 +78,8 @@ A typical output from the ``--performance-report`` flag will look like this:
   :emphasize-lines: 9
 
 This report is generated from the data collected from the tool and processed in
-the ``self.perf_patterns`` part of the check: 
-
-.. literalinclude:: ../../reframechecks/intel/intel_inspector.py
-  :lines: 205-207
-  :emphasize-lines: 3
-
-Here, the number of (``memory not deallocated``) problems detected by the tool
+the ``self.perf_patterns`` part of the check.  
+The number of (``memory not deallocated``) problems detected by the tool
 is extracted with the :meth:`inspector_not_deallocated
 <reframechecks.common.sphexa.sanity_intel.inspector_not_deallocated>` method.
 Looking at the report with the tool shows that the problem comes from a system
