@@ -25,29 +25,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
     :arg steps: number of simulation steps.
     :arg cycles: sampling sources generate interrupts that trigger a sample.
          SCOREP_SAMPLING_EVENTS sets the sampling source:
-         see $EBROOTSCOREMINP/share/doc/scorep/html/sampling.html .
-         Very large values will produce unreliable performance report,
+         see $EBROOTSCOREMINP/share/doc/scorep/html/sampling.html
+         very large values will produce unreliable performance report,
          very small values will have a large runtime overhead.
-
-    Typical performance reporting:
-
-    .. code-block:: none
-
-       sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles
-       - dom:gpu
-          - PrgEnv-gnu
-             * num_tasks: 24
-             * Elapsed: 46.9216 s
-             * MomentumEnergyIAD: 14.1238 s
-             * Timestep: 8.0414 s
-             * %MomentumEnergyIAD: 30.1 %
-             * %Timestep: 17.14 %
-             * scorep_elapsed: 47.9408 s
-             * %scorep_USR: 71.5 %
-             * %scorep_MPI: 23.2 %
-             * scorep_top1: 30.9 % (sph::computeMomentumAndEnergyIADImpl)
-             * %scorep_Energy_exclusive: 30.913 %
-             * %scorep_Energy_inclusive: 30.913 %
     '''
     # }}}
 
@@ -115,7 +95,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
                      }
         cubesize = size_dict[mpitask]
         self.name = \
-            'sphexa_scorepS+P_{}_{:03d}mpi_{:03d}omp_{}n_{}steps_{}cycles'. \
+            'sphexa_scorepS+T_{}_{:03d}mpi_{:03d}omp_{}n_{}steps_{}cycles'. \
             format(self.testname, mpitask, ompthread, cubesize, steps, cycles)
         self.num_tasks = mpitask
         self.num_tasks_per_node = 24  # 72
@@ -136,8 +116,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'SCOREP_ENABLE_PROFILING': 'true',
-            'SCOREP_ENABLE_TRACING': 'false',
+            'SCOREP_ENABLE_PROFILING': 'flase',
+            'SCOREP_ENABLE_TRACING': 'true',
             'SCOREP_ENABLE_UNWINDING': 'true',
             'SCOREP_SAMPLING_EVENTS': 'perf_cycles@%s' % cycles,
             # 'SCOREP_SAMPLING_EVENTS': 'PAPI_TOT_CYC@1000000',
@@ -150,6 +130,14 @@ class SphExaNativeCheck(rfm.RegressionTest):
             # 'SCOREP_TIMER': 'clock_gettime',
             # 'SCOREP_PROFILING_MAX_CALLPATH_DEPTH': '1',
             # 'SCOREP_VERBOSE': 'true',
+            # ---
+            # Needed to avoid "No free memory page available"
+            # (SCOREP_TOTAL_MEMORY=16384000 bytes)
+            'SCOREP_TOTAL_MEMORY': '1G',
+            # ---
+            # adding some metrics to test my sanity_functions:
+            'SCOREP_METRIC_RUSAGE': 'ru_maxrss',
+            'SCOREP_METRIC_PAPI': 'PAPI_TOT_INS,PAPI_TOT_CYC',
         }
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
@@ -165,22 +153,11 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'which %s &> %s' % (self.tool, self.which_rpt),
             'scorep-info config-summary &> %s' % self.info_rpt,
         ]
-        cubetree = 'cube_calltree -m time -p -t 1'
-        # -m metricname -- print out values for the metric <metricname>
-        # -i            -- calculate inclusive values instead of exclusive
-        # -t treshold   -- print out only call path with a value larger
-        #                  than <treshold>%
-        # -p            -- diplay percent value
         self.post_run = [
-            # working around memory crash in scorep-score:
-            '(scorep-score -r scorep-*/profile.cubex ;rm -f core*) > %s' \
-            % self.rpt,
-            '(%s    scorep-*/profile.cubex ;rm -f core*) >> %s' \
-            % (cubetree, self.rpt_exclusive),
-            '(%s -i scorep-*/profile.cubex ;rm -f core*) >> %s' \
-            % (cubetree, self.rpt_inclusive),
+            # can't test directly from vampir gui:
+            'otf2-print scorep-*/traces.otf2 > %s' % self.rpt
         ]
-# }}} 
+# }}}
 
 # {{{ sanity
         # sanity
@@ -192,9 +169,10 @@ class SphExaNativeCheck(rfm.RegressionTest):
             sn.assert_true(sphsscorep.scorep_info_papi_support(self)),
             sn.assert_true(sphsscorep.scorep_info_perf_support(self)),
             sn.assert_true(sphsscorep.scorep_info_unwinding_support(self)),
-            # check the summary report:
-            sn.assert_found(r'Estimated aggregate size of event trace',
-                            self.rpt)
+            # check the report:
+            sn.assert_eq(sphsscorep.program_begin_count(self), self.num_tasks),
+            sn.assert_eq(sphsscorep.program_end_count(self), self.num_tasks),
+            # TODO: create derived metric (ipc) in cube
         ])
 # }}}
 
@@ -209,27 +187,16 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
         # tool
         self.perf_patterns.update({
-            'scorep_elapsed': sphsscorep.scorep_elapsed(self),
-            '%scorep_USR': sphsscorep.scorep_usr_pct(self),
-            '%scorep_MPI': sphsscorep.scorep_mpi_pct(self),
-            'scorep_top1': sphsscorep.scorep_top1_pct(self),
-            '%scorep_Energy_exclusive':
-            sphsscorep.scorep_exclusivepct_energy(self),
-            '%scorep_Energy_inclusive':
-            sphsscorep.scorep_inclusivepct_energy(self),
+            'max_ipc_rk0': sphsscorep.ipc_rk0(self),
+            'max_rumaxrss_rk0': sphsscorep.ru_maxrss_rk0(self),
         })
         # }}}
 
         # {{{ reference:
         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
         # tool
-        self.reference['*:scorep_elapsed'] = (0, None, None, 's')
-        self.reference['*:%scorep_USR'] = (0, None, None, '%')
-        self.reference['*:%scorep_MPI'] = (0, None, None, '%')
-        top1_name = sphsscorep.scorep_top1_name(self)
-        self.reference['*:scorep_top1'] = (0, None, None, top1_name)
-        self.reference['*:%scorep_Energy_exclusive'] = (0, None, None, '%')
-        self.reference['*:%scorep_Energy_inclusive'] = (0, None, None, '%')
+        self.reference['*:max_ipc_rk0'] = (0, None, None, 'ins/cyc')
+        self.reference['*:max_rumaxrss_rk0'] = (0, None, None, 'kilobytes')
 # }}}
 # }}}
 
@@ -238,12 +205,3 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.modules = self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
-
-    # TODO:
-    # def setup(self, partition, environ, **job_opts):
-    #     super().setup(partition, environ, **job_opts)
-    #     partitiontype = partition.fullname.split(':')[1]
-    #     if partitiontype == 'gpu':
-    #         self.job.options = ['--constraint="gpu&perf"']
-    #     elif partitiontype == 'mc':
-    #         self.job.options = ['--constraint="mc&perf"']

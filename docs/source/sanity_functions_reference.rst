@@ -57,13 +57,20 @@ Sanity checks
 Score-P
 =======
 
-scorep_sampling+profiling.py
+scorep_sampling_profiling.py
 ----------------------------
 
 .. .. automodule:: reframechecks.scorep.scorep_sampling+profiling
  A + in the filename breaks the documentation :-(
 
 .. automodule:: reframechecks.scorep.scorep_sampling_profiling
+   :members:
+   :show-inheritance:
+
+scorep_sampling_tracing.py
+----------------------------
+
+.. automodule:: reframechecks.scorep.scorep_sampling_tracing
    :members:
    :show-inheritance:
 

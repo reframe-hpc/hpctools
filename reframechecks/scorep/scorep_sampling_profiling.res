@@ -1,7 +1,7 @@
 PERFORMANCE REPORT
 ------------------------------------------------------------------------------
 sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_0steps_1000000cycles
-- dom:gpu
+- daint:gpu
    - PrgEnv-gnu
       * num_tasks: 24
       * Elapsed: 3.8245 s
@@ -583,7 +583,7 @@ sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_4steps_4000000cycles
 PERFORMANCE REPORT
 ------------------------------------------------------------------------------
 sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles
-- dom:gpu
+- daint:gpu
    - PrgEnv-gnu
       * num_tasks: 24
       * Elapsed: 46.9216 s

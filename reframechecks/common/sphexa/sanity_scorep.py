@@ -210,4 +210,49 @@ def scorep_inclusivepct_energy(obj):
     regex = r'^\d+.\d+ \((?P<pct>\d+.\d+).*computeMomentumAndEnergy'
     return sn.extractsingle(regex, obj.rpt_inclusive, 'pct', float)
 # }}}
+
+# {{{ --- tracing:
+@sn.sanity_function
+def program_begin_count(obj):
+    '''Reports the number of ``PROGRAM_BEGIN`` in the otf2 file
+    (trace validation)
+    '''
+    pg_begin_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_BEGIN)\s+',
+                                         obj.rpt))
+    return pg_begin_count
+
+
+@sn.sanity_function
+def program_end_count(obj):
+    '''Reports the number of ``PROGRAM_END`` in the otf2 file
+    (trace validation)
+    '''
+    pg_end_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_END)\s+', obj.rpt))
+    return pg_end_count
+
+
+@sn.sanity_function
+def ru_maxrss_rk0(obj):
+    '''Reports the ``maximum resident set size``
+    '''
+    maxrss_rk0 = sn.max(sn.extractall(
+        r'^METRIC\s+0\s+.*ru_maxrss\" <2>; UINT64; (?P<rss>\d+)\)',
+        obj.rpt, 'rss', int))
+    return maxrss_rk0
+
+
+@sn.sanity_function
+def ipc_rk0(obj):
+    '''Reports the ``IPC`` (instructions per cycle) for rank 0
+    '''
+    regex1 = (r'^METRIC\s+0\s+.*Values: \(\"PAPI_TOT_INS\" <0>; UINT64;'
+              r'\s+(?P<ins>\d+)\)')
+    tot_ins_rk0 = sn.extractall(regex1, obj.rpt, 'ins', float)
+    regex2 = (r'^METRIC\s+0\s+.*Values:.*\(\"PAPI_TOT_CYC\" <1>; UINT64;'
+              r'\s+(?P<cyc>\d+)\)')
+    tot_cyc_rk0 = sn.extractall(regex2, obj.rpt, 'cyc', float)
+    ipc = [a/b for a, b in zip(tot_ins_rk0, tot_cyc_rk0)]
+    return sn.round(max(ipc), 6)
+# }}}
+
 # }}}
