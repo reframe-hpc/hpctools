@@ -91,7 +91,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         }
         # ---------------------------------------------------------------- tool
         self.build_system = 'SingleSource'
-        self.build_system.cxx = 'scorep --mpp=mpi CC'  # enable instrumentation
+        self.build_system.cxx = 'scorep --mpp=mpi --nocompiler CC'
         self.sourcepath = '%s.cpp' % self.testname
         self.executable = '%s.exe' % self.testname
 # {{{ openmp:
