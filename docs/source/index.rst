@@ -16,6 +16,7 @@ together with HPC tools.
    Getting Started <started>
    Intel tools <intel>
    Score-P tools <scorep>
+   Extrae tools <extrae>
    Sanity Functions Reference <sanity_functions_reference>
 
 .. this is a comment: `:maxdepth: 2`

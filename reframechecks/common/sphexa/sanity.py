@@ -290,7 +290,7 @@ def basic_perf_patterns(obj):
         'EnergyConservation':   seconds_consv(obj),
         'SmoothingLength':      seconds_smoothinglength(obj),
         }
-        # top%
+    # top%
     perf_patterns.update({
         '%MomentumEnergyIAD':    pctg_MomentumEnergyIAD(obj),
         '%Timestep':             pctg_Timestep(obj),
@@ -317,7 +317,8 @@ def basic_reference_scoped_d(self):
     '''
     myzero_s = (0, None, None, 's')
     myzero_p = (0, None, None, '%')
-    self.myreference = ScopedDict({
+    # self.myreference = ScopedDict({
+    myreference = ScopedDict({
         '*': {
             'Elapsed': myzero_s,
             '_Elapsed': myzero_s,
@@ -342,5 +343,6 @@ def basic_reference_scoped_d(self):
             '%IAD': myzero_p,
             }
         })
-    return self.myreference
+    return myreference
+    # return self.myreference
 # }}}

@@ -80,3 +80,20 @@ Sanity checks
 .. automodule:: reframechecks.common.sphexa.sanity_scorep
    :members:
    :show-inheritance:
+
+Extrae
+======
+
+extrae.py
+---------
+
+.. automodule:: reframechecks.extrae.extrae
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. automodule:: reframechecks.common.sphexa.sanity_extrae
+   :members:
+   :show-inheritance:

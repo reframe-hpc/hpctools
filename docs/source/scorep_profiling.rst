@@ -57,7 +57,7 @@ Performance reporting
 
 A typical output from the ``--performance-report`` flag will look like this:
 
-.. literalinclude:: ../../reframechecks/scorep/scorep_sampling_profiling.res
+.. literalinclude:: ../../reframechecks/scorep/res/scorep_sampling_profiling.res
   :lines: 1-31
   :emphasize-lines: 26
 
