@@ -146,7 +146,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'which %s &> %s' % (self.tool, self.which_rpt),
         ]
         self.post_run = [
-            'cd %s ;ln -s nid00000.000 e000 ;cd -' % self.dir_rpt,
+            'cd %s ;ln -s nid?????.000 e000 ;cd -' % self.dir_rpt,
             '%s --report=survey --project-dir=%s &> %s' %
             (self.tool, self.dir_rpt, self.summary_rpt),
         ]
@@ -160,7 +160,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
             # check the tool's version:
             sn.assert_true(sphsintel.advisor_version(self)),
             # check the summary report:
-            sn.assert_found(r'vtune: Executing actions 100 % done',
+            sn.assert_found(r'advixe: This data has been saved',
                             self.summary_rpt),
         ])
 # }}}
