@@ -2,7 +2,8 @@ import os
 import sys
 import reframe as rfm
 import reframe.utility.sanity as sn
-sys.path.append(os.path.abspath('../common'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                '../common')))  # noqa: E402
 import sphexa.sanity as sphs
 
 
