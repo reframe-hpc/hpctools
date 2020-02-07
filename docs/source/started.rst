@@ -48,11 +48,13 @@ and OpenMP targets for accelerators. Our reference HPC system is `Piz Daint
    ----------------------------------------------------------------------------
 
 The most simple case of a ReFrame test is a test that compiles, runs and
-checks the output of the job. In this example, we set the 3 parameters as
-follows: 24 mpi tasks, a cube size of :math:`{100}^3` particles in the 3D
-square patch test and only 1 step of simulation:
+checks the output of the job. Looking into the :class:`Class
+<reframechecks.notool.internal_timers_mpi>` shows how to setup and run the code
+with the tool. In this example, we set the 3 parameters as follows: 24 mpi
+tasks, a cube size of :math:`{100}^3` particles in the 3D square patch test and
+only 1 step of simulation.
 
-.. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
+.. .. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
   :language: python
   :lines: 9-39
   :emphasize-lines: 1
@@ -115,22 +117,17 @@ A typical output from ReFrame will look like this:
 
 By default, the test is run with every programming environment set inside the
 check. It is possible to select only one programming environment with the *-p*
-flag (``-p PrgEnv-gnu`` for instance). A typical output from the mini-app for
-PrgEnv-gnu will look like this:
-
-.. code-block:: bash
-
-  > cat stage/daint/gpu/PrgEnv-gnu/rfm_sphexa_timers_sqpatch_024mpi_001omp_100n_0steps_job.out
-.. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
-  :lines: 50-72
+flag (``-p PrgEnv-gnu`` for instance).
 
 Sanity checking
 ===============
 
-All tests are successful. Here we do only minimum sanity checking i.e we check
-that the job output reached the end of the first step:
+All of our tests passed. Sanity checking checks if a test passed or not. In
+this simple example, we check that the job output reached the end of the first
+step, this is coded in the ``self.sanity_patterns`` part of the :class:`Class
+<reframechecks.notool.internal_timers_mpi>`.
 
-.. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
+.. .. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
   :language: python
   :lines: 175-178
   :emphasize-lines: 3
@@ -148,24 +145,23 @@ checking, it is possible to print a performance report with the
 ``--performance-report`` flag. A typical report for the mini-app with
 PrgEnv-gnu will look like this:
 
-.. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
-  :lines: 78-103
-
+.. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.res
+  :lines: 25-49
 
 This report is generated from the data collected from the job output and
 processed in the ``self.perf_patterns`` part of the check. For example, the 
 time spent in the ``MomentumEnergyIAD`` is extracted with the
 :meth:`seconds_energ <reframechecks.common.sphexa.sanity.seconds_energ>`
-method:
+method.
+Similarly, the percentage of walltime spent in the ``MomentumEnergyIAD`` is
+calculated with the :meth:`pctg_MomentumEnergyIAD 
+<reframechecks.common.sphexa.sanity.pctg_MomentumEnergyIAD>` method.
 
-.. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
+.. .. literalinclude:: ../../reframechecks/notool/internal_timers_mpi.py
   :language: python
   :lines: 190-192, 201, 209
   :emphasize-lines: 4
 
-Similarly, the percentage of walltime spent in the ``MomentumEnergyIAD`` is
-calculated with the :meth:`pctg_MomentumEnergyIAD 
-<reframechecks.common.sphexa.sanity.pctg_MomentumEnergyIAD>` method.
 
 .. :meth:`sanity.elapsed_time_from_date <reframechecks.common.sphexa.sanity.elapsed_time_from_date>` method
 .. * The :class:`internal_timers_mpi.py <reframechecks.notool.internal_timers_mpi>` 

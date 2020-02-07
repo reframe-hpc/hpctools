@@ -29,8 +29,8 @@ A successful ReFrame output will look like the following:
  Launched on host: daint101
  
  [----------] started processing sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles (Tool validation)
- [ RUN      ] sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on dom:gpu using PrgEnv-gnu
- [       OK ] sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on dom:gpu using PrgEnv-gnu
+ [ RUN      ] sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on daint:gpu using PrgEnv-gnu
  [----------] finished processing sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles (Tool validation)
  
  [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
@@ -44,7 +44,7 @@ Looking into the :class:`Class
 <reframechecks.scorep.scorep_sampling_profiling>` shows how to setup and run
 the code with the tool. 
 
-.. literalinclude:: ../../reframechecks/scorep/scorep_sampling_profiling.py
+.. .. literalinclude:: ../../reframechecks/scorep/scorep_sampling_profiling.py
   :language: python
   :lines: 10-15
   :emphasize-lines: 1

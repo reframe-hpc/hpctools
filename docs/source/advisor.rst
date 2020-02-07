@@ -36,30 +36,32 @@ A successful ReFrame output will look like the following:
  Launched on host: daint101
  
  [----------] started processing sphexa_advisor_sqpatch_024mpi_001omp_100n_0steps (Tool validation)
- [ RUN      ] sphexa_advisor_sqpatch_024mpi_001omp_100n_0steps on dom:gpu using PrgEnv-gnu
- [       OK ] sphexa_advisor_sqpatch_024mpi_001omp_100n_0steps on dom:gpu using PrgEnv-gnu
+ [ RUN      ] sphexa_advisor_sqpatch_024mpi_001omp_100n_0steps on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_advisor_sqpatch_024mpi_001omp_100n_0steps on daint:gpu using PrgEnv-gnu
  [----------] finished processing sphexa_advisor_sqpatch_024mpi_001omp_100n_0steps (Tool validation)
  
  [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
 
 Several analyses are available:
 
-.. literalinclude:: ../../reframechecks/intel/intel_advisor.py
+.. .. literalinclude:: ../../reframechecks/intel/intel_advisor.py
   :lines: 25-30
   :emphasize-lines: 1
 
 Looking into the :class:`Class <reframechecks.intel.intel_advisor>` shows how
 to setup and run the code with the tool. The ``survey`` analysis is
-triggered by setting the ``executable_opts``:
+triggered by setting the ``executable_opts``.
 
-.. literalinclude:: ../../reframechecks/intel/intel_advisor.py
+.. .. literalinclude:: ../../reframechecks/intel/intel_advisor.py
   :language: python
   :lines: 133-137
 
-A final step can be added at the end of the job to get the report from the
-tool:
+Use ``self.post_run`` to generate the report with the tool.
 
-.. literalinclude:: ../../reframechecks/intel/intel_advisor.py
+.. A final step can be added at the end of the job to get the report from the
+ tool:
+
+.. .. literalinclude:: ../../reframechecks/intel/intel_advisor.py
   :language: python
   :lines: 147-151
   :emphasize-lines: 3-4
@@ -69,8 +71,8 @@ Performance reporting
 
 A typical output from the ``--performance-report`` flag will look like this:
 
-.. literalinclude:: ../../reframechecks/intel/intel_advisor.py
-  :lines: 43-52
+.. literalinclude:: ../../reframechecks/intel/intel_advisor.res
+  :lines: 1-10
   :emphasize-lines: 9-10
 
 This report is generated from the data collected from the tool and processed in

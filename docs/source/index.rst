@@ -18,6 +18,8 @@ together with HPC tools.
    Score-P tools <scorep>
    Extrae tools <extrae>
    Sanity Functions Reference <sanity_functions_reference>
+   GPU: NVIDIA <nvidia>
+   GPU: Sanity Functions Reference <sanity_functions_reference_gpu>
 
 .. this is a comment: `:maxdepth: 2`
 

@@ -2,13 +2,13 @@
 Extrae
 ======
 
-`Extrae <https://tools.bsc.es>`__ is the core instrumentation package developed by the
-Performance Tools group at BSC. Extrae is capable of instrumenting applications
-based on MPI, OpenMP, pthreads, CUDA1, OpenCL1, and StarSs1 using different
-instrumentation approaches. The information gathered by Extrae typically
-includes timestamped events of runtime calls, performance counters and source
-code references.  Besides, Extrae provides its own API to allow the user to
-manually instrument his or her application.
+`Extrae <https://tools.bsc.es>`__ is the core instrumentation package developed
+by the Performance Tools group at BSC. Extrae is capable of instrumenting
+applications based on MPI, OpenMP, pthreads, CUDA1, OpenCL1, and StarSs1 using
+different instrumentation approaches. The information gathered by Extrae
+typically includes timestamped events of runtime calls, performance counters
+and source code references.  Besides, Extrae provides its own API to allow the
+user to manually instrument his or her application.
 
 Running the test
 ================
@@ -37,8 +37,8 @@ A successful ReFrame output will look like the following:
  Launched on host: daint101
  
  [----------] started processing sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps (Tool validation)
- [ RUN      ] sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps on dom:gpu using PrgEnv-gnu
- [       OK ] sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps on dom:gpu using PrgEnv-gnu
+ [ RUN      ] sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps on daint:gpu using PrgEnv-gnu
  [----------] finished processing sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps (Tool validation)
  
  [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
@@ -46,7 +46,7 @@ A successful ReFrame output will look like the following:
 Looking into the :class:`Class <reframechecks.extrae.extrae>` shows how to
 setup and run the code with the tool. 
 
-.. literalinclude:: ../../reframechecks/extrae/extrae.py
+.. .. literalinclude:: ../../reframechecks/extrae/extrae.py
   :language: python
   :lines: 10-14
   :emphasize-lines: 1
