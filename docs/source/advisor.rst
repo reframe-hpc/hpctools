@@ -25,6 +25,7 @@ The test can be run from the command-line:
  --prefix=$SCRATCH -r \
  -p PrgEnv-gnu \
  --performance-report \
+ --keep-stage-files \
  -c ./intel_advisor.py
 
 A successful ReFrame output will look like the following:

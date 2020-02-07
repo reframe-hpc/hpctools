@@ -71,6 +71,7 @@ The test can be run from the command-line:
     -C ~/reframe.git/config/cscs.py \
     --system daint:gpu \
     --prefix=$SCRATCH -r \
+    --keep-stage-files \
     -c ./internal_timers_mpi.py
 
 where:
