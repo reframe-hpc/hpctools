@@ -1,9 +1,8 @@
-*******
 Tracing
-*******
+=======
 
 Running the test
-================
+----------------
 
 The test can be run from the command-line:
 
@@ -49,7 +48,7 @@ variables with ``self.variables`` to trigger the (sampling based) `tracing`
 analysis.
 
 Performance reporting
-=====================
+---------------------
 
 A typical output from the ``--performance-report`` flag will look like this:
 

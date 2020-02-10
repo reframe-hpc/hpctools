@@ -74,7 +74,7 @@ def scorep_info_unwinding_support(obj):
 # {{{ --- profiling:
 @sn.sanity_function
 def scorep_elapsed(obj):
-    '''Typical performance report from the tool
+    '''Typical performance report from the tool (profile.cubex)
 
     .. code-block::
 

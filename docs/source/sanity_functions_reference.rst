@@ -81,6 +81,33 @@ Sanity checks
    :members:
    :show-inheritance:
 
+Scalasca
+========
+
+scalasca_sampling_profiling.py
+------------------------------
+
+.. .. automodule:: reframechecks.scorep.scorep_sampling+profiling
+ A + in the filename breaks the documentation :-(
+
+.. automodule:: reframechecks.scalasca.scalasca_sampling_profiling
+   :members:
+   :show-inheritance:
+
+scalasca_sampling_tracing.py
+----------------------------
+
+.. automodule:: reframechecks.scalasca.scalasca_sampling_tracing
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. automodule:: reframechecks.common.sphexa.sanity_scalasca
+   :members:
+   :show-inheritance:
+
 Extrae
 ======
 

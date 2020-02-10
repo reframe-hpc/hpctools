@@ -15,7 +15,7 @@ together with HPC tools.
 
    Getting Started <started>
    Intel tools <intel>
-   Score-P tools <scorep>
+   VI-HPS tools <vi-hps>
    Extrae tools <extrae>
    Sanity Functions Reference <sanity_functions_reference>
    GPU: NVIDIA <nvidia>

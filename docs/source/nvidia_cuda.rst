@@ -79,4 +79,4 @@ the code:
    :align: center
    :alt: NSYS screenshot 01
 
-   NVIDIA Nsight Cuda (launched with: nsys nid00036.0.qdrep)
+   Nsight Cuda (launched with: nsight-sys nid00036.0.qdrep)

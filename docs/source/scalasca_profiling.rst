@@ -1,6 +1,6 @@
-*******
-Score-P
-*******
+********
+Scalasca
+********
 
 Profiling
 =========
@@ -13,7 +13,7 @@ The test can be run from the command-line:
 .. code-block:: bash
 
  module load reframe
- cd hpctools.git/reframechecks/scorep/
+ cd hpctools.git/reframechecks/scalasca
 
  ~/reframe.git/reframe.py \
  -C ~/reframe.git/config/cscs.py \
@@ -22,7 +22,7 @@ The test can be run from the command-line:
  -p PrgEnv-gnu \
  --performance-report \
  --keep-stage-files \
- -c ./scorep_sampling_profiling.py
+ -c ./scalasca_sampling_profiling.py
 
 A successful ReFrame output will look like the following:
 
@@ -31,10 +31,10 @@ A successful ReFrame output will look like the following:
  Reframe version: 2.22
  Launched on host: daint101
  
- [----------] started processing sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles (Tool validation)
- [ RUN      ] sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on daint:gpu using PrgEnv-gnu
- [       OK ] sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on daint:gpu using PrgEnv-gnu
- [----------] finished processing sphexa_scorepS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles (Tool validation)
+ [----------] started processing sphexa_scalascaS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles (Tool validation)
+ [ RUN      ] sphexa_scalascaS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_scalascaS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles on daint:gpu using PrgEnv-gnu
+ [----------] finished processing sphexa_scalascaS+P_sqpatch_024mpi_001omp_100n_10steps_1000000cycles (Tool validation)
  
  [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
 
@@ -44,8 +44,8 @@ A successful ReFrame output will look like the following:
   :emphasize-lines: 1
 
 Looking into the :class:`Class
-<reframechecks.scorep.scorep_sampling_profiling>` shows how to setup and run
-the code with the tool. 
+<reframechecks.scalasca.scalasca_sampling_profiling>` shows how to setup and
+run the code with the tool. 
 
 .. .. literalinclude:: ../../reframechecks/scorep/scorep_sampling_profiling.py
   :language: python
@@ -61,23 +61,24 @@ Performance reporting
 
 A typical output from the ``--performance-report`` flag will look like this:
 
-.. literalinclude:: ../../reframechecks/scorep/res/scorep_sampling_profiling.res
-  :lines: 1-31
+.. literalinclude:: ../../reframechecks/scalasca/res/scalasca_sampling_profiling.res
+  :lines: 74-104
   :emphasize-lines: 26
 
 This report is generated from the data collected from the tool and processed in
-the ``self.perf_patterns`` part of the :class:`Class <reframechecks.scorep.scorep_sampling_profiling>`.
+the ``self.perf_patterns`` part of the :class:`Class <reframechecks.scalasca.scalasca_sampling_profiling>`.
 For example, the information about the top1 function is extracted with the
 :meth:`scorep_top1_pct <reframechecks.common.sphexa.sanity_scorep.scorep_top1_pct>` method.
-Looking at the report with the tool gives more insight into the performance of
-the code:
+Notice that the same sanity functions used with Score-P can be used with
+Scalasca too. Looking at the report with the tool gives more insight into the
+performance of the code:
 
 .. (:ref:`Fig.1 <link_to_myfig1>`) shows that...
 .. .. _link_to_myfig1:
 
-.. figure:: img/scorep/cube_01.png
+.. figure:: img/scalasca/cube_01.png
    :align: center
    :alt: Cube screenshot 01
 
-   Score-P Cube (launched with: cube scorep-/profile.cubex)
+   Scalasca Cube (launched with: cube scorep_sqpatch_24_sum/profile.cubex)
 
