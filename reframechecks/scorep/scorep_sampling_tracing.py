@@ -117,7 +117,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'SCOREP_ENABLE_PROFILING': 'flase',
+            'SCOREP_ENABLE_PROFILING': 'false',
             'SCOREP_ENABLE_TRACING': 'true',
             'SCOREP_ENABLE_UNWINDING': 'true',
             'SCOREP_SAMPLING_EVENTS': 'perf_cycles@%s' % cycles,

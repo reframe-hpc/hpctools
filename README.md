@@ -4,4 +4,8 @@
 
 # HPCTools
 
+[ReFrame](https://github.com/eth-cscs/reframe) is a regression testing
+framework to facilitate the sanity checking of HPC systems. 
+This repository showcases how to use ReFrame together with HPC tools.
+
 Check out the [docs](https://hpctools.readthedocs.io/en/latest/)
