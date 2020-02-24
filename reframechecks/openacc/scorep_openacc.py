@@ -227,11 +227,11 @@ class SphExaNativeCheck(rfm.RegressionTest):
           ],
         '''
         self.post_run += [
-                'echo stoptime=`date +%s`',
-                'echo start_pproc=`date +%s`',
-                '%s %s -i scorep-*/traces.otf2 --json %s' %
-                (self.launcher_cmd, self.postproc_tool,
-                 sn.evaluate(sphsscacc.otf2cli_metric_flag(self))),
-                'echo stop_pproc=`date +%s`',
-                ]
+            'echo stoptime=`date +%s`',
+            'echo start_pproc=`date +%s`',
+            '%s %s -i scorep-*/traces.otf2 --json %s' %
+            (self.launcher_cmd, self.postproc_tool,
+             sn.evaluate(sphsscacc.otf2cli_metric_flag(self))),
+            'echo stop_pproc=`date +%s`',
+        ]
 # }}}
