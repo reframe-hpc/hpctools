@@ -9,7 +9,7 @@ import sphexa.sanity_scorep as sphsscorep
 
 
 @rfm.parameterized_test(*[[mpitask, steps, cycles]
-                          for mpitask in [24]
+                          for mpitask in [64]
                           for steps in [4]
                           for cycles in [5000000]
                           ])
@@ -92,7 +92,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         #     cubesize = 100
         size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     6: 30,
+                     6: 30, 64: 100,
                      }
         cubesize = size_dict[mpitask]
         self.name = \

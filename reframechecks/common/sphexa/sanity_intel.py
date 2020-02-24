@@ -286,6 +286,7 @@ def advisor_loop1_line(obj):
     regex = (r'\d+\s+\[loop in sphexa::(?P<funcname>.*) at (?P<filename>\S+):'
              r'(?P<fline>\d+)\]')
     rpt = os.path.join(obj.stagedir, obj.summary_rpt)
+    # print('RPT=', rpt)
     fline = sn.extractsingle(regex, rpt, 'fline', int)
     # NOTE: This will fail with 'No such file or directory':
     # fline = sn.extractsingle(regex, obj.summary_rpt, 'fline', int)

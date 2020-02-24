@@ -1,4 +1,5 @@
 import os
+import json
 import cxxfilt
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -19,6 +20,7 @@ def scorep_version(obj):
     reference_tool_version = {
         'daint': '6.0',
         'dom': '6.0',
+        'tave': '6.0',
     }
     regex = r'^Score-P\s(?P<toolsversion>\d.\d)'
     version = sn.extractsingle(regex, obj.version_rpt, 'toolsversion')

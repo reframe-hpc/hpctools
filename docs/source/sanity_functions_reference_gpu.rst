@@ -22,3 +22,18 @@ Sanity checks
    :members:
    :show-inheritance:
 
+scorep_openacc.py
+=================
+
+.. automodule:: reframechecks.openacc.scorep_openacc
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. * `See Score-P sanity checks<./sanity_functions_reference.html#id2>`.
+
+.. automodule:: reframechecks.common.sphexa.sanity_scorep_openacc
+   :members:
+   :show-inheritance:

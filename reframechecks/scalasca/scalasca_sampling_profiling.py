@@ -223,15 +223,16 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # {{{ reference:
         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
         # tool
-        myzero_k = (0, None, None, 'KiB')
+        # myzero_k = (0, None, None, 'KiB')
         myzero_p = (0, None, None, '%')
-        self.reference['*:scorep_elapsed'] = (0, None, None, 's')
-        self.reference['*:%scorep_USR'] = (0, None, None, '%')
-        self.reference['*:%scorep_MPI'] = (0, None, None, '%')
+        myzero_s = (0, None, None, 's')
+        self.reference['*:scorep_elapsed'] = myzero_s
+        self.reference['*:%scorep_USR'] = myzero_p
+        self.reference['*:%scorep_MPI'] = myzero_p
         top1_name = sphsscorep.scorep_top1_name(self)
         self.reference['*:scorep_top1'] = (0, None, None, top1_name)
-        self.reference['*:%scorep_Energy_exclusive'] = (0, None, None, '%')
-        self.reference['*:%scorep_Energy_inclusive'] = (0, None, None, '%')
+        self.reference['*:%scorep_Energy_exclusive'] = myzero_p
+        self.reference['*:%scorep_Energy_inclusive'] = myzero_p
 # }}}
 # }}}
 
