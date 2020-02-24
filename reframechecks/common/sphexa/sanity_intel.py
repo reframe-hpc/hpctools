@@ -231,16 +231,18 @@ def vtune_momentumAndEnergyIAD(self):
     print("vtune_energ=", result2)
     print("vtune_cput/24=", result1/24)
     print("vtune_energ/24=", result2/24)
-    #print("t=", result1/result2)
-    #print("c=", self.num_tasks)
-    #print("t=", (result1/result2) / self.num_tasks)
+    # print("t=", result1/result2)
+    # print("c=", self.num_tasks)
+    # print("t=", (result1/result2) / self.num_tasks)
     # t= 5.208910219363269 / 24 = 0.2170379258068029
     # vtune_momentumAndEnergyIAD: 5.2089 %
     return 0
     # return sn.round(result1/result2, 4)
     # return sn.round((100 * sec / self.vtune_cpu_time), 2)
 
-# sphexa::sph::computeMomentumAndEnergyIADImpl<double, sphexa::ParticlesData<double>>  sqpatch.exe   40.919s / 24 = 1.7 s = 32% of 5.3 s
+# sphexa::sph::computeMomentumAndEnergyIADImpl
+# <double, sphexa::ParticlesData<double>>  sqpatch.exe
+# 40.919s / 24 = 1.7 s = 32% of 5.3 s
 # }}}
 
 # {{{ sanity_function: intel_advisor

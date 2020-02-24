@@ -15,7 +15,8 @@ def rpt_trace_stats_d(obj):
 
     Typical performance reporting:
 
-    .. literalinclude:: ../../reframechecks/scalasca/res/scalasca_sampling_tracing.res
+    .. literalinclude::
+      ../../reframechecks/scalasca/res/scalasca_sampling_tracing.res
       :lines: 33-36, 40, 43, 48, 55
     '''
     regex_latesender = r'^mpi_latesender\s+(?P<cnt>\d+)\s'

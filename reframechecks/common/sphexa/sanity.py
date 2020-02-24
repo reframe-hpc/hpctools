@@ -289,7 +289,7 @@ def basic_perf_patterns(obj):
         'UpdateQuantities':     seconds_updat(obj),
         'EnergyConservation':   seconds_consv(obj),
         'SmoothingLength':      seconds_smoothinglength(obj),
-        }
+    }
     # top%
     perf_patterns.update({
         '%MomentumEnergyIAD':    pctg_MomentumEnergyIAD(obj),
@@ -297,7 +297,7 @@ def basic_perf_patterns(obj):
         '%mpi_synchronizeHalos': pctg_mpi_synchronizeHalos(obj),
         '%FindNeighbors':        pctg_FindNeighbors(obj),
         '%IAD':                  pctg_IAD(obj),
-        })
+    })
     return perf_patterns
 # }}}
 
@@ -341,8 +341,8 @@ def basic_reference_scoped_d(self):
             '%mpi_synchronizeHalos': myzero_p,
             '%FindNeighbors': myzero_p,
             '%IAD': myzero_p,
-            }
-        })
+        }
+    })
     return myreference
     # return self.myreference
 # }}}
