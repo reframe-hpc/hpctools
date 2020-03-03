@@ -32,8 +32,6 @@ scorep_openacc.py
 Sanity checks
 -------------
 
-.. * `See Score-P sanity checks<./sanity_functions_reference.html#id2>`.
-
 .. automodule:: reframechecks.common.sphexa.sanity_scorep_openacc
    :members:
    :show-inheritance:
