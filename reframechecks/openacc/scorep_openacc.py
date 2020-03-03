@@ -14,7 +14,7 @@ import sphexa.sanity_scorep_openacc as sphsscacc
 
 
 @rfm.parameterized_test(*[[mpitask, steps, cycles, rumetric]
-                          for mpitask in [1, 2, 4, 8, 16]
+                          for mpitask in [1, 2, 4]  # , 8, 16]
                           for steps in [1]
                           for cycles in [0]
                           for rumetric in ['ru_maxrss,ru_utime']
