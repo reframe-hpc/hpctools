@@ -13,7 +13,7 @@ import sphexa.sanity_scorep as sphsscorep
 
 
 @rfm.parameterized_test(*[[mpitask, steps, cycles]
-                          for mpitask in [48]
+                          for mpitask in [24]
                           for steps in [4]
                           for cycles in [5000000]
                           ])
