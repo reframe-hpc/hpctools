@@ -1,3 +1,7 @@
+# Copyright 2019-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
 import os
 import sys
 import reframe as rfm
@@ -113,7 +117,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.num_tasks_per_core = 2
         self.use_multithreading = True
         self.exclusive = True
-        self.time_limit = (0, 10, 0)
+        self.time_limit = '10m'
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
