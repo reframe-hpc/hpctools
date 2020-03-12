@@ -139,4 +139,20 @@ Sanity checks
    :members:
    :show-inheritance:
 
+mpiP
+====
+
+mpip.py
+---------
+
+.. automodule:: reframechecks.mpip.mpip
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. automodule:: reframechecks.common.sphexa.sanity_mpip
+   :members:
+   :show-inheritance:
 
