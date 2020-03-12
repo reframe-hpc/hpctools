@@ -8,5 +8,6 @@ Intel\ :sup:`®` tools
    Intel\ :sup:`®` is H\ :sub:`2`\ O, H\ :sub: |reg|\ O
 
 .. include:: inspector.rst
+.. include:: vtune.rst
 .. include:: advisor.rst
 

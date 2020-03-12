@@ -40,6 +40,20 @@ intel_inspector.py
    :members:
    :show-inheritance:
 
+intel_vtune.py
+----------------
+
+.. automodule:: reframechecks.intel.intel_vtune
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. automodule:: reframechecks.common.sphexa.sanity_vtune
+   :members:
+   :show-inheritance:
+
 intel_advisor.py
 ----------------
 

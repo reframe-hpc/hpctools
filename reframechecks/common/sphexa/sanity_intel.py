@@ -1,7 +1,7 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-# from reframe.core.fields import ScopedDict
+from reframe.core.fields import ScopedDict
 
 
 # {{{ sanity_function: intel_inspector
@@ -57,6 +57,7 @@ def inspector_not_deallocated(obj):
 # }}}
 
 # {{{ sanity_function: intel_vtune
+# {{{ vtune_version
 @sn.sanity_function
 def vtune_version(obj):
     '''Checks tool's version:
@@ -77,114 +78,79 @@ def vtune_version(obj):
     TorF = sn.assert_eq(
         version, reference_tool_version[obj.current_system.name])
     return TorF
+# }}}
 
-
+# {{{ vtune_time
 @sn.sanity_function
-def vtune_elapsed_max(self):
-    '''Reports the maximum elapsed time (in seconds) between nodes measured by
-    the tool
+def vtune_time(self):
+    '''Vtune creates 1 report per compute node. For example, a 48 mpi tasks job
+    (= 2 compute nodes when running with 24 c/cn) will create 2 directories:
+        rpt.nid00001/rpt.nid00001.vtune
+        rpt.nid00002/rpt.nid00002.vtune
 
-    .. code-block::
-
-      > stdout:
-       vtune: Executing actions 50 % Creating top-level rows Elapsed \
-               Time: 29.974s
-       Elapsed Time: 30.413s
-       Elapsed Time: 29.528s
-      returns: * vtune_elapsed_max: 30.413 s
+    Typical output (for each compute node) is:
+    Elapsed Time:	14.866s
+        CPU Time:	319.177s            /24 = 13.3
+            Effective Time:	308.218s    /24 = 12.8
+                Idle:	0s
+                Poor:	19.725s
+                Ok:	119.570s
+                Ideal:	168.922s
+                Over:	0s
+            Spin Time:	10.959s             /24 =  0.4
+                MPI Busy Wait Time:	10.795s
+                Other:	0.164s
+            Overhead Time:	0s
+    Total Thread Count:	25
+    Paused Time:	0s
     '''
+    result_d = {}
+    # --- ranks per node
+    if self.num_tasks < self.num_tasks_per_node:
+        vtune_tasks_per_node = self.num_tasks
+    else:
+        vtune_tasks_per_node = self.num_tasks_per_node
+    # --- Elapsed Time (min, max)
     regex = r'.*Elapsed Time: (?P<sec>\S+)s'
-    # rpt = os.path.join(obj.stagedir, obj.summary_rpt)
-    return sn.round(sn.max(sn.extractall(regex, self.stdout, 'sec', float)), 4)
-
-
-@sn.sanity_function
-def vtune_elapsed_min(self):
-    '''Reports the minimum elapsed time (in seconds) between nodes measured by
-    the tool
-
-    .. code-block::
-
-      > stdout:
-       vtune: Executing actions 50 % Creating top-level rows Elapsed \
-               Time: 29.974s
-       Elapsed Time: 30.413s
-       Elapsed Time: 29.528s
-      returns: * vtune_elapsed_min: 29.528 s
-    '''
-    regex = r'.*Elapsed Time: (?P<sec>\S+)s'
-    return sn.round(sn.min(sn.extractall(regex, self.stdout, 'sec', float)), 4)
-
-
-@sn.sanity_function
-def vtune_cpu_time_max(self):
-    '''Reports the maximum ``CPU Time`` (in seconds) measured by the tool
-    divided by num_tasks for the slowest node
-
-    .. code-block::
-
-      CPU Time: 53.739s   <---
-          Effective Time: 53.739s
-          Spin Time: 0s
-            MPI Busy Wait Time: 12.457s
-    '''
+    result = sn.extractall(regex, self.stdout, 'sec', float)
+    result_d['elapsed_min'] = sn.round(sn.min(result), 4)
+    result_d['elapsed_max'] = sn.round(sn.max(result), 4)
+    # --- CPU Time (max)
     regex = r'^\s+CPU Time: (?P<sec>\S+)s'
-    return sn.round(sn.max(sn.extractall(regex, self.stdout, 'sec', float)) /
-                    self.num_tasks, 4)
-
-
-@sn.sanity_function
-def vtune_cpu_effective_time_max(self):
-    '''Reports the maximum ``CPU Effective Time`` (in seconds) measured by the
-    tool
-
-    .. code-block::
-
-      CPU Time: 53.739s
-          Effective Time: 53.739s <---
-          Spin Time: 0s
-            MPI Busy Wait Time: 12.457s
-    '''
+    result = sn.extractall(regex, self.stdout, 'sec', float)
+    result_d['elapsed_cput'] = sn.round(sn.max(result) / vtune_tasks_per_node,
+                                        4)
+    # --- CPU Time: Effective Time (max)
     regex = r'^\s+Effective Time: (?P<sec>\S+)s'
-    return sn.round(sn.max(sn.extractall(regex, self.stdout, 'sec', float)) /
-                    self.num_tasks, 4)
-
-
-@sn.sanity_function
-def vtune_cpu_spin_time_max(self):
-    '''Reports the maximum ``CPU Spin Time`` (in seconds) measured by the
-    tool
-
-    .. code-block::
-
-      CPU Time: 53.739s
-          Effective Time: 53.739s
-          Spin Time: 0s <---
-            MPI Busy Wait Time: 12.457s
-    '''
+    result = sn.extractall(regex, self.stdout, 'sec', float)
+    result_d['elapsed_cput_efft'] = sn.round(sn.max(result) /
+                                             vtune_tasks_per_node, 4)
+    # --- CPU Time: Spin Time (max)
     regex = r'^\s+Spin Time: (?P<sec>\S+)s'
-    return sn.round(sn.max(sn.extractall(regex, self.stdout, 'sec', float)) /
-                    self.num_tasks, 4)
+    result = sn.extractall(regex, self.stdout, 'sec', float)
+    result_d['elapsed_cput_spint'] = sn.round(sn.max(result) /
+                                              vtune_tasks_per_node, 4)
+    # --- CPU Time: Spin Time: MPI Busy Wait (max)
+    if self.num_tasks > 1:
+        regex = r'\s+MPI Busy Wait Time: (?P<sec>\S+)s'
+        result = sn.extractall(regex, self.stdout, 'sec', float)
+        result_d['elapsed_cput_spint_mpit'] = sn.round(sn.max(result) /
+                                                       vtune_tasks_per_node, 4)
+    else:
+        result_d['elapsed_cput_spint_mpit'] = 0
 
+# TODO:
+# 'vtune_momentumAndEnergyIAD':
+# sphsintel.vtune_momentumAndEnergyIAD(self),
+# '%vtune_srcf_lookupTables': self.vtune_pct_lookupTables,
+# '%vtune_srcf_Octree': self.vtune_pct_Octree,
+# '%vtune_srcf_momentumAndEnergyIAD':
+# self.vtune_pct_momentumAndEnergyIAD,
+# '%vtune_srcf_IAD': self.vtune_pct_IAD,
+    return result_d
+# }}}
 
-@sn.sanity_function
-def vtune_cpu_spin_mpiwait_time_max(self):
-    '''Reports the maximum ``CPU MPI Wait Time`` (in seconds) measured by the
-    tool
-
-    .. code-block::
-
-      CPU Time: 53.739s
-          Effective Time: 53.739s
-          Spin Time: 0s
-            MPI Busy Wait Time: 12.457s <---
-    '''
-    regex = r'\s+MPI Busy Wait Time: (?P<sec>\S+)s'
-    # print("self.num_tasks=", self.num_tasks)
-    return sn.round(sn.max(sn.extractall(regex, self.stdout, 'sec', float)) /
-                    self.num_tasks, 4)
-
-
+# {{{ vtune_physical_core_utilization
 @sn.sanity_function
 def vtune_physical_core_utilization(self):
     '''Reports the minimum ``Physical Core Utilization`` (%) measured by the
@@ -198,8 +164,9 @@ def vtune_physical_core_utilization(self):
     '''
     regex = r'^Effective Physical Core Utilization: (?P<pct>\S+)%'
     return sn.round(sn.min(sn.extractall(regex, self.stdout, 'pct', float)), 4)
+# }}}
 
-
+# {{{ vtune_logical_core_utilization
 @sn.sanity_function
 def vtune_logical_core_utilization(self):
     '''Reports the minimum ``Physical Core Utilization`` (%) measured by the
@@ -213,8 +180,9 @@ def vtune_logical_core_utilization(self):
     '''
     regex = r'^\s+Effective Logical Core Utilization: (?P<pct>\S+)%'
     return sn.round(sn.min(sn.extractall(regex, self.stdout, 'pct', float)), 4)
+# }}}
 
-
+# {{{ vtune_momentumAndEnergyIAD
 @sn.sanity_function
 def vtune_momentumAndEnergyIAD(self):
     '''
@@ -223,6 +191,7 @@ def vtune_momentumAndEnergyIAD(self):
     sphexa::sph::computeMomentumAndEnergyIADImpl<...>  sqpatch.exe   40.245s
     sphexa::sph::computeMomentumAndEnergyIADImpl<...>  sqpatch.exe   39.487s
     '''
+    # ^[sphexa::|MPI|[Others].*\s+(?P<sec>\S+)s$'
     regex1 = r'^\s+CPU Time: (?P<sec>\S+)s'
     result1 = sn.max(sn.extractall(regex1, self.stdout, 'sec', float))
     regex2 = r'^sphexa::sph::computeMomentumAndEnergyIADImpl.*\s+(?P<x>\S+)s$'
@@ -243,6 +212,58 @@ def vtune_momentumAndEnergyIAD(self):
 # sphexa::sph::computeMomentumAndEnergyIADImpl
 # <double, sphexa::ParticlesData<double>>  sqpatch.exe
 # 40.919s / 24 = 1.7 s = 32% of 5.3 s
+# }}}
+
+# {{{ vtune_perf_patterns
+@sn.sanity_function
+def vtune_perf_patterns(obj):
+    '''Dictionary of default ``perf_patterns`` for the tool
+    '''
+    stdout_d = vtune_time(obj)
+    res_d = {
+        'vtune_elapsed_min': stdout_d['elapsed_min'],
+        'vtune_elapsed_max': stdout_d['elapsed_max'],
+        'vtune_elapsed_cput': stdout_d['elapsed_cput'],
+        'vtune_elapsed_cput_efft': stdout_d['elapsed_cput_efft'],
+        'vtune_elapsed_cput_spint': stdout_d['elapsed_cput_spint'],
+        'vtune_elapsed_cput_spint_mpit': stdout_d['elapsed_cput_spint_mpit'],
+        #
+        '%vtune_effective_physical_core_utilization':
+        vtune_physical_core_utilization(obj),
+        '%vtune_effective_logical_core_utilization':
+        vtune_logical_core_utilization(obj),
+    }
+    return res_d
+# }}}
+
+# {{{ vtune_tool_reference
+@sn.sanity_function
+def vtune_tool_reference(obj):
+    '''Dictionary of default ``reference`` for the tool
+    '''
+    reference = ScopedDict()
+    # first, copy the existing self.reference (if any):
+    if obj.reference:
+        for kk in obj.reference:
+            reference[kk] = obj.reference['*:%s' % kk]
+
+    # then add more:
+    myzero_s = (0, None, None, 's')
+    myzero_p = (0, None, None, '%')
+    reference['*:vtune_elapsed_min'] = myzero_s
+    reference['*:vtune_elapsed_max'] = myzero_s
+    reference['*:vtune_elapsed_cput'] = myzero_s
+    reference['*:vtune_elapsed_cput_efft'] = myzero_s
+    reference['*:vtune_elapsed_cput_spint'] = myzero_s
+    reference['*:vtune_elapsed_cput_spint_mpit'] = myzero_s
+    reference['*:%vtune_effective_physical_core_utilization'] = myzero_p
+    reference['*:%vtune_effective_logical_core_utilization'] = myzero_p
+    # inside check, use this instead:
+    # self.reference['*:vtune_elapsed_min'] = myzero_s
+    # self.reference['*:vtune_momentumAndEnergyIAD'] = (0, None, None, 's')
+
+    return reference
+# }}}
 # }}}
 
 # {{{ sanity_function: intel_advisor
