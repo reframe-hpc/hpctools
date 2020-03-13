@@ -23,10 +23,9 @@ class MpipBaseTest(rfm.RegressionTest):
         self.rpt = sn.extractsingle(
             r'^mpiP: Storing mpiP output in \[(?P<rpt>.*)\]',
             self.stdout, 'rpt', str)
-        # print('self.rpt', self.rpt)
+# }}}
 
-# {{{
-    # @sn.sanity_function
+# {{{ sanity patterns
     @rfm.run_before('sanity')
     def mpip_version(self):
         '''Checks tool's version:
@@ -38,25 +37,20 @@ class MpipBaseTest(rfm.RegressionTest):
           @ Command : sqpatch.exe -n 62 -s 1
           @ Version                  : 3.4.2  <---
           @ MPIP Build date          : Oct 15 2019, 16:52:21
-
-          returns: True or False
         '''
         reference_tool_version = {
             'daint': '3.4.2',
             'dom': '3.4.2',
         }
+        ref_version = reference_tool_version[self.current_system.name]
         regex = r'^@ Version\s+: (?P<toolversion>\S+)$'
-        self.version = sn.extractsingle(regex, self.rpt, 'toolversion')
-        self.ref_version = reference_tool_version[self.current_system.name]
-        # TorF = sn.assert_eq(version,
-        #                     reference_tool_version[obj.current_system.name])
-        # print('version=%s' % version)
-        # return TorF
-        # return True
-# }}}
+        version = sn.extractsingle(regex, self.rpt, 'toolversion')
+        self.sanity_patterns_l.append(
+            sn.assert_eq(version, ref_version)
+        )
 # }}}
 
-# {{{ patterns
+# {{{ performance patterns
     # --- 1
     @rfm.run_before('performance')
     def set_basic_perf_patterns(self):
@@ -115,7 +109,7 @@ class MpipBaseTest(rfm.RegressionTest):
             self.perf_patterns = perf_pattern
 # }}}
 
-# {{{ reference
+# {{{ performance reference
     # --- 1
     @rfm.run_before('performance')
     def set_basic_reference(self):

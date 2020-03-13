@@ -10,13 +10,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                 '../common')))  # noqa: E402
 import sphexa.sanity as sphs
 import sphexa.sanity_mpip as sphsmpip
-# import sphexa.sanity_vtune as sphsvtune
 
 
 @rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [24, 48, 96]
-                          # for mpitask in [3]
-                          for steps in [3]
+                          # for mpitask in [24, 48, 96]
+                          for mpitask in [24]
+                          for steps in [0]
                           ])
 class SphExaMpipCheck(sphsmpip.MpipBaseTest):
     # {{{
@@ -123,23 +122,17 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
             # 'MPIP': '"-c"',
         }
         # self.mpi_isendline = '140'
-        # self.dir_rpt = 'rpt'
-        # self.rpt_file = self.rpt_file_txt
         self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps, '2>&1']
         self.pre_run = [
             'module rm xalt',
         ]
-#        self.post_run = [
-#            'cp *_job.out %s' % self.dir_rpt,
-#        ]
 # }}}
 
 # {{{ sanity
-        # sanity
-        self.sanity_patterns = sn.all([
-            # check the job output:
-            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
-        ])
+        self.sanity_patterns_l = [
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout)
+        ]
+        self.sanity_patterns = sn.all(self.sanity_patterns_l)
 # }}}
 
 # {{{ performance
