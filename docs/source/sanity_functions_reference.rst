@@ -156,3 +156,20 @@ Sanity checks
    :members:
    :show-inheritance:
 
+Perftools
+=========
+
+patrun.py
+---------
+
+.. automodule:: reframechecks.perftools.patrun
+   :members:
+   :show-inheritance:
+
+Sanity checks
+-------------
+
+.. automodule:: reframechecks.common.sphexa.sanity_perftools
+   :members:
+   :show-inheritance:
+

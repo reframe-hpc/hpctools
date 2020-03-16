@@ -89,24 +89,27 @@ def vtune_version(obj):
 def vtune_time(self):
     '''Vtune creates 1 report per compute node. For example, a 48 mpi tasks job
     (= 2 compute nodes when running with 24 c/cn) will create 2 directories:
-        rpt.nid00001/rpt.nid00001.vtune
-        rpt.nid00002/rpt.nid00002.vtune
+    * rpt.nid00001/rpt.nid00001.vtune
+    * rpt.nid00002/rpt.nid00002.vtune
 
     Typical output (for each compute node) is:
-    Elapsed Time:	14.866s
-        CPU Time:	319.177s            /24 = 13.3
-            Effective Time:	308.218s    /24 = 12.8
-                Idle:	0s
-                Poor:	19.725s
-                Ok:	119.570s
-                Ideal:	168.922s
-                Over:	0s
-            Spin Time:	10.959s             /24 =  0.4
-                MPI Busy Wait Time:	10.795s
-                Other:	0.164s
-            Overhead Time:	0s
-    Total Thread Count:	25
-    Paused Time:	0s
+
+    .. code-block::
+
+      Elapsed Time:	14.866s
+          CPU Time:	319.177s            /24 = 13.3
+              Effective Time:	308.218s    /24 = 12.8
+                  Idle:	0s
+                  Poor:	19.725s
+                  Ok:	119.570s
+                  Ideal:	168.922s
+                  Over:	0s
+              Spin Time:	10.959s             /24 =  0.4
+                  MPI Busy Wait Time:	10.795s
+                  Other:	0.164s
+              Overhead Time:	0s
+      Total Thread Count:	25
+      Paused Time:	0s
     '''
     result_d = {}
     # --- ranks per node

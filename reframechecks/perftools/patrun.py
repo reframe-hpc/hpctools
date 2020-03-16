@@ -14,18 +14,19 @@ import sphexa.sanity_perftools as sphsperft
 
 @rfm.parameterized_test(*[[mpitask, steps]
                           for mpitask in [24]
-                          for steps in [0]
+                          for steps in [1]
                           # for mpitask in [24, 48, 96]
                           # for steps in [2]
                           ])
 class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
     # {{{
-    '''
-    This class runs the test code with CrayPAT (Cray Performance Measurement
+    '''This class runs the test code with CrayPAT (Cray Performance Measurement
     and Analysis toolset):
-        - https://pubs.cray.com (Cray Perftools)
-        - man pat_run
-    CrayPAT provides detailed information about application performance.
+
+        * https://pubs.cray.com (Cray Perftools)
+        * man pat_run
+        * man intro_craypat
+        * ``pat_help``
 
     2 parameters can be set for simulation:
 
@@ -33,6 +34,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
          square patch test is set with a dictionary depending on mpitask,
          but cubesize could also be on the list of parameters,
     :arg steps: number of simulation steps.
+
     '''
     # }}}
 
@@ -115,6 +117,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
         # -r: generate a report upon successful execution
+        # TODO: use rpt-files/RUNTIME.rpt
         self.executable_opts = ['-r', '%s' % self.target_executable,
                                 '-n %s' % cubesize, '-s %s' % steps, '2>&1']
         self.version_rpt = 'version.rpt'
@@ -131,6 +134,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         # needed for sanity functions:
         self.rpt = 'rpt'
         self.post_run += [
+            # patrun_num_of_compute_nodes
             'ls -1 %s+*s/xf-files/' % self.target_executable,
             'cp *_job.out %s' % self.rpt
         ]
@@ -144,7 +148,8 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         self.sanity_patterns = sn.all(self.sanity_patterns_l)
 # }}}
 
-        # performance: see sanity.py
+# {{{ performance: see sanity.py
+# }}}
 
     @rfm.run_before('compile')
     def set_flags(self):

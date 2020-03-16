@@ -18,6 +18,7 @@ together with HPC tools.
    VI-HPS tools <vi-hps>
    Extrae tools <extrae>
    Statistical tools <mpip>
+   Cray tools <perftools>
    Sanity Functions Reference <sanity_functions_reference>
    GPU: NVIDIA <nvidia>
    GPU: Sanity Functions Reference <sanity_functions_reference_gpu>
