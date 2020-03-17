@@ -101,9 +101,6 @@ Scalasca
 scalasca_sampling_profiling.py
 ------------------------------
 
-.. .. automodule:: reframechecks.scorep.scorep_sampling+profiling
- A + in the filename breaks the documentation :-(
-
 .. automodule:: reframechecks.scalasca.scalasca_sampling_profiling
    :members:
    :show-inheritance:

@@ -63,10 +63,5 @@ the :meth:`patrun_walltime_and_memory <reframechecks.common.sphexa.sanity_perfto
 and :meth:`set_tool_perf_patterns <reframechecks.common.sphexa.sanity_perftools.PerftoolsBaseTest.set_tool_perf_patterns>`
 methods of the :class:`SphExaPatRunCheck <reframechecks.common.sphexa.sanity_perftools.PerftoolsBaseTest>` class.
 
-.. Looking at the report with the tool gives more insight into the performance of the code:
+.. include:: perftools_patrun_img.rst
 
-.. .. figure:: img/XX/XX_01.png
-   :align: center
-   :alt: XX screenshot 01
-
-   XX (overview)
