@@ -27,6 +27,9 @@ CrayPAT consists of the following main components
       instrumented program execution.
     * Reveal - Reveal helps to identify top time consuming loops, with compiler
       feedback on dependency and vectorization.
+    * pat_view - a graphical analysis tool that can be used to view CrayPat
+      data. pat_view takes as input several ap2 data sets and creates either a
+      graph or the raw data of the scaling information for the input data.
 
 .. include:: perftools_patrun.rst
 

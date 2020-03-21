@@ -28,9 +28,9 @@ A successful ReFrame output will look like the following:
  Launched on host: daint101
 
  [----------] waiting for spawned checks to finish
- [       OK ] sphexa_patrun_sqpatch_024mpi_001omp_100n_2steps on daint:gpu using PrgEnv-gnu
- [       OK ] sphexa_patrun_sqpatch_048mpi_001omp_125n_2steps on daint:gpu using PrgEnv-gnu
- [       OK ] sphexa_patrun_sqpatch_096mpi_001omp_157n_2steps on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_patrun_sqpatch_024mpi_001omp_100n_4steps on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_patrun_sqpatch_048mpi_001omp_125n_4steps on daint:gpu using PrgEnv-gnu
+ [       OK ] sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps on daint:gpu using PrgEnv-gnu
  [----------] all spawned checks have finished
 
  [  PASSED  ] Ran 3 test case(s) from 3 check(s) (0 failure(s))
@@ -48,15 +48,15 @@ Performance reporting
 An overview of the performance data for a job with 96 mpi ranks will typically
 look like this:
 
-.. literalinclude:: ../../reframechecks/perftools/res/sphexa_patrun_sqpatch_096mpi_001omp_157n_2steps/sqpatch.exe+15597-5s/rpt-files/RUNTIME.rpt
-  :lines: 463-474, 31-57
+.. literalinclude:: ../../reframechecks/perftools/res/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s/rpt-files/RUNTIME.rpt
+  :lines: 461-472, 31-57, 409-416
 
 As a result, a typical output from the ``--performance-report`` flag will look
 like this:
 
 .. literalinclude:: ../../reframechecks/perftools/patrun.res
-  :lines: 97-137
-  :emphasize-lines: 24-28, 35-37
+  :lines: 141-169
+  :emphasize-lines: 12, 22-24
 
 This report is generated from the performance data collected from the tool and processed in
 the :meth:`patrun_walltime_and_memory <reframechecks.common.sphexa.sanity_perftools.PerftoolsBaseTest.patrun_walltime_and_memory>`
