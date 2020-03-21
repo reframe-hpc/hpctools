@@ -1,0 +1,460 @@
+CrayPat/X:  Version 20.03.0 Revision b18264180  02/08/20 03:10:56
+
+Number of PEs (MPI ranks):   96
+                           
+Numbers of PEs per Node:     24  PEs on each of  4  Nodes
+                           
+Numbers of Threads per PE:    1
+                           
+Number of Cores per Socket:  12
+
+Execution start time:  Sat Mar 21 15:55:21 2020
+
+System name and speed:  nid00004  2.601 GHz (nominal)
+
+Intel Haswell    CPU  Family:  6  Model: 63  Stepping:  2
+
+DRAM:  64 GiB DDR4-2400 on 2.6 GHz nodes
+
+
+Current path to data file:
+  /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/./sqpatch.exe+2773-4s   (RTS, 4 data files)
+
+Processing step 1 of 1
+
+Notes for table 1:
+
+  This table shows load balance of exclusive time at the function
+    group level, by showing for each group the maximum, mean, and
+    minimum rank times, as well as the average time across ranks.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O load_balance_group ...
+
+  Table option:
+    -O load_balance_group
+  Options implied by table option:
+    -d ti%@0.95,ti,tr -b gr,pe -s table.min_sa_pct=0.95
+  Other options:
+    -s pe='ALL'
+    -s show_data='csv'
+    -s sort_by_pe='yes'
+
+  The Total value for Samp is the sum of the Group values.
+  The Group value for Samp is the avg of the PE values.
+    (To specify different aggregations, see: pat_help report options s1)
+  If no aggregation method is listed for a data item,
+  then it is derived from values of other data items,
+  and is not aggregated independently.
+
+  This table shows only lines with Samp% > 0.95.
+    (To set thresholds to zero, specify:  -T)
+
+  Percentages at each level are of the Total for the program.
+    (For percentages relative to next level up, specify:
+      -s percent=r[elative])
+  
+  The following groups were pruned due to thresholding:
+    HEAP, RT, MATH
+
+Table 1:  Load Balance across PEs by FunctionGroup
+
+Level,Samp%,Samp,Group/PE
+0,100.0%,1858.4,Total
+1,84.5%,1570.2,USER
+2,85.2%,1583.0,USER/pe.0
+2,87.3%,1623.0,USER/pe.1
+2,87.7%,1629.0,USER/pe.2
+2,88.3%,1641.0,USER/pe.3
+2,88.1%,1638.0,USER/pe.4
+2,87.9%,1634.0,USER/pe.5
+2,86.4%,1605.0,USER/pe.6
+2,87.6%,1628.0,USER/pe.7
+2,88.1%,1637.0,USER/pe.8
+2,88.1%,1638.0,USER/pe.9
+2,89.7%,1667.0,USER/pe.10
+2,89.3%,1659.0,USER/pe.11
+2,87.5%,1626.0,USER/pe.12
+2,86.4%,1605.0,USER/pe.13
+2,90.2%,1677.0,USER/pe.14
+2,88.9%,1653.0,USER/pe.15
+2,87.4%,1624.0,USER/pe.16
+2,88.1%,1638.0,USER/pe.17
+2,86.8%,1613.0,USER/pe.18
+2,87.0%,1617.0,USER/pe.19
+2,88.8%,1650.0,USER/pe.20
+2,89.6%,1666.0,USER/pe.21
+2,88.1%,1637.0,USER/pe.22
+2,88.1%,1637.0,USER/pe.23
+2,88.8%,1651.0,USER/pe.24
+2,88.9%,1652.0,USER/pe.25
+2,86.6%,1610.0,USER/pe.26
+2,87.2%,1621.0,USER/pe.27
+2,87.6%,1628.0,USER/pe.28
+2,87.0%,1616.0,USER/pe.29
+2,88.9%,1653.0,USER/pe.30
+2,88.6%,1646.0,USER/pe.31
+2,86.6%,1610.0,USER/pe.32
+2,87.7%,1629.0,USER/pe.33
+2,89.2%,1657.0,USER/pe.34
+2,89.4%,1662.0,USER/pe.35
+2,87.0%,1616.0,USER/pe.36
+2,87.7%,1630.0,USER/pe.37
+2,87.5%,1626.0,USER/pe.38
+2,86.5%,1607.0,USER/pe.39
+2,88.2%,1639.0,USER/pe.40
+2,88.7%,1648.0,USER/pe.41
+2,87.5%,1626.0,USER/pe.42
+2,88.6%,1647.0,USER/pe.43
+2,86.5%,1607.0,USER/pe.44
+2,84.7%,1575.0,USER/pe.45
+2,86.3%,1603.0,USER/pe.46
+2,87.2%,1620.0,USER/pe.47
+2,88.3%,1641.0,USER/pe.48
+2,87.9%,1634.0,USER/pe.49
+2,88.9%,1652.0,USER/pe.50
+2,88.5%,1644.0,USER/pe.51
+2,86.3%,1603.0,USER/pe.52
+2,88.0%,1635.0,USER/pe.53
+2,87.7%,1630.0,USER/pe.54
+2,87.9%,1633.0,USER/pe.55
+2,90.0%,1672.0,USER/pe.56
+2,90.1%,1675.0,USER/pe.57
+2,87.7%,1630.0,USER/pe.58
+2,86.4%,1606.0,USER/pe.59
+2,89.3%,1659.0,USER/pe.60
+2,89.9%,1671.0,USER/pe.61
+2,87.3%,1622.0,USER/pe.62
+2,88.1%,1638.0,USER/pe.63
+2,87.3%,1623.0,USER/pe.64
+2,86.3%,1603.0,USER/pe.65
+2,89.8%,1668.0,USER/pe.66
+2,89.2%,1658.0,USER/pe.67
+2,87.8%,1632.0,USER/pe.68
+2,87.2%,1621.0,USER/pe.69
+2,88.9%,1652.0,USER/pe.70
+2,89.6%,1665.0,USER/pe.71
+2,86.5%,1608.0,USER/pe.72
+2,87.3%,1623.0,USER/pe.73
+2,87.6%,1628.0,USER/pe.74
+2,86.9%,1615.0,USER/pe.75
+2,89.2%,1657.0,USER/pe.76
+2,89.3%,1659.0,USER/pe.77
+2,86.5%,1608.0,USER/pe.78
+2,86.7%,1611.0,USER/pe.79
+2,87.7%,1629.0,USER/pe.80
+2,87.9%,1634.0,USER/pe.81
+2,88.0%,1636.0,USER/pe.82
+2,87.5%,1627.0,USER/pe.83
+2,87.1%,1619.0,USER/pe.84
+2,86.0%,1598.0,USER/pe.85
+2,86.6%,1610.0,USER/pe.86
+2,88.1%,1638.0,USER/pe.87
+2,88.1%,1637.0,USER/pe.88
+2,87.8%,1632.0,USER/pe.89
+2,87.4%,1625.0,USER/pe.90
+2,86.0%,1599.0,USER/pe.91
+2,26.5%,493.0,USER/pe.92
+2,1.7%,31.0,USER/pe.93
+2,1.5%,28.0,USER/pe.94
+2,1.4%,26.0,USER/pe.95
+1,11.1%,205.9,MPI
+2,10.5%,196.0,MPI/pe.0
+2,8.2%,152.0,MPI/pe.1
+2,7.4%,137.0,MPI/pe.2
+2,7.5%,140.0,MPI/pe.3
+2,6.9%,129.0,MPI/pe.4
+2,6.1%,114.0,MPI/pe.5
+2,8.9%,166.0,MPI/pe.6
+2,6.9%,128.0,MPI/pe.7
+2,6.9%,128.0,MPI/pe.8
+2,7.0%,131.0,MPI/pe.9
+2,5.1%,94.0,MPI/pe.10
+2,6.2%,116.0,MPI/pe.11
+2,7.9%,146.0,MPI/pe.12
+2,9.3%,172.0,MPI/pe.13
+2,5.5%,103.0,MPI/pe.14
+2,6.2%,116.0,MPI/pe.15
+2,7.8%,145.0,MPI/pe.16
+2,7.4%,137.0,MPI/pe.17
+2,8.7%,161.0,MPI/pe.18
+2,9.3%,172.0,MPI/pe.19
+2,6.3%,117.0,MPI/pe.20
+2,5.4%,100.0,MPI/pe.21
+2,8.0%,148.0,MPI/pe.22
+2,7.0%,131.0,MPI/pe.23
+2,5.9%,110.0,MPI/pe.24
+2,7.0%,131.0,MPI/pe.25
+2,9.5%,177.0,MPI/pe.26
+2,8.7%,162.0,MPI/pe.27
+2,8.1%,150.0,MPI/pe.28
+2,8.0%,149.0,MPI/pe.29
+2,6.3%,117.0,MPI/pe.30
+2,7.2%,133.0,MPI/pe.31
+2,9.7%,181.0,MPI/pe.32
+2,8.3%,154.0,MPI/pe.33
+2,5.8%,108.0,MPI/pe.34
+2,5.6%,104.0,MPI/pe.35
+2,8.8%,164.0,MPI/pe.36
+2,7.9%,146.0,MPI/pe.37
+2,7.5%,140.0,MPI/pe.38
+2,9.7%,180.0,MPI/pe.39
+2,7.2%,134.0,MPI/pe.40
+2,7.0%,130.0,MPI/pe.41
+2,7.9%,146.0,MPI/pe.42
+2,7.3%,136.0,MPI/pe.43
+2,8.2%,153.0,MPI/pe.44
+2,10.7%,199.0,MPI/pe.45
+2,9.8%,182.0,MPI/pe.46
+2,7.9%,147.0,MPI/pe.47
+2,7.2%,133.0,MPI/pe.48
+2,7.3%,135.0,MPI/pe.49
+2,5.6%,104.0,MPI/pe.50
+2,7.2%,133.0,MPI/pe.51
+2,9.1%,169.0,MPI/pe.52
+2,7.7%,144.0,MPI/pe.53
+2,7.5%,139.0,MPI/pe.54
+2,8.3%,155.0,MPI/pe.55
+2,4.9%,91.0,MPI/pe.56
+2,5.5%,102.0,MPI/pe.57
+2,8.1%,151.0,MPI/pe.58
+2,9.4%,175.0,MPI/pe.59
+2,6.5%,121.0,MPI/pe.60
+2,5.8%,108.0,MPI/pe.61
+2,8.2%,152.0,MPI/pe.62
+2,6.5%,121.0,MPI/pe.63
+2,8.1%,151.0,MPI/pe.64
+2,9.4%,174.0,MPI/pe.65
+2,5.3%,99.0,MPI/pe.66
+2,6.2%,116.0,MPI/pe.67
+2,8.0%,148.0,MPI/pe.68
+2,8.6%,160.0,MPI/pe.69
+2,5.8%,108.0,MPI/pe.70
+2,6.5%,121.0,MPI/pe.71
+2,8.9%,165.0,MPI/pe.72
+2,8.2%,153.0,MPI/pe.73
+2,8.2%,152.0,MPI/pe.74
+2,9.2%,171.0,MPI/pe.75
+2,6.6%,122.0,MPI/pe.76
+2,6.0%,112.0,MPI/pe.77
+2,8.8%,164.0,MPI/pe.78
+2,9.0%,168.0,MPI/pe.79
+2,8.0%,149.0,MPI/pe.80
+2,7.5%,139.0,MPI/pe.81
+2,7.3%,136.0,MPI/pe.82
+2,8.3%,155.0,MPI/pe.83
+2,8.6%,160.0,MPI/pe.84
+2,10.0%,185.0,MPI/pe.85
+2,9.0%,168.0,MPI/pe.86
+2,7.9%,147.0,MPI/pe.87
+2,7.5%,140.0,MPI/pe.88
+2,6.9%,128.0,MPI/pe.89
+2,8.4%,156.0,MPI/pe.90
+2,9.6%,178.0,MPI/pe.91
+2,70.9%,1318.0,MPI/pe.92
+2,96.4%,1792.0,MPI/pe.93
+2,96.5%,1793.0,MPI/pe.94
+2,96.4%,1792.0,MPI/pe.95
+1,4.2%,78.3,ETC
+2,4.3%,80.0,ETC/pe.0
+2,4.2%,78.0,ETC/pe.1
+2,4.7%,87.0,ETC/pe.2
+2,3.7%,68.0,ETC/pe.3
+2,4.3%,80.0,ETC/pe.4
+2,4.7%,87.0,ETC/pe.5
+2,4.6%,86.0,ETC/pe.6
+2,5.1%,95.0,ETC/pe.7
+2,4.6%,86.0,ETC/pe.8
+2,4.5%,84.0,ETC/pe.9
+2,5.0%,93.0,ETC/pe.10
+2,4.3%,79.0,ETC/pe.11
+2,4.6%,86.0,ETC/pe.12
+2,4.0%,74.0,ETC/pe.13
+2,3.9%,73.0,ETC/pe.14
+2,4.6%,85.0,ETC/pe.15
+2,4.6%,85.0,ETC/pe.16
+2,4.3%,79.0,ETC/pe.17
+2,4.5%,83.0,ETC/pe.18
+2,3.6%,67.0,ETC/pe.19
+2,4.7%,87.0,ETC/pe.20
+2,4.7%,87.0,ETC/pe.21
+2,3.9%,72.0,ETC/pe.22
+2,4.6%,85.0,ETC/pe.23
+2,5.1%,94.0,ETC/pe.24
+2,3.9%,73.0,ETC/pe.25
+2,3.7%,69.0,ETC/pe.26
+2,4.0%,75.0,ETC/pe.27
+2,4.4%,81.0,ETC/pe.28
+2,4.8%,89.0,ETC/pe.29
+2,4.5%,83.0,ETC/pe.30
+2,3.9%,73.0,ETC/pe.31
+2,3.6%,66.0,ETC/pe.32
+2,4.1%,77.0,ETC/pe.33
+2,4.7%,88.0,ETC/pe.34
+2,4.7%,87.0,ETC/pe.35
+2,4.1%,76.0,ETC/pe.36
+2,4.2%,78.0,ETC/pe.37
+2,4.8%,89.0,ETC/pe.38
+2,3.8%,70.0,ETC/pe.39
+2,4.5%,83.0,ETC/pe.40
+2,4.0%,75.0,ETC/pe.41
+2,4.4%,82.0,ETC/pe.42
+2,4.0%,74.0,ETC/pe.43
+2,4.9%,91.0,ETC/pe.44
+2,4.1%,76.0,ETC/pe.45
+2,4.0%,75.0,ETC/pe.46
+2,4.6%,85.0,ETC/pe.47
+2,4.6%,85.0,ETC/pe.48
+2,4.7%,87.0,ETC/pe.49
+2,5.1%,95.0,ETC/pe.50
+2,4.1%,77.0,ETC/pe.51
+2,4.4%,81.0,ETC/pe.52
+2,4.3%,80.0,ETC/pe.53
+2,4.5%,84.0,ETC/pe.54
+2,3.9%,72.0,ETC/pe.55
+2,4.8%,89.0,ETC/pe.56
+2,4.2%,78.0,ETC/pe.57
+2,3.9%,73.0,ETC/pe.58
+2,4.2%,78.0,ETC/pe.59
+2,4.0%,75.0,ETC/pe.60
+2,4.1%,76.0,ETC/pe.61
+2,4.2%,78.0,ETC/pe.62
+2,5.2%,97.0,ETC/pe.63
+2,4.5%,83.0,ETC/pe.64
+2,4.3%,79.0,ETC/pe.65
+2,4.3%,80.0,ETC/pe.66
+2,4.0%,75.0,ETC/pe.67
+2,4.0%,75.0,ETC/pe.68
+2,4.2%,78.0,ETC/pe.69
+2,5.1%,94.0,ETC/pe.70
+2,3.6%,67.0,ETC/pe.71
+2,4.5%,83.0,ETC/pe.72
+2,4.2%,78.0,ETC/pe.73
+2,4.0%,74.0,ETC/pe.74
+2,3.8%,71.0,ETC/pe.75
+2,4.0%,75.0,ETC/pe.76
+2,4.6%,85.0,ETC/pe.77
+2,4.6%,85.0,ETC/pe.78
+2,4.2%,78.0,ETC/pe.79
+2,4.1%,77.0,ETC/pe.80
+2,4.3%,79.0,ETC/pe.81
+2,4.3%,80.0,ETC/pe.82
+2,4.0%,74.0,ETC/pe.83
+2,3.8%,71.0,ETC/pe.84
+2,4.0%,75.0,ETC/pe.85
+2,4.1%,77.0,ETC/pe.86
+2,3.4%,63.0,ETC/pe.87
+2,4.0%,74.0,ETC/pe.88
+2,4.8%,89.0,ETC/pe.89
+2,3.8%,71.0,ETC/pe.90
+2,4.3%,79.0,ETC/pe.91
+2,2.7%,51.0,ETC/pe.92
+2,2.0%,38.0,ETC/pe.93
+2,2.2%,40.0,ETC/pe.94
+2,2.3%,42.0,ETC/pe.95
+
+========================  Additional details  ========================
+
+
+
+General table notes:
+
+    The default notes for a table are based on the default definition of
+    the table, and do not account for the effects of command-line options
+    that may modify the content of the table.
+    
+    Detailed notes, produced by the pat_report -v option, do account for
+    all command-line options, and also show how data is aggregated, and
+    if the table content is limited by thresholds, rank selections, etc.
+    
+    An imbalance metric in a line is based on values in main threads
+    across multiple ranks, or on values across all threads, as applicable.
+    
+    An imbalance percent in a line is relative to the maximum value
+    for that line across ranks or threads, as applicable.
+    
+Experiment:  samp_cs_time
+
+Sampling interval:  10000 microsecs
+
+Original path to data file:
+  /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s/xf-files   (RTS, 4 data files)
+
+Original program:  ./sqpatch.exe
+
+Instrumented with:  pat_run -r ./sqpatch.exe
+
+Program invocation:  ./sqpatch.exe -n 157 -s 4
+
+0Exit Status:  0 for 96 PEs
+
+Memory pagesize:  4 KiB
+
+Memory hugepagesize:  Not Available
+
+Accelerator Model: Nvidia P100-PCIE-16GB Memory: 16.00
+
+Accelerator Driver Version: 440.33.1
+
+Programming environment:  GNU
+
+Runtime environment variables:
+  CRAYPAT_ALPS_COMPONENT=/opt/cray/pe/perftools/20.03.0/sbin/pat_alps
+  CRAYPAT_COMPILER_OPTIONS=1
+  CRAYPAT_LD_LIBRARY_PATH=/opt/cray/pe/gcc-libs:/opt/cray/gcc-libs:/opt/cray/pe/perftools/20.03.0/lib64
+  CRAYPAT_OPTS_EXECUTABLE=libexec64/opts
+  CRAYPAT_PRELOAD=1
+  CRAYPAT_ROOT=/opt/cray/pe/perftools/20.03.0
+  CRAYPE_VERSION=2.6.4
+  CRAY_CRAYPE_VERSION=2.6.4
+  CRAY_LIBSCI_VERSION=20.03.1
+  CRAY_MPICH_VERSION=7.7.12
+  CRAY_PERFTOOLS_VERSION=20.03.0
+  CRAY_PMI_VERSION=5.0.15
+  DVS_VERSION=0.9.0
+  GCC_VERSION=9.2.0
+  GNU_VERSION=9.2.0
+  LIBSCI_VERSION=20.03.1
+  MODULE_VERSION=3.2.11.4
+  MODULE_VERSION_STACK=3.2.11.4
+  MPICH_ABORT_ON_ERROR=1
+  MPICH_DIR=/opt/cray/pe/mpt/7.7.12/gni/mpich-gnu/8.2
+  OMP_NUM_THREADS=1
+  PAT_BUILD_PAPI_LIBDIR=/opt/cray/pe/papi/5.7.0.3/lib64
+  PAT_REPORT_PRUNE_NAME=_cray$mt_execute_,_cray$mt_start_,_cray$mt_kmpc_fork,__cray_hwpc_,f_cray_hwpc_,cstart,__pat_,pat_region_,PAT_,OMP.slave_loop,slave_entry,_new_slave_entry,_thread_pool_slave_entry,THREAD_POOL_join,__libc_start_main,_start,__start,start_thread,__wrap_,UPC_ADIO_,_upc_,upc_,__caf_,__pgas_,syscall,__device_stub,__cray_acc_hw,_ZZ
+  PAT_RT_EXPERIMENT=samp_cs_time
+  PAT_RT_PERFCTR=default_samp,
+  PAT_RT_REPORT_CMD=pat_report
+  PAT_RT_SAMPLING_MODE=3
+  PAT_RT_TRACE_HOOKS=1
+  PERFTOOLS_VERSION=20.03.0
+  PMI_CONTROL_PORT=22390
+  PMI_CRAY_NO_SMP_ORDER=0
+  PMI_GNI_COOKIE=2719547392:2720989184
+  PMI_GNI_DEV_ID=0
+  PMI_GNI_LOC_ADDR=4:4
+  PMI_GNI_PTAG=144:145
+  PMI_NO_FORK=1
+
+Report time environment variables:
+    CRAYPAT_ROOT=/opt/cray/pe/perftools/20.03.0
+    PAT_REPORT_PRUNE_NAME=_cray$mt_execute_,_cray$mt_start_,_cray$mt_kmpc_fork,__cray_hwpc_,f_cray_hwpc_,cstart,__pat_,pat_region_,PAT_,OMP.slave_loop,slave_entry,_new_slave_entry,_thread_pool_slave_entry,THREAD_POOL_join,__libc_start_main,_start,__start,start_thread,__wrap_,UPC_ADIO_,_upc_,upc_,__caf_,__pgas_,syscall,__device_stub,__cray_acc_hw,_ZZ
+
+Number of MPI control variables collected:  108
+
+  (To see the list, specify: -s mpi_cvar=show)
+
+Report command line options:
+  -v -O load_balance_group -s sort_by_pe=yes -s show_data=csv -s pe=ALL
+
+Operating system:
+  Linux 4.12.14-150.17_5.0.89-cray_ari_c #1 SMP Tue Jan 28 20:28:10 UTC 2020 (c7a4d66)
+
+Hardware performance counter events:
+0   UNHALTED_REFERENCE_CYCLES                      Unhalted reference cycles
+0   CPU_CLK_THREAD_UNHALTED:THREAD_P               Count core clock cycles whenever the clock signal on the specificcore is running (not halted):Cycles when thread is not halted
+0   DTLB_LOAD_MISSES:WALK_DURATION                 Data TLB load misses:Cycles when PMH is busy with page walks
+0   INST_RETIRED:ANY_P                             Number of instructions retired (Precise Event):Number of instructions retired. General Counter - architectural event
+0   RESOURCE_STALLS:ANY                            Cycles Allocation is stalled due to Resource Related reason:Cycles Allocation is stalled due to Resource Related reason
+0   OFFCORE_RESPONSE_0:ANY_REQUEST:L3_MISS_LOCAL   Offcore response event (must provide at least one request type andeither any_response or any combination of supplier + snoop):Request: combination of all request umasks:Supplier: counts L3 misses to local DRAM
+0   OFFCORE_RESPONSE_1:ANY_REQUEST:L3_MISS_REMOTE  Offcore response event (must provide at least one request type andeither any_response or any combination of supplier + snoop):Request: combination of all request umasks:Supplier: counts L3 misses to remote node
+

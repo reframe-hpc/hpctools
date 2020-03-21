@@ -1,0 +1,702 @@
+starttime=1584802519
+CrayPat/X:  Version 20.03.0 Revision b18264180  02/08/20 03:10:56
+# domain::distribute: 0.0853416s
+# mpi::synchronizeHalos: 0.0342951s
+# domain::buildTree: 0.0458335s
+# updateTasks: 0.000229619s
+# FindNeighbors: 0.405794s
+# Density: 0.37188s
+# EquationOfState: 0.00265505s
+# mpi::synchronizeHalos: 0.180268s
+# IAD: 0.853694s
+# mpi::synchronizeHalos: 0.0733964s
+# MomentumEnergyIAD: 1.24327s
+# Timestep: 0.171257s
+# UpdateQuantities: 0.00467608s
+# EnergyConservation: 0.0126354s
+# UpdateSmoothingLength: 0.00328221s
+### Check ### Global Tree Nodes: 4681, Particles: 41440, Halos: 75899
+### Check ### Computational domain: -49.6815 49.6815 -49.6815 49.6815 -50 50
+### Check ### Total Neighbors: 966119596, Avg neighbor count per particle: 249
+### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
+### Check ### Total energy: 2.08335e+10, (internal: 1e+06, cinetic: 2.08325e+10)
+=== Total time for iteration(0) 3.5099s
+
+# domain::distribute: 0.0899275s
+# mpi::synchronizeHalos: 0.0576953s
+# domain::buildTree: 0.0447307s
+# updateTasks: 0.0614742s
+# FindNeighbors: 0.400511s
+# Density: 0.38785s
+# EquationOfState: 0.00350541s
+# mpi::synchronizeHalos: 0.102691s
+# IAD: 0.90669s
+# mpi::synchronizeHalos: 0.0784694s
+# MomentumEnergyIAD: 1.33452s
+# Timestep: 0.132808s
+# UpdateQuantities: 0.00476259s
+# EnergyConservation: 0.000836671s
+# UpdateSmoothingLength: 0.00321701s
+### Check ### Global Tree Nodes: 4681, Particles: 41500, Halos: 74939
+### Check ### Computational domain: -49.6818 49.6818 -49.6818 49.6818 -50 50
+### Check ### Total Neighbors: 966655778, Avg neighbor count per particle: 249
+### Check ### Total time: 2.31e-06, current time-step: 1.21e-06
+### Check ### Total energy: 2.08336e+10, (internal: 999904, cinetic: 2.08326e+10)
+=== Total time for iteration(1) 3.61041s
+
+# domain::distribute: 0.0865194s
+# mpi::synchronizeHalos: 0.0266795s
+# domain::buildTree: 0.044552s
+# updateTasks: 0.000249748s
+# FindNeighbors: 0.403347s
+# Density: 0.392161s
+# EquationOfState: 0.00350151s
+# mpi::synchronizeHalos: 0.13443s
+# IAD: 0.935899s
+# mpi::synchronizeHalos: 0.0392695s
+# MomentumEnergyIAD: 1.33177s
+# Timestep: 0.0955169s
+# UpdateQuantities: 0.00451265s
+# EnergyConservation: 0.0010306s
+# UpdateSmoothingLength: 0.00321899s
+### Check ### Global Tree Nodes: 4681, Particles: 41500, Halos: 74939
+### Check ### Computational domain: -49.6821 49.6821 -49.6821 49.6821 -50 50
+### Check ### Total Neighbors: 970542818, Avg neighbor count per particle: 250
+### Check ### Total time: 3.641e-06, current time-step: 1.331e-06
+### Check ### Total energy: 2.08336e+10, (internal: 748578, cinetic: 2.08328e+10)
+=== Total time for iteration(2) 3.50342s
+
+# domain::distribute: 0.0897532s
+# mpi::synchronizeHalos: 0.0249921s
+# domain::buildTree: 0.0442285s
+# updateTasks: 0.000242618s
+# FindNeighbors: 0.402489s
+# Density: 0.38624s
+# EquationOfState: 0.00347765s
+# mpi::synchronizeHalos: 0.108777s
+# IAD: 0.921541s
+# mpi::synchronizeHalos: 0.0676362s
+# MomentumEnergyIAD: 1.31174s
+# Timestep: 0.127543s
+# UpdateQuantities: 0.00459119s
+# EnergyConservation: 0.000954698s
+# UpdateSmoothingLength: 0.00332423s
+### Check ### Global Tree Nodes: 4681, Particles: 41500, Halos: 74939
+### Check ### Computational domain: -49.6824 49.6824 -49.6824 49.6824 -50 50
+### Check ### Total Neighbors: 964187242, Avg neighbor count per particle: 249
+### Check ### Total time: 5.1051e-06, current time-step: 1.4641e-06
+### Check ### Total energy: 2.08338e+10, (internal: 625308, cinetic: 2.08332e+10)
+=== Total time for iteration(3) 3.49858s
+
+# domain::distribute: 0.0899942s
+# mpi::synchronizeHalos: 0.0246743s
+# domain::buildTree: 0.0440677s
+# updateTasks: 0.000255288s
+# FindNeighbors: 0.404343s
+# Density: 0.391801s
+# EquationOfState: 0.00348903s
+# mpi::synchronizeHalos: 0.101211s
+# IAD: 0.934364s
+# mpi::synchronizeHalos: 0.056645s
+# MomentumEnergyIAD: 1.32997s
+# Timestep: 0.0894574s
+# UpdateQuantities: 0.0049173s
+# EnergyConservation: 0.000693385s
+# UpdateSmoothingLength: 0.00322361s
+### Check ### Global Tree Nodes: 4681, Particles: 41500, Halos: 74939
+### Check ### Computational domain: -49.6828 49.6828 -49.6828 49.6828 -50 50
+### Check ### Total Neighbors: 970556390, Avg neighbor count per particle: 250
+### Check ### Total time: 6.71561e-06, current time-step: 1.61051e-06
+### Check ### Total energy: 2.08342e+10, (internal: 432482, cinetic: 2.08338e+10)
+=== Total time for iteration(4) 3.4794s
+
+# Total execution time of 4 iterations of SqPatch: 17.6023s
+Processing step 1 of 19
+Suggested trace options file:   /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s/build-options.apa
+
+Processing step 2 of 19Processing step 3 of 19Processing step 4 of 19Processing step 5 of 19Processing step 6 of 19Processing step 7 of 19Processing step 8 of 19Processing step 9 of 19Processing step 10 of 19Processing step 11 of 19Processing step 12 of 19Processing step 13 of 19Processing step 14 of 19Processing step 15 of 19Processing step 16 of 19Processing step 17 of 19Processing step 18 of 19Processing step 19 of 19
+CrayPat/X:  Version 20.03.0 Revision b18264180  02/08/20 03:10:56
+
+Number of PEs (MPI ranks):   96
+                           
+Numbers of PEs per Node:     24  PEs on each of  4  Nodes
+                           
+Numbers of Threads per PE:    1
+                           
+Number of Cores per Socket:  12
+
+Execution start time:  Sat Mar 21 15:55:21 2020
+
+System name and speed:  nid00004  2.601 GHz (nominal)
+
+Intel Haswell    CPU  Family:  6  Model: 63  Stepping:  2
+
+DRAM:  64 GiB DDR4-2400 on 2.6 GHz nodes
+
+
+Current path to data file:
+  /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s   (RTS, 4 data files)
+
+
+Notes for table 1:
+
+  This table shows functions that have significant exclusive sample
+    hits, averaged across ranks.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O samp_profile ...
+
+Table 1:  Profile by Function
+
+  Samp% |    Samp |    Imb. |  Imb. | Group
+        |         |    Samp | Samp% |  Function
+        |         |         |       |   PE=HIDE
+       
+ 100.0% | 1,858.4 |      -- |    -- | Total
+|-----------------------------------------------------------------------------
+|  84.5% | 1,570.2 |      -- |    -- | USER
+||----------------------------------------------------------------------------
+||  34.7% |   645.1 |    40.9 |  6.0% | sphexa::sph::computeMomentumAndEnergyIADImpl<>
+||  23.8% |   442.9 |    26.1 |  5.6% | sphexa::sph::computeIADImpl<>
+||  10.7% |   198.1 |    14.9 |  7.1% | sphexa::Octree<>::findNeighborsRec
+||  10.3% |   191.0 |    12.0 |  6.0% | sphexa::sph::computeDensityImpl<>
+||   1.5% |    28.2 |    16.8 | 37.8% | sphexa::reorder<>
+||   1.1% |    20.2 |     8.8 | 30.6% | sphexa::Octree<>::buildTreeRec
+||   1.1% |    19.9 |    11.1 | 36.2% | main
+||============================================================================
+|  11.1% |   205.9 |      -- |    -- | MPI
+||----------------------------------------------------------------------------
+||   6.6% |   122.2 | 1,664.8 | 94.1% | MPI_Allreduce
+||   3.5% |    64.7 |   676.3 | 92.2% | MPI_Recv
+||============================================================================
+|   4.2% |    78.3 |      -- |    -- | ETC
+||----------------------------------------------------------------------------
+||   2.2% |    40.7 |     9.3 | 18.8% | __sin_avx
+||   1.1% |    19.9 |    14.1 | 42.0% | __memset_avx2_erms
+|=============================================================================
+
+Notes for table 2:
+
+  This table shows functions that have the most significant exclusive
+    time, taking the maximum time across ranks and threads.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O profile_max ...
+
+Table 2:  Profile of maximum function times
+
+  Samp% |    Samp |    Imb. |  Imb. | Function
+        |         |    Samp | Samp% |  PE=[max,min]
+|-----------------------------------------------------------------------------
+| 100.0% | 1,787.0 | 1,664.8 | 94.1% | MPI_Allreduce
+||----------------------------------------------------------------------------
+|| 100.0% | 1,787.0 |      -- |    -- | pe.94
+||   1.9% |    34.0 |      -- |    -- | pe.57
+||============================================================================
+|  41.5% |   741.0 |   676.3 | 92.2% | MPI_Recv
+||----------------------------------------------------------------------------
+||  41.5% |   741.0 |      -- |    -- | pe.92
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|  38.4% |   686.0 |    40.9 |  6.0% | sphexa::sph::computeMomentumAndEnergyIADImpl<>
+||----------------------------------------------------------------------------
+||  38.4% |   686.0 |      -- |    -- | pe.56
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|  26.2% |   469.0 |    26.1 |  5.6% | sphexa::sph::computeIADImpl<>
+||----------------------------------------------------------------------------
+||  26.2% |   469.0 |      -- |    -- | pe.56
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|  11.9% |   213.0 |    14.9 |  7.1% | sphexa::Octree<>::findNeighborsRec
+||----------------------------------------------------------------------------
+||  11.9% |   213.0 |      -- |    -- | pe.56
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|  11.4% |   203.0 |    12.0 |  6.0% | sphexa::sph::computeDensityImpl<>
+||----------------------------------------------------------------------------
+||  11.4% |   203.0 |      -- |    -- | pe.10
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|   2.8% |    50.0 |     9.3 | 18.8% | __sin_avx
+||----------------------------------------------------------------------------
+||   2.8% |    50.0 |      -- |    -- | pe.86
+||   1.7% |    31.0 |      -- |    -- | pe.3
+||============================================================================
+|   2.5% |    45.0 |    16.8 | 37.8% | sphexa::reorder<>
+||----------------------------------------------------------------------------
+||   2.5% |    45.0 |      -- |    -- | pe.5
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|   1.9% |    34.0 |    14.1 | 42.0% | __memset_avx2_erms
+||----------------------------------------------------------------------------
+||   1.9% |    34.0 |      -- |    -- | pe.70
+||   0.0% |     0.0 |      -- |    -- | pe.95
+||============================================================================
+|   1.7% |    31.0 |    11.1 | 36.2% | main
+||----------------------------------------------------------------------------
+||   1.7% |    31.0 |      -- |    -- | pe.3
+||   0.5% |     9.0 |      -- |    -- | pe.86
+||============================================================================
+|   1.6% |    29.0 |     8.8 | 30.6% | sphexa::Octree<>::buildTreeRec
+||----------------------------------------------------------------------------
+||   1.6% |    29.0 |      -- |    -- | pe.40
+||   0.1% |     1.0 |      -- |    -- | pe.94
+||============================================================================
+|   1.5% |    27.0 |    14.2 | 53.0% | MPI_Waitall
+||----------------------------------------------------------------------------
+||   1.5% |    27.0 |      -- |    -- | pe.48
+||   0.1% |     2.0 |      -- |    -- | pe.36
+|=============================================================================
+
+Observation:  MPI Grid Detection
+
+    There appears to be point-to-point MPI communication in a 10 X 2 X 5
+    grid pattern. The 11.1% of the total execution time spent in MPI
+    functions might be reduced with a rank order that maximizes
+    communication between ranks on the same node. The effect of several
+    rank orders is estimated below.
+
+    No custom rank order was found that is better than the SMP order.
+
+    Rank Order    On-Node    On-Node  MPICH_RANK_REORDER_METHOD
+                 Bytes/PE  Bytes/PE%  
+                            of Total  
+                            Bytes/PE  
+
+           SMP  5.591e+09     64.23%  1
+          Fold  1.828e+09     21.00%  2
+    RoundRobin  1.333e+09     15.32%  0
+
+
+Observation:  Metric-Based Rank Order
+
+    When the use of a shared resource like memory bandwidth is unbalanced
+    across nodes, total execution time may be reduced with a rank order
+    that improves the balance.  The metric used here for resource usage
+    is: USER Samp
+
+    For each node, the metric values for the ranks on that node are
+    summed.  The maximum and average value of those sums are shown below
+    for both the current rank order and a custom rank order that seeks
+    to reduce the maximum value.
+
+    A file named MPICH_RANK_ORDER.USER_Samp was generated
+    along with this report and contains usage instructions and the
+    Custom rank order from the following table.
+
+       Rank    Node Reduction    Maximum  Average
+      Order  Metric    in Max      Value  Value
+               Imb.     Value             
+
+    Current   4.27%            3.937e+04  3.769e+04
+     Custom   0.88%    3.419%  3.802e+04  3.769e+04
+
+
+Observation:  MPI Hybrid Rank Order
+
+    A hybrid rank order has been calculated that attempts to take both
+    the MPI communication and USER Samp resources into account.
+    The table below shows the metric-based calculations along with the
+    final on-node bytes/PE value.
+
+    A file named MPICH_RANK_ORDER.USER_Samp_hybrid was generated
+    along with this report and contains usage instructions for this
+    custom rank order.
+
+       Rank    Node Reduction    Maximum    Average  On-Node
+      Order  Metric    in Max      Value      Value  Bytes/PE%
+               Imb.     Value                        of Total
+                                                     Bytes/PE
+
+    Current   4.27%            3.937e+04  3.769e+04  64.23%
+     Custom   3.91%     0.38%  3.922e+04  3.769e+04  57.57%
+
+
+Observation:  Stall Cycles
+
+    Stall cycles are 58.0% of total cycles, which exceeds the guideline
+    of 40.0%. This can be caused by issues in the program such as
+    saturation of memory bandwidth.
+
+
+Observation:  Program sensitivity to memory latency
+
+    The relatively low memory bandwidth utilization but significant rate
+    of stalls in the program suggest that its performance is limited by
+    memory latency.
+    It could be beneficial to improve prefetching in loops in functions
+    high in the profile, by modifying compiler-generated prefetches or
+    inserting directives into the source code.
+
+
+Observation:  MFLOPS not available on Intel Haswell
+
+    The document that specifies performance monitoring events for Intel
+    processors does not include events that could be used to compute a
+    count of floating point operations for Haswell processors: Intel 64
+    and IA-32 Architectures Software Developer's Manual, Order Number
+    253665-050US, February 2014.
+
+
+Notes for table 3:
+
+  This table shows functions, and line numbers within functions, that
+    have significant exclusive sample hits, averaged across ranks.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O samp_profile+src ...
+
+Table 3:  Profile by Group, Function, and Line
+
+  Samp% |    Samp |    Imb. |  Imb. | Group
+        |         |    Samp | Samp% |  Function
+        |         |         |       |   Source
+        |         |         |       |    Line
+        |         |         |       |     PE=HIDE
+       
+ 100.0% | 1,858.4 |      -- |    -- | Total
+|-----------------------------------------------------------------------------
+|  84.5% | 1,570.2 |      -- |    -- | USER
+||----------------------------------------------------------------------------
+||  34.7% |   645.1 |      -- |    -- | sphexa::sph::computeMomentumAndEnergyIADImpl<>
+|||---------------------------------------------------------------------------
+3||  22.6% |   419.1 |      -- |    -- | ./include/sph/momentumAndEnergyIAD.hpp
+||||--------------------------------------------------------------------------
+4|||   1.1% |    20.1 |    17.9 | 47.6% | line.98
+4|||   2.6% |    48.0 |    13.0 | 21.5% | line.109
+4|||   2.3% |    43.6 |    17.4 | 28.8% | line.111
+4|||   1.3% |    23.5 |    13.5 | 36.9% | line.118
+4|||   2.0% |    36.3 |    18.7 | 34.4% | line.141
+4|||   2.4% |    44.6 |    23.4 | 34.8% | line.155
+4|||   2.9% |    53.0 |    18.0 | 25.6% | line.165
+||||==========================================================================
+3||   6.8% |   126.1 |      -- |    -- | ./include/sph/lookupTables.hpp
+||||--------------------------------------------------------------------------
+4|||   1.1% |    20.9 |    12.1 | 37.1% | line.120
+4|||   3.7% |    68.2 |    17.8 | 20.9% | line.123
+4|||   2.0% |    37.0 |    19.0 | 34.2% | line.124
+||||==========================================================================
+3||   4.5% |    83.9 |      -- |    -- | ./include/sph/kernels.hpp
+||||--------------------------------------------------------------------------
+4|||   2.4% |    44.3 |    19.7 | 31.1% | line.52
+4|||   1.7% |    31.6 |    22.4 | 42.0% | line.61
+|||===========================================================================
+||  23.8% |   442.9 |      -- |    -- | sphexa::sph::computeIADImpl<>
+|||---------------------------------------------------------------------------
+3||   9.3% |   172.4 |      -- |    -- | ./include/sph/lookupTables.hpp
+||||--------------------------------------------------------------------------
+4|||   3.5% |    64.9 |    21.1 | 24.8% | line.120
+4|||   2.6% |    48.0 |    17.0 | 26.5% | line.123
+4|||   3.2% |    59.6 |    19.4 | 24.9% | line.124
+||||==========================================================================
+3||   8.2% |   153.1 |      -- |    -- | ./include/sph/IAD.hpp
+||||--------------------------------------------------------------------------
+4|||   1.1% |    20.8 |    10.2 | 33.3% | line.102
+4|||   3.4% |    63.9 |    19.1 | 23.3% | line.104
+||||==========================================================================
+3||   6.3% |   117.4 |      -- |    -- | sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/./include/BBox.hpp
+||||--------------------------------------------------------------------------
+4|||   2.6% |    48.9 |    21.1 | 30.5% | line.137
+4|||   3.1% |    57.0 |    26.0 | 31.7% | line.166
+|||===========================================================================
+||  10.7% |   198.1 |      -- |    -- | sphexa::Octree<>::findNeighborsRec
+3|  10.3% |   191.5 |      -- |    -- |  sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/./include/Octree.hpp
+||||--------------------------------------------------------------------------
+4|||   1.3% |    24.6 |    18.4 | 43.3% | line.85
+4|||   2.5% |    47.3 |    18.7 | 28.6% | line.100
+||||==========================================================================
+||  10.3% |   191.0 |      -- |    -- | sphexa::sph::computeDensityImpl<>
+|||---------------------------------------------------------------------------
+3||   5.6% |   103.3 |      -- |    -- | ./include/sph/density.hpp
+||||--------------------------------------------------------------------------
+4|||   1.8% |    33.4 |    15.6 | 32.1% | line.84
+4|||   3.3% |    62.1 |    20.9 | 25.5% | line.85
+||||==========================================================================
+3||   4.0% |    73.7 |      -- |    -- | ./include/sph/lookupTables.hpp
+||||--------------------------------------------------------------------------
+4|||   1.3% |    24.3 |     9.7 | 28.8% | line.120
+4|||   2.1% |    38.5 |    14.5 | 27.6% | line.124
+|||===========================================================================
+||   1.5% |    28.2 |      -- |    -- | sphexa::reorder<>
+3|   1.5% |    28.1 |      -- |    -- |  sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/./include/Domain.hpp
+4|   1.3% |    24.5 |    15.5 | 39.2% |   line.25
+||   1.1% |    20.2 |      -- |    -- | sphexa::Octree<>::buildTreeRec
+||   1.1% |    19.9 |      -- |    -- | main
+3|   1.0% |    18.6 |      -- |    -- |  gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/SqPatchDataGenerator.hpp
+||============================================================================
+|  11.1% |   205.9 |      -- |    -- | MPI
+||----------------------------------------------------------------------------
+||   6.6% |   122.2 | 1,664.8 | 94.1% | MPI_Allreduce
+||   3.5% |    64.7 |   676.3 | 92.2% | MPI_Recv
+||============================================================================
+|   4.2% |    78.3 |      -- |    -- | ETC
+||----------------------------------------------------------------------------
+||   2.2% |    40.7 |     9.3 | 18.8% | __sin_avx
+||   1.1% |    19.9 |    14.1 | 42.0% | __memset_avx2_erms
+|=============================================================================
+
+Notes for table 4:
+
+  This table shows HW performance counter data for the whole program,
+    averaged across ranks or threads, as applicable.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O hwpc ...
+
+Table 4:  Program HW Performance Counter Data
+
+PE=HIDE
+
+  
+==============================================================================
+  Total
+------------------------------------------------------------------------------
+  Thread Time                                           18.705111 secs
+  UNHALTED_REFERENCE_CYCLES                        47,413,038,933 
+  CPU_CLK_THREAD_UNHALTED:THREAD_P                 56,530,929,234 
+  DTLB_LOAD_MISSES:WALK_DURATION                       95,298,876 
+  INST_RETIRED:ANY_P                               36,009,161,293 
+  RESOURCE_STALLS:ANY                              32,767,581,228 
+  OFFCORE_RESPONSE_0:ANY_REQUEST:L3_MISS_LOCAL         33,553,602 
+  CPU CLK Boost                                              1.19 X
+  Resource stall cycles / Cycles                            58.0% 
+  Memory traffic GBytes                     0.115G/sec       2.15 GB
+  Local Memory traffic GBytes               0.115G/sec       2.15 GB
+  Memory Traffic / Nominal Peak                              0.2% 
+  DTLB Miss Ovhd                                       95,298,876 cycles  0.2% cycles
+  Retired Inst per Clock                                     0.64 
+==============================================================================
+
+Notes for table 5:
+
+  This table show the average time and number of bytes read from each
+    input file, taking the average over the number of ranks that read
+    from the file.  It also shows the number of read operations, and
+    average rates.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O read_stats ...
+
+Table 5:  File Input Stats by Filename
+
+ Avg Read | Avg Read |   Read Rate | Number |    Avg | Bytes/ | File Name=!x/^/(proc|sys)/
+ Time per |  MiBytes | MiBytes/sec |     of |  Reads |   Call |  PE=HIDE
+   Reader |      per |             | Reader |    per |        | 
+     Rank |   Reader |             |  Ranks | Reader |        | 
+          |     Rank |             |        |   Rank |        | 
+|-----------------------------------------------------------------------------
+| 0.000235 | 0.001850 |    7.883281 |     93 |  242.5 |   8.00 | _UnknownFile_
+|=============================================================================
+
+Notes for table 6:
+
+  This table show the average time and number of bytes written to each
+    output file, taking the average over the number of ranks that
+    wrote to the file.  It also shows the number of write operations,
+    and average rates.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O write_stats ...
+
+Table 6:  File Output Stats by Filename
+
+      Avg |      Avg |  Write Rate | Number |     Avg | Bytes/ | File Name=!x/^/(proc|sys)/
+    Write |    Write | MiBytes/sec |     of |  Writes |   Call |  PE=HIDE
+ Time per |  MiBytes |             | Writer |     per |        | 
+   Writer |      per |             |  Ranks |  Writer |        | 
+     Rank |   Writer |             |        |    Rank |        | 
+          |     Rank |             |        |         |        | 
+|-----------------------------------------------------------------------------
+| 0.007925 | 0.000304 |    0.038387 |      1 |     5.0 |  63.80 | constants.txt
+| 0.003081 | 0.073415 |   23.824697 |     96 | 2,405.7 |  32.00 | _UnknownFile_
+| 0.000192 | 0.004076 |   21.240582 |      1 |   570.0 |   7.50 | stdout
+|=============================================================================
+
+Table 7:  Lustre File Information
+
+     File Path |    Stripe | Stripe | Stripe | OST list
+               |      size | offset |  count | 
+-------------------------------------------------------
+ constants.txt | 1,048,576 |      0 |      1 | 1
+=======================================================
+
+Notes for table 8:
+
+  This table shows energy and power usage for the nodes with the
+    maximum, mean, and minimum usage, as well as the sum of usage over
+    all nodes.
+    Energy and power for accelerators is also shown, if applicable.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O program_energy ...
+
+Table 8:  Program energy and power usage (from Cray PM)
+
+   Node |     Node |   Process | Node Id
+ Energy |    Power |      Time |  PE=HIDE
+    (J) |      (W) |           | 
+       
+ 13,096 |  698.660 | 18.744450 | Total
+|----------------------------------------
+|  3,449 |  184.056 | 18.738896 | nid.7
+|  3,275 |  174.706 | 18.745747 | nid.4
+|  3,202 |  170.802 | 18.746824 | nid.6
+|  3,170 |  169.100 | 18.746332 | nid.5
+|========================================
+
+Notes for table 9:
+
+  This table shows memory traffic to local and remote memory for numa
+    nodes, taking for each numa node the maximum value across nodes.
+    It also shows the balance in memory traffic by showing the top 3
+    and bottom 3 node values.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O mem_bw ...
+
+Table 9:  Memory Bandwidth by Numanode
+
+  Memory |   Local |    Thread |  Memory |  Memory | Numanode
+ Traffic |  Memory |      Time | Traffic | Traffic |  Node Id
+  GBytes | Traffic |           |  GBytes |       / |   PE=HIDE
+         |  GBytes |           |   / Sec | Nominal | 
+         |         |           |         |    Peak | 
+|--------------------------------------------------------------
+|   53.95 |   53.95 | 18.715319 |    2.88 |    4.2% | numanode.0
+||-------------------------------------------------------------
+||   53.95 |   53.95 | 18.713514 |    2.88 |    4.2% | nid.6
+||   53.85 |   53.85 | 18.715319 |    2.88 |    4.2% | nid.4
+||   53.24 |   53.24 | 18.712333 |    2.85 |    4.2% | nid.5
+||   45.12 |   45.12 | 18.706232 |    2.41 |    3.5% | nid.7
+|==============================================================
+
+Notes for table 10:
+
+  This table shows total wall clock time for the ranks with the
+    maximum, mean, and minimum time, as well as the average across
+    ranks.
+    It also shows maximum memory usage from /proc/self/numa_maps for
+    those ranks, and on average.  The usage is total size of all
+    pages, including huge pages, that were actually mapped into
+    physical memory from both private and shared memory segments.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O program_time ...
+
+Table 10:  Wall Clock Time, Memory High Water Mark
+
+   Process |   Process | PE=[mmm]
+      Time |     HiMem | 
+           | (MiBytes) | 
+          
+ 18.744450 |      76.8 | Total
+|--------------------------------
+| 18.755150 |      60.1 | pe.12
+| 18.744323 |      99.6 | pe.20
+| 18.721262 |      53.8 | pe.93
+|================================
+
+========================  Additional details  ========================
+
+
+
+General table notes:
+
+    The default notes for a table are based on the default definition of
+    the table, and do not account for the effects of command-line options
+    that may modify the content of the table.
+    
+    Detailed notes, produced by the pat_report -v option, do account for
+    all command-line options, and also show how data is aggregated, and
+    if the table content is limited by thresholds, rank selections, etc.
+    
+    An imbalance metric in a line is based on values in main threads
+    across multiple ranks, or on values across all threads, as applicable.
+    
+    An imbalance percent in a line is relative to the maximum value
+    for that line across ranks or threads, as applicable.
+    
+Experiment:  samp_cs_time
+
+Sampling interval:  10000 microsecs
+
+Original path to data file:
+  /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s/xf-files   (RTS, 4 data files)
+
+Original program:  ./sqpatch.exe
+
+Instrumented with:  pat_run -r ./sqpatch.exe
+
+Program invocation:  ./sqpatch.exe -n 157 -s 4
+
+Exit Status:  0 for 96 PEs
+
+Memory pagesize:  4 KiB
+
+Memory hugepagesize:  Not Available
+
+Accelerator Model: Nvidia P100-PCIE-16GB Memory: 16.00
+
+Accelerator Driver Version: 440.33.1
+
+Programming environment:  GNU
+
+Runtime environment variables:
+  CRAYPAT_ALPS_COMPONENT=/opt/cray/pe/perftools/20.03.0/sbin/pat_alps
+  CRAYPAT_COMPILER_OPTIONS=1
+  CRAYPAT_LD_LIBRARY_PATH=/opt/cray/pe/gcc-libs:/opt/cray/gcc-libs:/opt/cray/pe/perftools/20.03.0/lib64
+  CRAYPAT_OPTS_EXECUTABLE=libexec64/opts
+  CRAYPAT_PRELOAD=1
+  CRAYPAT_ROOT=/opt/cray/pe/perftools/20.03.0
+  CRAYPE_VERSION=2.6.4
+  CRAY_CRAYPE_VERSION=2.6.4
+  CRAY_LIBSCI_VERSION=20.03.1
+  CRAY_MPICH_VERSION=7.7.12
+  CRAY_PERFTOOLS_VERSION=20.03.0
+  CRAY_PMI_VERSION=5.0.15
+  DVS_VERSION=0.9.0
+  GCC_VERSION=9.2.0
+  GNU_VERSION=9.2.0
+  LIBSCI_VERSION=20.03.1
+  MODULE_VERSION=3.2.11.4
+  MODULE_VERSION_STACK=3.2.11.4
+  MPICH_ABORT_ON_ERROR=1
+  MPICH_DIR=/opt/cray/pe/mpt/7.7.12/gni/mpich-gnu/8.2
+  OMP_NUM_THREADS=1
+  PAT_BUILD_PAPI_LIBDIR=/opt/cray/pe/papi/5.7.0.3/lib64
+  PAT_REPORT_PRUNE_NAME=_cray$mt_execute_,_cray$mt_start_,_cray$mt_kmpc_fork,__cray_hwpc_,f_cray_hwpc_,cstart,__pat_,pat_region_,PAT_,OMP.slave_loop,slave_entry,_new_slave_entry,_thread_pool_slave_entry,THREAD_POOL_join,__libc_start_main,_start,__start,start_thread,__wrap_,UPC_ADIO_,_upc_,upc_,__caf_,__pgas_,syscall,__device_stub,__cray_acc_hw,_ZZ
+  PAT_RT_EXPERIMENT=samp_cs_time
+  PAT_RT_PERFCTR=default_samp,
+  PAT_RT_REPORT_CMD=pat_report
+  PAT_RT_SAMPLING_MODE=3
+  PAT_RT_TRACE_HOOKS=1
+  PERFTOOLS_VERSION=20.03.0
+  PMI_CONTROL_PORT=22390
+  PMI_CRAY_NO_SMP_ORDER=0
+  PMI_GNI_COOKIE=2719547392:2720989184
+  PMI_GNI_DEV_ID=0
+  PMI_GNI_LOC_ADDR=4:4
+  PMI_GNI_PTAG=144:145
+  PMI_NO_FORK=1
+
+Report time environment variables:
+    CRAYPAT_ROOT=/opt/cray/pe/perftools/20.03.0
+    PAT_REPORT_PRUNE_NAME=_cray$mt_execute_,_cray$mt_start_,_cray$mt_kmpc_fork,__cray_hwpc_,f_cray_hwpc_,cstart,__pat_,pat_region_,PAT_,OMP.slave_loop,slave_entry,_new_slave_entry,_thread_pool_slave_entry,THREAD_POOL_join,__libc_start_main,_start,__start,start_thread,__wrap_,UPC_ADIO_,_upc_,upc_,__caf_,__pgas_,syscall,__device_stub,__cray_acc_hw,_ZZ
+    PAT_REPORT_WORKING_DIR=/scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s
+
+Number of MPI control variables collected:  108
+
+  (To see the list, specify: -s mpi_cvar=show)
+
+Report command line options:
+  -o /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_096mpi_001omp_157n_4steps/sqpatch.exe+2773-4s/rpt-files/RUNTIME.rpt
+
+Operating system:
+  Linux 4.12.14-150.17_5.0.89-cray_ari_c #1 SMP Tue Jan 28 20:28:10 UTC 2020 (c7a4d66)
+
+Hardware performance counter events:
+   UNHALTED_REFERENCE_CYCLES                      Unhalted reference cycles
+   CPU_CLK_THREAD_UNHALTED:THREAD_P               Count core clock cycles whenever the clock signal on the specificcore is running (not halted):Cycles when thread is not halted
+   DTLB_LOAD_MISSES:WALK_DURATION                 Data TLB load misses:Cycles when PMH is busy with page walks
+   INST_RETIRED:ANY_P                             Number of instructions retired (Precise Event):Number of instructions retired. General Counter - architectural event
+   RESOURCE_STALLS:ANY                            Cycles Allocation is stalled due to Resource Related reason:Cycles Allocation is stalled due to Resource Related reason
+   OFFCORE_RESPONSE_0:ANY_REQUEST:L3_MISS_LOCAL   Offcore response event (must provide at least one request type andeither any_response or any combination of supplier + snoop):Request: combination of all request umasks:Supplier: counts L3 misses to local DRAM
+   OFFCORE_RESPONSE_1:ANY_REQUEST:L3_MISS_REMOTE  Offcore response event (must provide at least one request type andeither any_response or any combination of supplier + snoop):Request: combination of all request umasks:Supplier: counts L3 misses to remote node
+
+stoptime=1584802542
+000004.xf
+000005.xf
+000006.xf
+000007.xf

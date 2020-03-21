@@ -1,0 +1,244 @@
+CrayPat/X:  Version 20.03.0 Revision b18264180  02/08/20 03:10:56
+
+Number of PEs (MPI ranks):   24
+                           
+Numbers of PEs per Node:     24
+                           
+Numbers of Threads per PE:    1
+                           
+Number of Cores per Socket:  12
+
+Execution start time:  Sat Mar 21 15:54:58 2020
+
+System name and speed:  nid00000  2.601 GHz (nominal)
+
+Intel Haswell    CPU  Family:  6  Model: 63  Stepping:  2
+
+DRAM:  64 GiB DDR4-2400 on 2.6 GHz nodes
+
+
+Current path to data file:
+  /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_024mpi_001omp_100n_4steps/./sqpatch.exe+9685-0s   (RTS)
+
+Processing step 1 of 1
+
+Notes for table 1:
+
+  This table shows load balance of exclusive time at the function
+    group level, by showing for each group the maximum, mean, and
+    minimum rank times, as well as the average time across ranks.
+  For further explanation, see the "General table notes" below,
+    or use:  pat_report -v -O load_balance_group ...
+
+  Table option:
+    -O load_balance_group
+  Options implied by table option:
+    -d ti%@0.95,ti,tr -b gr,pe -s table.min_sa_pct=0.95
+  Other options:
+    -s pe='ALL'
+    -s show_data='csv'
+    -s sort_by_pe='yes'
+
+  The Total value for Samp is the sum of the Group values.
+  The Group value for Samp is the avg of the PE values.
+    (To specify different aggregations, see: pat_help report options s1)
+  If no aggregation method is listed for a data item,
+  then it is derived from values of other data items,
+  and is not aggregated independently.
+
+  This table shows only lines with Samp% > 0.95.
+    (To set thresholds to zero, specify:  -T)
+
+  Percentages at each level are of the Total for the program.
+    (For percentages relative to next level up, specify:
+      -s percent=r[elative])
+  
+  The following groups were pruned due to thresholding:
+    HEAP, RT, MATH, STRING
+
+Table 1:  Load Balance across PEs by FunctionGroup
+
+Level,Samp%,Samp,Group/PE
+0,100.0%,1768.0,Total
+1,88.4%,1563.4,USER
+2,89.8%,1588.0,USER/pe.0
+2,92.2%,1630.0,USER/pe.1
+2,91.9%,1624.0,USER/pe.2
+2,91.7%,1621.0,USER/pe.3
+2,91.7%,1622.0,USER/pe.4
+2,91.8%,1623.0,USER/pe.5
+2,92.6%,1638.0,USER/pe.6
+2,92.7%,1639.0,USER/pe.7
+2,91.3%,1614.0,USER/pe.8
+2,91.3%,1614.0,USER/pe.9
+2,92.4%,1634.0,USER/pe.10
+2,91.5%,1618.0,USER/pe.11
+2,92.2%,1630.0,USER/pe.12
+2,93.1%,1646.0,USER/pe.13
+2,91.9%,1625.0,USER/pe.14
+2,91.8%,1623.0,USER/pe.15
+2,91.5%,1617.0,USER/pe.16
+2,91.1%,1610.0,USER/pe.17
+2,92.1%,1628.0,USER/pe.18
+2,92.1%,1628.0,USER/pe.19
+2,91.9%,1625.0,USER/pe.20
+2,92.0%,1627.0,USER/pe.21
+2,76.1%,1346.0,USER/pe.22
+2,25.5%,451.0,USER/pe.23
+1,6.6%,116.5,MPI
+2,4.9%,87.0,MPI/pe.0
+2,2.5%,44.0,MPI/pe.1
+2,3.3%,58.0,MPI/pe.2
+2,3.6%,64.0,MPI/pe.3
+2,2.8%,50.0,MPI/pe.4
+2,2.1%,38.0,MPI/pe.5
+2,2.3%,40.0,MPI/pe.6
+2,2.1%,37.0,MPI/pe.7
+2,3.5%,61.0,MPI/pe.8
+2,3.2%,57.0,MPI/pe.9
+2,2.5%,44.0,MPI/pe.10
+2,4.0%,70.0,MPI/pe.11
+2,3.2%,56.0,MPI/pe.12
+2,2.1%,38.0,MPI/pe.13
+2,3.1%,55.0,MPI/pe.14
+2,4.1%,72.0,MPI/pe.15
+2,4.6%,82.0,MPI/pe.16
+2,2.7%,47.0,MPI/pe.17
+2,2.5%,44.0,MPI/pe.18
+2,3.2%,56.0,MPI/pe.19
+2,2.3%,41.0,MPI/pe.20
+2,2.9%,52.0,MPI/pe.21
+2,19.2%,339.0,MPI/pe.22
+2,71.6%,1265.0,MPI/pe.23
+1,4.8%,84.3,ETC
+2,5.1%,91.0,ETC/pe.0
+2,5.0%,89.0,ETC/pe.1
+2,4.6%,82.0,ETC/pe.2
+2,4.6%,81.0,ETC/pe.3
+2,5.0%,89.0,ETC/pe.4
+2,5.8%,102.0,ETC/pe.5
+2,4.8%,85.0,ETC/pe.6
+2,5.0%,89.0,ETC/pe.7
+2,4.6%,81.0,ETC/pe.8
+2,5.0%,88.0,ETC/pe.9
+2,5.0%,88.0,ETC/pe.10
+2,4.3%,76.0,ETC/pe.11
+2,4.3%,76.0,ETC/pe.12
+2,4.7%,83.0,ETC/pe.13
+2,4.8%,84.0,ETC/pe.14
+2,3.9%,69.0,ETC/pe.15
+2,3.8%,68.0,ETC/pe.16
+2,6.2%,109.0,ETC/pe.17
+2,5.1%,91.0,ETC/pe.18
+2,4.7%,83.0,ETC/pe.19
+2,5.8%,102.0,ETC/pe.20
+2,4.9%,87.0,ETC/pe.21
+2,4.5%,80.0,ETC/pe.22
+2,2.9%,51.0,ETC/pe.23
+
+========================  Additional details  ========================
+
+
+
+General table notes:
+
+    The default notes for a table are based on the default definition of
+    the table, and do not account for the effects of command-line options
+    that may modify the content of the table.
+    
+    Detailed notes, produced by the pat_report -v option, do account for
+    all command-line options, and also show how data is aggregated, and
+    if the table content is limited by thresholds, rank selections, etc.
+    
+    An imbalance metric in a line is based on values in main threads
+    across multiple ranks, or on values across all threads, as applicable.
+    
+    An imbalance percent in a line is relative to the maximum value
+    for that line across ranks or threads, as applicable.
+    
+Experiment:  samp_cs_time
+
+Sampling interval:  10000 microsecs
+
+Original path to data file:
+  /scratch/snx3000tds/piccinal/reframe/hpctools/stage/dom/gpu/PrgEnv-gnu/sphexa_patrun_sqpatch_024mpi_001omp_100n_4steps/sqpatch.exe+9685-0s/xf-files   (RTS)
+
+Original program:  ./sqpatch.exe
+
+Instrumented with:  pat_run -r ./sqpatch.exe
+
+Program invocation:  ./sqpatch.exe -n 100 -s 4
+
+0Exit Status:  0 for 24 PEs
+
+Memory pagesize:  4 KiB
+
+Memory hugepagesize:  Not Available
+
+Accelerator Model: Nvidia P100-PCIE-16GB Memory: 16.00
+
+Accelerator Driver Version: 440.33.1
+
+Programming environment:  GNU
+
+Runtime environment variables:
+  CRAYPAT_ALPS_COMPONENT=/opt/cray/pe/perftools/20.03.0/sbin/pat_alps
+  CRAYPAT_COMPILER_OPTIONS=1
+  CRAYPAT_LD_LIBRARY_PATH=/opt/cray/pe/gcc-libs:/opt/cray/gcc-libs:/opt/cray/pe/perftools/20.03.0/lib64
+  CRAYPAT_OPTS_EXECUTABLE=libexec64/opts
+  CRAYPAT_PRELOAD=1
+  CRAYPAT_ROOT=/opt/cray/pe/perftools/20.03.0
+  CRAYPE_VERSION=2.6.4
+  CRAY_CRAYPE_VERSION=2.6.4
+  CRAY_LIBSCI_VERSION=20.03.1
+  CRAY_MPICH_VERSION=7.7.12
+  CRAY_PERFTOOLS_VERSION=20.03.0
+  CRAY_PMI_VERSION=5.0.15
+  DVS_VERSION=0.9.0
+  GCC_VERSION=9.2.0
+  GNU_VERSION=9.2.0
+  LIBSCI_VERSION=20.03.1
+  MODULE_VERSION=3.2.11.4
+  MODULE_VERSION_STACK=3.2.11.4
+  MPICH_ABORT_ON_ERROR=1
+  MPICH_DIR=/opt/cray/pe/mpt/7.7.12/gni/mpich-gnu/8.2
+  OMP_NUM_THREADS=1
+  PAT_BUILD_PAPI_LIBDIR=/opt/cray/pe/papi/5.7.0.3/lib64
+  PAT_REPORT_PRUNE_NAME=_cray$mt_execute_,_cray$mt_start_,_cray$mt_kmpc_fork,__cray_hwpc_,f_cray_hwpc_,cstart,__pat_,pat_region_,PAT_,OMP.slave_loop,slave_entry,_new_slave_entry,_thread_pool_slave_entry,THREAD_POOL_join,__libc_start_main,_start,__start,start_thread,__wrap_,UPC_ADIO_,_upc_,upc_,__caf_,__pgas_,syscall,__device_stub,__cray_acc_hw,_ZZ
+  PAT_RT_EXPERIMENT=samp_cs_time
+  PAT_RT_PERFCTR=default_samp,
+  PAT_RT_REPORT_CMD=pat_report
+  PAT_RT_SAMPLING_MODE=3
+  PAT_RT_TRACE_HOOKS=1
+  PERFTOOLS_VERSION=20.03.0
+  PMI_CONTROL_PORT=22388
+  PMI_CRAY_NO_SMP_ORDER=0
+  PMI_GNI_COOKIE=2713452544:2713780224
+  PMI_GNI_DEV_ID=0:0
+  PMI_GNI_LOC_ADDR=0:0
+  PMI_GNI_PTAG=156:157
+  PMI_NO_FORK=1
+
+Report time environment variables:
+    CRAYPAT_ROOT=/opt/cray/pe/perftools/20.03.0
+    PAT_REPORT_PRUNE_NAME=_cray$mt_execute_,_cray$mt_start_,_cray$mt_kmpc_fork,__cray_hwpc_,f_cray_hwpc_,cstart,__pat_,pat_region_,PAT_,OMP.slave_loop,slave_entry,_new_slave_entry,_thread_pool_slave_entry,THREAD_POOL_join,__libc_start_main,_start,__start,start_thread,__wrap_,UPC_ADIO_,_upc_,upc_,__caf_,__pgas_,syscall,__device_stub,__cray_acc_hw,_ZZ
+
+Number of MPI control variables collected:  108
+
+  (To see the list, specify: -s mpi_cvar=show)
+
+Report command line options:
+  -v -O load_balance_group -s sort_by_pe=yes -s show_data=csv -s pe=ALL
+
+Operating system:
+  Linux 4.12.14-150.17_5.0.89-cray_ari_c #1 SMP Tue Jan 28 20:28:10 UTC 2020 (c7a4d66)
+
+Hardware performance counter events:
+0   UNHALTED_REFERENCE_CYCLES                      Unhalted reference cycles
+0   CPU_CLK_THREAD_UNHALTED:THREAD_P               Count core clock cycles whenever the clock signal on the specificcore is running (not halted):Cycles when thread is not halted
+0   DTLB_LOAD_MISSES:WALK_DURATION                 Data TLB load misses:Cycles when PMH is busy with page walks
+0   INST_RETIRED:ANY_P                             Number of instructions retired (Precise Event):Number of instructions retired. General Counter - architectural event
+0   RESOURCE_STALLS:ANY                            Cycles Allocation is stalled due to Resource Related reason:Cycles Allocation is stalled due to Resource Related reason
+0   OFFCORE_RESPONSE_0:ANY_REQUEST:L3_MISS_LOCAL   Offcore response event (must provide at least one request type andeither any_response or any combination of supplier + snoop):Request: combination of all request umasks:Supplier: counts L3 misses to local DRAM
+0   OFFCORE_RESPONSE_1:ANY_REQUEST:L3_MISS_REMOTE  Offcore response event (must provide at least one request type andeither any_response or any combination of supplier + snoop):Request: combination of all request umasks:Supplier: counts L3 misses to remote node
+

@@ -13,10 +13,10 @@ import sphexa.sanity_perftools as sphsperft
 
 
 @rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [24]
-                          for steps in [1]
-                          # for mpitask in [24, 48, 96]
-                          # for steps in [2]
+                          # for mpitask in [24]
+                          # for steps in [1]
+                          for mpitask in [24, 48, 96]
+                          for steps in [4]
                           ])
 class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
     # {{{
@@ -122,21 +122,27 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
                                 '-n %s' % cubesize, '-s %s' % steps, '2>&1']
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
+        self.csv_rpt = 'csv.rpt'
         self.pre_run = [
             'module rm xalt',
             'mv %s %s' % (self.executable, self.target_executable),
             '%s -V &> %s' % (self.tool, self.version_rpt),
             'which %s &> %s' % (self.tool, self.which_rpt),
+            # 'rm -fr $HOME/.craypat/*',
         ]
         # use linux date as timer:
         self.pre_run += ['echo starttime=`date +%s`']
         self.post_run = ['echo stoptime=`date +%s`']
         # needed for sanity functions:
         self.rpt = 'rpt'
+        csv_options = ('-v -O load_balance_group -s sort_by_pe=\'yes\' '
+                       '-s show_data=\'csv\' -s pe=\'ALL\'')
         self.post_run += [
             # patrun_num_of_compute_nodes
             'ls -1 %s+*s/xf-files/' % self.target_executable,
-            'cp *_job.out %s' % self.rpt
+            'cp *_job.out %s' % self.rpt,
+            'pat_report %s %s+*s/index.ap2 &> %s' %
+            (csv_options, self.target_executable, self.csv_rpt)
         ]
 # }}}
 

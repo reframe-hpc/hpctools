@@ -5,6 +5,7 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
+import numpy as np
 from reframe.core.fields import ScopedDict
 import sphexa.sanity as sphs
 
@@ -247,15 +248,12 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         regex = (r'^Table \d+:\s+Program energy and power usage \(from Cray '
                  r'PM\)\n(.*\n){5}\s+(?P<nrgy>\S+)\s+\|\s+(?P<power>\S+).*'
                  r'Total$')
-        # res_str = sn.extractsingle(regex, self.stdout, 'nrgy')
-        # mystr = sn.evaluate(res_str)
-        # print('XXXX', type(res_str))
-        # res['energy_avg'] = int(mystr.replace(',', ''))
+        res['energy_avg'] = \
+            sn.extractsingle(regex, self.stdout, 'nrgy',
+                             conv=lambda x: int(x.replace(',', ''))) \
+            / self.num_cn
         res['power_avg'] = sn.extractsingle(regex, self.stdout, 'power',
                                             float) / self.num_cn
-        # res['ipc'] = sn.extractsingle(regex, self.stdout, 'ipc', float)
-        #
-        # self.patrun_xxx_d = res
         if self.patrun_perf_d:
             self.patrun_perf_d = {**self.patrun_perf_d, **res}
         else:
@@ -347,15 +345,216 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         #     self.patrun_perf_d = {**self.patrun_perf_d, **res}
         # else:
         #     self.patrun_perf_d = res
-        # TODO: when MPI is not #2 as in:
-        # |  14.8% |  57.0 |    -- |    -- | ETC
-        # ||----------------------------------------------------
-        # ||  10.9% |  42.1 |   7.9 | 16.4% | __sin_avx
-        # ||   2.8% |  10.7 |   5.3 | 34.5% | __memset_avx2_erms
-        # ||====================================================
-        # |   6.9% |  26.5 |    -- |    -- | MPI
-        # ||----------------------------------------------------
-        # ||   3.2% |  12.2 | 124.8 | 95.0% | MPI_Recv
+# }}}
+
+# TODO: rpt from sqpatch.exe+5046-0s/rpt-files/RUNTIME.rpt
+
+# {{{ patrun: imbalance
+    @rfm.run_after('sanity')
+    def patrun_imbalance(self):
+        # {{{
+        '''Load imbalance from csv report
+
+        .. code-block::
+
+          Table 1:  load Balance with MPI Message Stats
+
+        '''
+        # }}}
+        rpt = os.path.join(self.stagedir, self.csv_rpt)
+        # self.num_tasks
+        # USER:
+        regex = r'^\d+,\S+,(?P<samples>\S+),USER/pe.(?P<pe>\d+)$'
+        res_user_sm_l = sn.extractall(regex, rpt, 'samples', float)
+        res_user_pe_l = sn.extractall(regex, rpt, 'pe')
+        # MPI:
+        regex = r'^\d+,\S+,(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$'
+        res_mpi_sm_l = sn.extractall(regex, rpt, 'samples', float)
+        res_mpi_pe_l = sn.extractall(regex, rpt, 'pe')
+        # ETC:
+        regex = r'^\d+,\S+,(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$'
+        res_etc_sm_l = sn.extractall(regex, rpt, 'samples', float)
+        res_etc_pe_l = sn.extractall(regex, rpt, 'pe')
+        # DICT from LISTs: dict(zip(pe,usr))
+        # TOTAL = USER+MPI+ETC
+        res_total_sm_l = []
+        # WARNING: this fails if data is not sorted by pe, use pat_report with:
+        # -s sort_by_pe='yes' !!!!!!!!!!!!!!
+        res_total_sm_l = [sum(sam) for sam in zip(res_user_sm_l, res_mpi_sm_l,
+                                                  res_etc_sm_l)]
+        # USER pes
+        # {{{ slowest pe (USER)
+        # slowest = max(max(res_user_sm_l),
+        #               max(res_mpi_sm_l),
+        #               max(res_etc_sm_l))
+        slowest = max(res_user_sm_l)
+        user_slowest_pe = -1
+        index = -1
+        if slowest in res_user_sm_l:
+            for sam in res_user_sm_l:
+                index += 1
+                if sam == slowest:
+                    user_slowest_pe = index
+
+        # ko? '_DeferredExpression' object has no attribute 'index'
+        # ko? if slowest in res_user_sm_l:
+        # ko?     pe_slowest = res_user_sm_l.index(slowest)
+        # ko? if slowest in res_mpi_sm_l:
+        # ko?     pe_slowest = res_mpi_sm_l.index(slowest)
+        # ko? if slowest in res_etc_sm_l:
+        # ko?     pe_slowest = res_etc_sm_l.index(slowest)
+        if user_slowest_pe == -1:
+            user_slowest_pe = 0
+        # }}}
+        # {{{ fastest pe (USER)
+        fastest = min(res_user_sm_l)
+        user_fastest_pe = -1
+        index = -1
+        for sam in res_user_sm_l:
+            index += 1
+            if sam == fastest:
+                user_fastest_pe = index
+
+        if user_fastest_pe == -1:
+            user_fastest_pe = 0
+        # }}}
+
+        # MPI pes
+        # {{{ slowest pe (MPI)
+        slowest = max(res_mpi_sm_l)
+        mpi_slowest_pe = -1
+        index = -1
+        if slowest in res_mpi_sm_l:
+            for sam in res_mpi_sm_l:
+                index += 1
+                if sam == slowest:
+                    mpi_slowest_pe = index
+
+        if mpi_slowest_pe == -1:
+            mpi_slowest_pe = 0
+        # }}}
+        # {{{ fastest pe (MPI)
+        fastest = min(res_mpi_sm_l)
+        mpi_fastest_pe = -1
+        index = -1
+        for sam in res_mpi_sm_l:
+            index += 1
+            if sam == fastest:
+                mpi_fastest_pe = index
+
+        if mpi_fastest_pe == -1:
+            mpi_fastest_pe = 0
+        # }}}
+
+        # ETC pes
+        # {{{ slowest pe (ETC)
+        slowest = max(res_etc_sm_l)
+        etc_slowest_pe = -1
+        index = -1
+        if slowest in res_etc_sm_l:
+            for sam in res_etc_sm_l:
+                index += 1
+                if sam == slowest:
+                    etc_slowest_pe = index
+
+        if etc_slowest_pe == -1:
+            etc_slowest_pe = 0
+        # }}}
+        # {{{ fastest pe (ETC)
+        fastest = min(res_etc_sm_l)
+        etc_fastest_pe = -1
+        index = -1
+        for sam in res_etc_sm_l:
+            index += 1
+            if sam == fastest:
+                etc_fastest_pe = index
+
+        if etc_fastest_pe == -1:
+            etc_fastest_pe = 0
+        # }}}
+
+        # TOTAL pes
+        # {{{ slowest pe (TOTAL)
+        slowest = max(res_total_sm_l)
+        total_slowest_pe = -1
+        index = -1
+        if slowest in res_total_sm_l:
+            for sam in res_total_sm_l:
+                index += 1
+                if sam == slowest:
+                    total_slowest_pe = index
+
+        if total_slowest_pe == -1:
+            total_slowest_pe = 0
+        # }}}
+        # {{{ fastest pe (TOTAL)
+        fastest = min(res_total_sm_l)
+        total_fastest_pe = -1
+        index = -1
+        for sam in res_total_sm_l:
+            index += 1
+            if sam == fastest:
+                total_fastest_pe = index
+
+        if total_fastest_pe == -1:
+            total_fastest_pe = 0
+        # }}}
+
+        # {{{ res dict
+        res = {}
+        # min/(mean=average)/median/max
+        res['user_samples_min'] = sn.round(sn.min(res_user_sm_l), 0)
+        res['mpi_samples_min'] = sn.round(sn.min(res_mpi_sm_l), 0)
+        res['etc_samples_min'] = sn.round(sn.min(res_etc_sm_l), 0)
+        res['total_samples_min'] = sn.round(sn.min(res_total_sm_l), 0)
+        #
+        res['user_samples_mean'] = sn.round(sn.avg(res_user_sm_l), 1)
+        res['mpi_samples_mean'] = sn.round(sn.avg(res_mpi_sm_l), 1)
+        res['etc_samples_mean'] = sn.round(sn.avg(res_etc_sm_l), 1)
+        res['total_samples_mean'] = sn.round(sn.avg(res_total_sm_l), 1)
+        #
+        res['user_samples_median'] = \
+            sn.sanity_function(np.median)(res_user_sm_l)
+        res['mpi_samples_median'] = sn.sanity_function(np.median)(res_mpi_sm_l)
+        res['etc_samples_median'] = sn.sanity_function(np.median)(res_etc_sm_l)
+        res['total_samples_median'] = \
+            sn.sanity_function(np.median)(res_total_sm_l)
+        #
+        res['user_samples_max'] = sn.round(sn.max(res_user_sm_l), 0)
+        res['mpi_samples_max'] = sn.round(sn.max(res_mpi_sm_l), 0)
+        res['etc_samples_max'] = sn.round(sn.max(res_etc_sm_l), 0)
+        res['total_samples_max'] = sn.round(sn.max(res_total_sm_l), 0)
+        #
+        res['%user_samples'] = sn.round(100 * res['user_samples_mean']
+                                        / res['total_samples_mean'], 1)
+        res['%mpi_samples'] = sn.round(100 * res['mpi_samples_mean']
+                                       / res['total_samples_mean'], 1)
+        res['%etc_samples'] = sn.round(100 * res['etc_samples_mean']
+                                       / res['total_samples_mean'], 1)
+        # slowest pes
+        res['user_slowest_pe'] = user_slowest_pe
+        res['mpi_slowest_pe'] = mpi_slowest_pe
+        res['etc_slowest_pe'] = etc_slowest_pe
+        res['total_slowest_pe'] = total_slowest_pe
+        res['%user_slowest'] = sn.round(100 * res_user_sm_l[user_slowest_pe] /
+                                        res_total_sm_l[user_slowest_pe], 1)
+        res['%mpi_slowest'] = sn.round(100 * res_mpi_sm_l[user_slowest_pe] /
+                                       res_total_sm_l[user_slowest_pe], 1)
+        res['%etc_slowest'] = sn.round(100 * res_etc_sm_l[user_slowest_pe] /
+                                       res_total_sm_l[user_slowest_pe], 1)
+        # fastest pes
+        res['user_fastest_pe'] = user_fastest_pe
+        res['mpi_fastest_pe'] = mpi_fastest_pe
+        res['etc_fastest_pe'] = etc_fastest_pe
+        res['total_fastest_pe'] = total_fastest_pe
+        res['%user_fastest'] = sn.round(100 * res_user_sm_l[user_fastest_pe] /
+                                        res_total_sm_l[user_fastest_pe], 1)
+        res['%mpi_fastest'] = sn.round(100 * res_mpi_sm_l[user_fastest_pe] /
+                                       res_total_sm_l[user_fastest_pe], 1)
+        res['%etc_fastest'] = sn.round(100 * res_etc_sm_l[user_fastest_pe] /
+                                       res_total_sm_l[user_fastest_pe], 1)
+        # }}}
+        self.patrun_stats_d = res
 # }}}
 
 # {{{ rpt_path_stdout
@@ -390,8 +589,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         Typical performance reporting:
 
         .. literalinclude:: ../../reframechecks/perftools/patrun.res
-          :lines: 97-137
-          :emphasize-lines: 24-28, 35-37
+          :lines: 141-169
 
         '''
         regex = r'^\|\s+(?P<pct>\S+)%\s+\|\s+(?P<sam>\S+).*USER$'
@@ -399,6 +597,10 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         regex = r'^\|\s+(?P<pct>\S+)%\s+\|\s+(?P<sam>\S+).*MPI$'
         mpi_pct = sn.extractsingle(regex, self.stdout, 'pct', float)
         etc_pct = sn.round(100 - usr_pct - mpi_pct, 1)
+        self.patrun_stats_d['%total_samples'] = sn.round(
+            self.patrun_stats_d['%user_samples'] +
+            self.patrun_stats_d['%mpi_samples'] +
+            self.patrun_stats_d['%etc_samples'], 1)
         perf_pattern = {
             'patrun_cn': self.num_cn,
             'patrun_wallt_max': self.patrun_perf_d['patrun_wallt_max'],
@@ -419,10 +621,23 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             'patrun_memory_traffic': self.patrun_hwc_d['memory_traffic'],
             'patrun_ipc': self.patrun_hwc_d['ipc'],
             '%patrun_stallcycles': self.patrun_hwc_d['stallcycles'],
+            # %
+            '%patrun_user': self.patrun_stats_d['%user_samples'],
+            '%patrun_mpi': self.patrun_stats_d['%mpi_samples'],
+            '%patrun_etc': self.patrun_stats_d['%etc_samples'],
+            '%patrun_total': self.patrun_stats_d['%total_samples'],
             #
-            '%patrun_avg_usr': usr_pct,
-            '%patrun_avg_mpi': mpi_pct,
-            '%patrun_avg_etc': etc_pct,
+            '%patrun_user_slowest': self.patrun_stats_d['%user_slowest'],
+            '%patrun_mpi_slowest': self.patrun_stats_d['%mpi_slowest'],
+            '%patrun_etc_slowest': self.patrun_stats_d['%etc_slowest'],
+            #
+            '%patrun_user_fastest': self.patrun_stats_d['%user_fastest'],
+            '%patrun_mpi_fastest': self.patrun_stats_d['%mpi_fastest'],
+            '%patrun_etc_fastest': self.patrun_stats_d['%etc_fastest'],
+            #
+            '%patrun_avg_usr_reported': usr_pct,
+            '%patrun_avg_mpi_reported': mpi_pct,
+            '%patrun_avg_etc_reported': etc_pct,
             '%patrun_hotspot1': self.patrun_hotspot1_pct,
             #
             '%patrun_mpi_h1': self.mpi_h1,
@@ -431,6 +646,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             # '%patrun_mpi_h1': self.patrun_perf_d['mpi_h1'],
             # '%patrun_mpi_h1_imb': self.patrun_perf_d['mpi_h1_imb'],
             #
+            'patrun_avg_energy': self.patrun_perf_d['energy_avg'],
             'patrun_avg_power': self.patrun_perf_d['power_avg'],
         }
         if self.perf_patterns:
@@ -464,11 +680,74 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         myzero_p = (0, None, None, '%')
         myzero_mb = (0, None, None, 'MiBytes')
         myzero_gb = (0, None, None, 'GB')
+        myzero_sam = (0, None, None, 'samples')
+        # -----------------------------------------------------------
         h1_name = '%% (%s)' % self.patrun_hotspot1_name
         myzero_h1 = (0, None, None, h1_name)
         # mpi_h1_name = '%% (%s)' % self.patrun_perf_d['mpi_h1_name']
         mpi_h1_name = '%% (%s)' % self.mpi_h1_name
         myzero_mpi_h1 = (0, None, None, mpi_h1_name)
+        # -----------------------------------------------------------
+        user_slowest_pe = '%% (pe.%s)' % self.patrun_stats_d['user_slowest_pe']
+        myzero_slowest = (0, None, None, user_slowest_pe)
+        # -----------------------------------------------------------
+        user_fastest_pe = '%% (pe.%s)' % self.patrun_stats_d['user_fastest_pe']
+        myzero_fastest = (0, None, None, user_fastest_pe)
+        # -----------------------------------------------------------
+        # %patrun_user: 76.4 % (slowest:1015.0 [pe71] / mean:950.2 /
+        #                       median:985.0 / fastest:20.0 [pe94])
+        user_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+                      'fast:%s [pe%s])') \
+            % (self.patrun_stats_d['user_samples_max'],
+               self.patrun_stats_d['user_slowest_pe'],
+               self.patrun_stats_d['user_samples_mean'],
+               self.patrun_stats_d['user_samples_median'],
+               self.patrun_stats_d['user_samples_min'],
+               self.patrun_stats_d['user_fastest_pe'])
+        myzero_user = (0, None, None, user_stats)
+        # -----------------------------------------------------------
+        # %patrun_mpi: 18.2 % (slowest:1178.0 [pe95] / mean:226.8 /
+        #                      median:191.5 / fastest:150.0 [pe20])
+        mpi_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+                     'fast:%s [pe%s])') \
+            % (self.patrun_stats_d['mpi_samples_max'],
+               # 'xx',
+               self.patrun_stats_d['mpi_slowest_pe'],
+               self.patrun_stats_d['mpi_samples_mean'],
+               self.patrun_stats_d['mpi_samples_median'],
+               self.patrun_stats_d['mpi_samples_min'],
+               # 'xx')
+               self.patrun_stats_d['mpi_fastest_pe'])
+        myzero_mpi = (0, None, None, mpi_stats)
+        # -----------------------------------------------------------
+        # %patrun_etc: 5.4 % (slowest:83.0 [pe21] / mean:67.3 /
+        #                     median:67.5 / fastest:41.0 [pe93])
+        etc_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+                     'fast:%s [pe%s])') \
+            % (self.patrun_stats_d['etc_samples_max'],
+               # 'xx',
+               self.patrun_stats_d['etc_slowest_pe'],
+               self.patrun_stats_d['etc_samples_mean'],
+               self.patrun_stats_d['etc_samples_median'],
+               self.patrun_stats_d['etc_samples_min'],
+               # 'xx')
+               self.patrun_stats_d['etc_fastest_pe'])
+        myzero_etc = (0, None, None, etc_stats)
+        # -----------------------------------------------------------
+        # %patrun_total: 100%  (slowest:1250.0 [pe33] / mean:1244.3 /
+        #                       median:1245.0 / fastest:1234.0 [pe20])
+        total_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+                       'fast:%s [pe%s])') \
+            % (self.patrun_stats_d['total_samples_max'],
+               # 'xx',
+               self.patrun_stats_d['total_slowest_pe'],
+               self.patrun_stats_d['total_samples_mean'],
+               self.patrun_stats_d['total_samples_median'],
+               self.patrun_stats_d['total_samples_min'],
+               # 'xx')
+               self.patrun_stats_d['total_fastest_pe'])
+        myzero_total = (0, None, None, total_stats)
+        # -----------------------------------------------------------
         ref['patrun_cn'] = myzero
         ref['patrun_wallt_max'] = myzero_s
         ref['patrun_wallt_avg'] = myzero_s
@@ -486,16 +765,29 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         ref['patrun_ipc'] = myzero
         ref['%patrun_stallcycles'] = myzero_p
         #
-        ref['%patrun_avg_usr'] = myzero_p
-        ref['%patrun_avg_mpi'] = myzero_p
-        ref['%patrun_avg_etc'] = myzero_p
+        ref['%patrun_user'] = myzero_user
+        ref['%patrun_mpi'] = myzero_mpi
+        ref['%patrun_etc'] = myzero_etc
+        ref['%patrun_total'] = myzero_total
+        #
+        ref['%patrun_user_slowest'] = myzero_slowest
+        ref['%patrun_mpi_slowest'] = myzero_slowest
+        ref['%patrun_etc_slowest'] = myzero_slowest
+        #
+        ref['%patrun_user_fastest'] = myzero_fastest
+        ref['%patrun_mpi_fastest'] = myzero_fastest
+        ref['%patrun_etc_fastest'] = myzero_fastest
+        #
+        ref['%patrun_avg_usr_reported'] = myzero_p
+        ref['%patrun_avg_mpi_reported'] = myzero_p
+        ref['%patrun_avg_etc_reported'] = myzero_p
         ref['%patrun_hotspot1'] = myzero_h1
         #
         ref['%patrun_mpi_h1'] = myzero_mpi_h1
         ref['%patrun_mpi_h1_imb'] = myzero_mpi_h1
         #
         ref['patrun_avg_power'] = myzero_w
-        # TODO: ref['patrun_avg_energy'] = myzero_j
+        ref['patrun_avg_energy'] = myzero_j
         # final reference:
         self.reference = ref
 # }}}
