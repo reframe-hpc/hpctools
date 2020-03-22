@@ -145,6 +145,26 @@ class PerftoolsBaseTest(rfm.RegressionTest):
           ||   28.24 |   28.24 | 11.355006 |    2.49 |    3.6% | nid.7
           |==============================================================
 
+          2 sockets:
+          Table 10:  Memory Bandwidth by Numanode
+
+            Memory |   Local |  Remote | Thread |  Memory |  Memory | Numanode
+           Traffic |  Memory |  Memory |   Time | Traffic | Traffic |  Node Id
+            GBytes | Traffic | Traffic |        |  GBytes |       / |   PE=HIDE
+                   |  GBytes |  GBytes |        |   / Sec | Nominal |
+                   |         |         |        |         |    Peak |
+          |-------------------------------------------------------------------
+          |   11.21 |   10.99 |    0.22 | 3.886926 |  2.88 | 3.8% | numanode.0
+          ||------------------------------------------------------------------
+          ||   11.21 |   10.99 |    0.22 | 3.886926 | 2.88 |3.8% | nid.407
+          ||   10.47 |   10.27 |    0.20 | 3.886450 | 2.69 |3.5% | nid.416
+          ||==================================================================
+          |   11.29 |   11.06 |    0.23 | 3.889932 |  2.90 | 3.8% | numanode.1
+          ||------------------------------------------------------------------
+          ||   11.29 |   11.06 |    0.23 | 3.889932 | 2.90 |3.8% | nid.407
+          ||   10.09 |    9.88 |    0.20 | 3.885858 | 2.60 |3.4% | nid.416
+          |===================================================================
+
         Typical output:
             * patrun_memory_traffic_global: 33.64 GB
             * patrun_memory_traffic_local: 33.64 GB
@@ -152,8 +172,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         '''
         res = {}
         regex = (r'^Table \d+:\s+Memory Bandwidth by Numanode\n(.*\n){7}\|\s+'
-                 r'(?P<GBytes>\S+)\s+\|\s+(?P<GBytes_local>\S+)\s+\|\s+\S+\s+'
-                 r'\|\s+\S+\s+\|\s+(?P<peak_pct>\S+)%')
+                 r'(?P<GBytes>\S+)\s+\|\s+(?P<GBytes_local>\S+)'
+                 r'(\s+\|\s+\S+){2,3}\s+\|\s+(?P<peak_pct>\S+)%')
+
         res['memory_traffic_global'] = sn.extractsingle(regex, self.stdout,
                                                         'GBytes', float)
         res['memory_traffic_local'] = sn.extractsingle(regex, self.stdout,
