@@ -13,10 +13,10 @@ import sphexa.sanity_perftools as sphsperft
 
 
 @rfm.parameterized_test(*[[mpitask, steps]
-                          # for mpitask in [24]
-                          # for steps in [1]
-                          for mpitask in [24, 48, 96]
-                          for steps in [4]
+                          for mpitask in [48]
+                          for steps in [1]
+                          # for mpitask in [24, 48, 96]
+                          # for steps in [4]
                           ])
 class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
     # {{{
@@ -47,7 +47,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
-        self.tags = {'sph', 'hpctools', 'cpu'}
+        self.tags = {'sph', 'hpctools', 'cpu', 'latestpe'}
 # }}}
 
 # {{{ compile
