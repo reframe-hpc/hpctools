@@ -12,12 +12,12 @@ import sphexa.sanity as sphs
 
 
 @rfm.parameterized_test(*[[mpitask, cubesize, steps]
-                          for mpitask in [24]
-                          for cubesize in [100]
-                          for steps in [0]
+                          for mpitask in [1]
+                          for cubesize in [10, 20, 40, 80, 100, 200, 400]
+                          for steps in [0, 1, 2, 4]
                           ])
 class SphExaNativeCheck(rfm.RegressionTest):
-# {{{
+    # {{{
     '''
     This class runs the test code without any tool (mpi only), and reports
     elapsed time from internal timers. 3 parameters can be set for simulation:
@@ -47,34 +47,6 @@ class SphExaNativeCheck(rfm.RegressionTest):
       weak 2560  41000  61440   2519040000   1360
       weak 5120  41000  122880  5038080000   1714
       weak 10240 41000  245760  10076160000  2159    10billions
-
-    Typical output:
-
-    .. code-block:: none
-
-      starttime=1579725956
-      # domain::distribute: 0.0983208s
-      # mpi::synchronizeHalos: 0.0341479s
-      # domain::buildTree: 0.084004s
-      # updateTasks: 0.000900428s
-      # FindNeighbors: 0.354712s
-      # Density: 0.296224s
-      # EquationOfState: 0.00244751s
-      # mpi::synchronizeHalos: 0.0770191s
-      # IAD: 0.626564s
-      # mpi::synchronizeHalos: 0.344856s
-      # MomentumEnergyIAD: 1.05951s
-      # Timestep: 0.621583s
-      # UpdateQuantities: 0.00498222s
-      # EnergyConservation: 0.00137127s
-      # UpdateSmoothingLength: 0.00321161s
-      ### Check ### Global Tree Nodes: 1097, Particles: 40947, Halos: 109194
-      ### Check ### Computational domain: -49.5 49.5 -49.5 49.5 -50 50
-      ### Check ### Total Neighbors: 244628400, Avg neighbor count per particle: 244
-      ### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
-      ### Check ### Total energy: 2.08323e+10, (internal: 1e+06, cinetic: 2.08313e+10)
-      === Total time for iteration(0) 3.61153s
-      stoptime=1579725961
 
     Typical performance reporting:
 
@@ -107,17 +79,19 @@ class SphExaNativeCheck(rfm.RegressionTest):
             * %FindNeighbors: 9.8 %
             * %IAD: 17.36 %
     '''
-# }}}
+    # }}}
+
     def __init__(self, mpitask, cubesize, steps):
         # {{{ pe
+        # likwid/5.0.1-perf_event
         self.descr = 'Strong scaling study'
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
                                     'PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-pgi']
-        #self.valid_systems = ['daint:gpu', 'dom:gpu']
+        # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
-        self.tags = {'sph', 'hpctools'}
+        self.tags = {'sph', 'hpctools', 'cpu'}
 # }}}
 
 # {{{ compile
@@ -149,8 +123,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
         size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857
                      }
-        cubesize = size_dict[mpitask]
-        self.name = 'sphexa_timers_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
+        # cubesize = size_dict[mpitask]
+        self.name = 'sphexa_likwid_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
             self.testname, mpitask, ompthread, cubesize, steps)
         self.num_tasks = mpitask
         self.num_tasks_per_node = 24  # 72
@@ -176,10 +150,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # }}}
 
 # {{{ sanity
-        # sanity
         self.sanity_patterns = sn.all([
             # check the job output:
-            sn.assert_found('Total time for iteration\(0\)', self.stdout),
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
         ])
 # }}}
 
@@ -188,7 +161,6 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # use linux date as timer:
         self.pre_run = ['echo starttime=`date +%s`']
         self.post_run = ['echo stoptime=`date +%s`']
-        #self.rpt = '%s.rpt' % self.testname
         # }}}
 
         # {{{ perf_patterns:
@@ -250,14 +222,5 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        self.build_system.cxxflags = self.prgenv_flags[self.current_environ.name]
-
-# {{{
-# ok     def setup(self, partition, environ, **job_opts):
-# ok         super().setup(partition, environ, **job_opts)
-# ok         environ_name = self.current_environ.name
-# ok         prgenv_flags = self.prgenv_flags[environ_name]
-# ok         self.build_system.cxxflags = prgenv_flags
-# ---
-# ok     exec(open("../common/sphexa/performance.py").read())
-# }}}
+        self.build_system.cxxflags = \
+        self.prgenv_flags[self.current_environ.name]

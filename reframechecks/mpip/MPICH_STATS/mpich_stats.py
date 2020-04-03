@@ -9,24 +9,22 @@ import reframe.utility.sanity as sn
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                 '../common')))  # noqa: E402
 import sphexa.sanity as sphs
-import sphexa.sanity_perftools as sphsperft
+# import sphexa.sanity_mpip as sphsmpip
+# import sphexa.sanity_vtune as sphsvtune
 
 
-@rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [48]
-                          for steps in [1]
+@rfm.parameterized_test(*[[mpitask, steps, verbose]
                           # for mpitask in [24, 48, 96]
-                          # for steps in [4]
+                          for mpitask in [24]
+                          for steps in [3]
+                          for verbose in [1, 2, 3, 4, 5, 6]
                           ])
-class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
+class SphExaMpichCheck(rfm.RegressionTest):
+# class SphExaMpichCheck(sphsmpip.MpipBaseTest):
     # {{{
-    '''This class runs the test code with CrayPAT (Cray Performance Measurement
-    and Analysis toolset):
-
-        * https://pubs.cray.com (Cray Perftools)
-        * man pat_run
-        * man intro_craypat
-        * ``pat_help``
+    '''
+    This class runs the test code with mpiP, the light-weight MPI profiler (mpi
+    only): http://llnl.github.io/mpiP
 
     2 parameters can be set for simulation:
 
@@ -34,27 +32,26 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
          square patch test is set with a dictionary depending on mpitask,
          but cubesize could also be on the list of parameters,
     :arg steps: number of simulation steps.
-
     '''
     # }}}
 
-    def __init__(self, mpitask, steps):
+    def __init__(self, mpitask, steps, verbose):
         super().__init__()
         # {{{ pe
         self.descr = 'Tool validation'
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-cray', 'PrgEnv-cray_classic']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
+                                    'PrgEnv-cray', 'PrgEnv-cray_classic',
+                                    'PrgEnv-pgi']
         # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
-        self.tags = {'sph', 'hpctools', 'cpu', 'latestpe'}
+        self.tags = {'sph', 'hpctools', 'cpu'}
 # }}}
 
 # {{{ compile
         self.testname = 'sqpatch'
-        if self.current_system.name in ['dom']:
-            self.modules = ['cdt/20.03']  # will load perftools-base/20.03.0
-        self.modules += ['perftools-preload']
+        # self.modules = ['mpiP']
+        # unload xalt to avoid _buffer_decode error:
         self.prebuild_cmd = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
@@ -71,9 +68,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         self.build_system = 'SingleSource'
         self.build_system.cxx = 'CC'
         self.sourcepath = '%s.cpp' % self.testname
-        self.tool = 'pat_run'
-        self.executable = self.tool
-        self.target_executable = './%s.exe' % self.testname
+        self.executable = './%s.exe' % self.testname
 # {{{ openmp:
 # 'PrgEnv-intel': ['-qopenmp'],
 # 'PrgEnv-gnu': ['-fopenmp'],
@@ -91,15 +86,15 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         #     cubesize = 100
         size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     6: 62, 3: 49, 1: 34
+                     6: 62, 1: 34
                      }
         cubesize = size_dict[mpitask]
-        self.name = 'sphexa_patrun_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
+        self.name = 'sphexa_mpistat_{}_{:03d}mpi_{:03d}omp_{}n_{}steps_{}'.format(
+            self.testname, mpitask, ompthread, cubesize, steps, verbose)
         self.num_tasks = mpitask
-        self.num_tasks_per_node = 24
-        self.num_tasks_per_core = 2
-        self.use_multithreading = True
+        self.num_tasks_per_node = 24 # 24  # 72
+        self.num_tasks_per_core = 2 # 2
+        self.use_multithreading = True # False # True
 # {{{ ht:
         # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
         # self.use_multithreading = False  # noht
@@ -115,53 +110,63 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'MPICH_STATS_DISPLAY': '1',
+            # 'MPICH_STATS_DISPLAY': '2',
+            # 'MPICH_STATS_FILE': '_cray_stats_',
+            # 'MPICH_STATS_VERBOSITY': '2', # '1-6',
+            'MPICH_STATS_VERBOSITY': str(verbose), # '1-6',
         }
-        # -r: generate a report upon successful execution
-        # TODO: use rpt-files/RUNTIME.rpt
-        self.executable_opts = ['-r', '%s' % self.target_executable,
-                                '-n %s' % cubesize, '-s %s' % steps, '2>&1']
-        self.version_rpt = 'version.rpt'
-        self.which_rpt = 'which.rpt'
-        self.csv_rpt = 'csv.rpt'
+        self.mpi_isendline = '140'
+        # self.dir_rpt = 'rpt'
+        # self.rpt_file = self.rpt_file_txt
+        self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps, '2>&1']
         self.pre_run = [
             'module rm xalt',
-            'mv %s %s' % (self.executable, self.target_executable),
-            '%s -V &> %s' % (self.tool, self.version_rpt),
-            'which %s &> %s' % (self.tool, self.which_rpt),
-            # 'rm -fr $HOME/.craypat/*',
         ]
-        # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run = ['echo stoptime=`date +%s`']
-        # needed for sanity functions:
-        self.rpt = 'rpt'
-        csv_options = ('-v -O load_balance_group -s sort_by_pe=\'yes\' '
-                       '-s show_data=\'csv\' -s pe=\'ALL\'')
-        self.post_run += [
-            # patrun_num_of_compute_nodes
-            'ls -1 %s+*s/xf-files/' % self.target_executable,
-            'cp *_job.out %s' % self.rpt,
-            'pat_report %s %s+*s/index.ap2 &> %s' %
-            (csv_options, self.target_executable, self.csv_rpt)
-        ]
+#        self.post_run = [
+#            'cp *_job.out %s' % self.dir_rpt,
+#        ]
 # }}}
 
 # {{{ sanity
-        self.sanity_patterns_l = [
-            sn.assert_found(r'Total time for iteration\(0\)', self.stdout)
-        ]
-        # will also silently call patrun_version (in sanity_perftools.py)
-        self.sanity_patterns = sn.all(self.sanity_patterns_l)
+        # sanity
+        self.sanity_patterns = sn.all([
+            # check the job output:
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
+            # check performance report:
+            # sn.assert_found('Single collector task', self.rpt_file),
+        ])
 # }}}
 
-# {{{ performance: see sanity.py
+# {{{ performance
+        # {{{ internal timers
+        # use linux date as timer:
+        self.pre_run += ['echo starttime=`date +%s`']
+        self.post_run += ['echo stoptime=`date +%s`']
+        # }}}
+
+#        # {{{ perf_patterns:
+#        basic_perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
+#        tool_perf_patterns = sn.evaluate(sphsintel.vtune_perf_patterns(self))
+#        self.perf_patterns = {**basic_perf_patterns, **tool_perf_patterns}
+#        # }}}
+#
+#        # {{{ reference:
+#        self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
+#        self.reference = sn.evaluate(sphsintel.vtune_tool_reference(self))
+# }}}
 # }}}
 
     @rfm.run_before('compile')
-    def set_flags(self):
+    def setflags(self):
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
 
-#     @rfm.run_before('sanity')
-#     def cp_stdout(self):
-#         self.post_run = ['cp *_job.out %s' % self.rpt]
+    # TODO:
+    # def setup(self, partition, environ, **job_opts):
+    #     super().setup(partition, environ, **job_opts)
+    #     partitiontype = partition.fullname.split(':')[1]
+    #     if partitiontype == 'gpu':
+    #         self.job.options = ['--constraint="gpu&perf"']
+    #     elif partitiontype == 'mc':
+    #         self.job.options = ['--constraint="mc&perf"']
