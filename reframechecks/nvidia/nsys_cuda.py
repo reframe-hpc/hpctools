@@ -2,6 +2,7 @@
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import sys
 import reframe as rfm
@@ -51,7 +52,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # {{{ compile
         self.testname = 'sqpatch'
         self.modules = ['craype-accel-nvidia60',
-                        'nvidia-nsight-systems/2020.1.1.65']
+                        'nvidia-nsight-systems/2020.2.1.71']
+                        # 'nvidia-nsight-systems/2020.1.1.65']
         self.prebuild_cmd = ['module rm xalt']
 
         self.build_system = 'Make'

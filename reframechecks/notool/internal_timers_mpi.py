@@ -2,6 +2,7 @@
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import sys
 import reframe as rfm
@@ -135,7 +136,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
                            '-DUSE_MPI', '-DNDEBUG'],
         }
         self.build_system = 'SingleSource'
-        self.build_system.cxx = 'CC'
+        # self.build_system.cxx = 'CC'
         self.sourcepath = '%s.cpp' % self.testname
         self.executable = '%s.exe' % self.testname
 

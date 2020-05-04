@@ -2,6 +2,7 @@
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -19,8 +20,10 @@ def nsys_version(obj):
       returns: True or False
     '''
     reference_tool_version = {
-        'daint': '2020.1.1.65',
-        'dom': '2020.1.1.65',
+        'daint': '2020.2.1.71',
+        'dom': '2020.2.1.71',
+        # 'daint': '2020.1.1.65',
+        # 'dom': '2020.1.1.65',
     }
     regex = r'^NVIDIA Nsight Systems version (?P<toolversion>\S+)-'
     version = sn.extractsingle(regex, obj.version_rpt, 'toolversion')
