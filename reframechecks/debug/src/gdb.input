@@ -1,0 +1,22 @@
+break 75
+run -s 0 -n 15
+# pretty returns this:
+# $1 = std::vector of length 3375, capacity 3375 = {0, etc...
+# except for PGI:
+#   Dwarf Error: wrong version in compilation unit header
+#   (gdb) p domain.clist[0]
+#   No symbol "operator[]" in current context.print domain.clist
+print domain.clist
+print domain.clist[1]
+# pvector returns this:
+# ---------------------------------------------------------------------
+# elem[2]: $3 = 2
+# elem[3]: $4 = 3
+# elem[4]: $5 = 4
+# Vector size = 3375
+# Vector capacity = 3375
+# Element type = std::_Vector_base<int, std::allocator<int> >::pointer
+# ---------------------------------------------------------------------
+pvector domain.clist 2 4
+continue
+quit
