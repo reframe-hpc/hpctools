@@ -11,6 +11,10 @@ Regression tests
 internal_timers_mpi.py
 ======================
 
+.. autoclass:: reframechecks.notool.internal_timers_mpi.SphExaNativeCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.notool.internal_timers_mpi
    :members:
    :show-inheritance:
@@ -36,12 +40,20 @@ Intel
 intel_inspector.py
 ------------------
 
+.. autoclass:: reframechecks.intel.intel_inspector.SphExaNativeCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.intel.intel_inspector
    :members:
    :show-inheritance:
 
 intel_vtune.py
 ----------------
+
+.. autoclass:: reframechecks.intel.intel_vtune.SphExaVtuneCheck
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframechecks.intel.intel_vtune
    :members:
@@ -56,6 +68,10 @@ Sanity checks
 
 intel_advisor.py
 ----------------
+
+.. autoclass:: reframechecks.intel.intel_advisor.SphExaNativeCheck
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframechecks.intel.intel_advisor
    :members:
@@ -77,12 +93,20 @@ scorep_sampling_profiling.py
 .. .. automodule:: reframechecks.scorep.scorep_sampling+profiling
  A + in the filename breaks the documentation :-(
 
+.. autoclass:: reframechecks.scorep.scorep_sampling_profiling.SphExaNativeCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.scorep.scorep_sampling_profiling
    :members:
    :show-inheritance:
 
 scorep_sampling_tracing.py
 ----------------------------
+
+.. autoclass:: reframechecks.scorep.scorep_sampling_tracing.SphExaNativeCheck
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframechecks.scorep.scorep_sampling_tracing
    :members:
@@ -101,12 +125,20 @@ Scalasca
 scalasca_sampling_profiling.py
 ------------------------------
 
+.. autoclass:: reframechecks.scalasca.scalasca_sampling_profiling.SphExaNativeCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.scalasca.scalasca_sampling_profiling
    :members:
    :show-inheritance:
 
 scalasca_sampling_tracing.py
 ----------------------------
+
+.. autoclass:: reframechecks.scalasca.scalasca_sampling_tracing.SphExaNativeCheck
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframechecks.scalasca.scalasca_sampling_tracing
    :members:
@@ -125,6 +157,10 @@ Extrae
 extrae.py
 ---------
 
+.. autoclass:: reframechecks.extrae.extrae.SphExaNativeCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.extrae.extrae
    :members:
    :show-inheritance:
@@ -142,6 +178,10 @@ mpiP
 mpip.py
 ---------
 
+.. autoclass:: reframechecks.mpip.mpip.SphExaMpipCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.mpip.mpip
    :members:
    :show-inheritance:
@@ -158,6 +198,10 @@ Perftools
 
 patrun.py
 ---------
+
+.. autoclass:: reframechecks.perftools.patrun.SphExaPatRunCheck
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframechecks.perftools.patrun
    :members:

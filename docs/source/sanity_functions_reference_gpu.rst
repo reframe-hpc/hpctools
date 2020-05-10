@@ -11,6 +11,10 @@ Regression tests
 nsys_cuda.py
 ============
 
+.. autoclass:: reframechecks.nvidia.nsys_cuda.SphExaNativeCheck
+   :members:
+   :show-inheritance:
+
 .. automodule:: reframechecks.nvidia.nsys_cuda
    :members:
    :show-inheritance:
@@ -24,6 +28,10 @@ Sanity checks
 
 scorep_openacc.py
 =================
+
+.. autoclass:: reframechecks.openacc.scorep_openacc.SphExaNativeCheck
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframechecks.openacc.scorep_openacc
    :members:

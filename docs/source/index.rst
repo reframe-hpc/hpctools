@@ -22,6 +22,8 @@ together with HPC tools.
    Sanity Functions Reference <sanity_functions_reference>
    GPU: NVIDIA <nvidia>
    GPU: Sanity Functions Reference <sanity_functions_reference_gpu>
+   Debugging tools <debugging>
+   Debugging: Sanity Functions Reference <sanity_functions_reference_debug>
 
 .. this is a comment: `:maxdepth: 2`
 
