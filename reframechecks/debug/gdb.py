@@ -59,7 +59,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.sourcepath = '%s.cpp' % self.testname
         self.executable = 'gdb'
         self.target_executable = './%s.exe' % self.testname
-
+        self.prebuild_cmd = ['ln -s GDB/* .']
 # }}}
 
 # {{{ run
@@ -86,10 +86,11 @@ class SphExaNativeCheck(rfm.RegressionTest):
             (steps, cubesize, self.tool_input),
         ]
         self.executable_opts = ['--nh', '--init-command ./%s' % tool_init,
-                                '--batch', '--command=./%s' %
-                                self.tool_input, self.target_executable]
+                                '--batch', '--command=./%s' % self.tool_input,
+                                self.target_executable]
 # }}}
 
+# {{{ set_sanity hook:
     @rfm.run_before('compile')
     def setflags(self):
         self.build_system.cxxflags = \
@@ -98,13 +99,11 @@ class SphExaNativeCheck(rfm.RegressionTest):
             # cce<9.1 fails to compile with -g
             self.modules = ['cdt/20.03']
 
-# {{{ set_sanity hook:
     @rfm.run_before('run')
     def set_sanity_pgi(self):
         if self.current_environ.name == 'PrgEnv-pgi':
-            self.pre_run += \
-                ['sed -i -e "s-print domain.clist\[1\]-print domain.clist-" %s'
-                 % self.tool_input]
+            regex = r'sed -ie "s-print domain.clist\[1\]-print domain.clist-"'
+            self.pre_run += ['%s %s' % (regex, self.tool_input)]
             pretty_printer_regex = \
                 r'^\s+members of std::_Vector_base::_Vector_impl: $'
             pvector_type_regex = r'^Element type = int \*'
