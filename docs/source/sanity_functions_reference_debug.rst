@@ -8,6 +8,13 @@ Debugging Reference Guide
 Regression tests
 ****************
 
+arm_ddt.py
+==========
+
+.. autoclass:: reframechecks.debug.arm_ddt.SphExaDDTCheck
+   :members:
+   :show-inheritance:
+
 cray_atp.py
 ===========
 
@@ -19,10 +26,10 @@ cray_atp.py
    :members:
    :show-inheritance:
 
-arm_ddt.py
-==========
+gdb.py
+======
 
-.. autoclass:: reframechecks.debug.arm_ddt.SphExaDDTCheck
+.. autoclass:: reframechecks.debug.gdb.SphExaGDBCheck
    :members:
    :show-inheritance:
 

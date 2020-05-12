@@ -1,0 +1,424 @@
+rpt_ddt logbook
+
+Debugging sqpatch.exe
+
+
+  * Messages
+  * Tracepoints
+  * Output
+
+Messages
+
+[+] Expand All [-] Collapse All
+
+#      Type       Time   Processes                                                                                          Message
+1  [PjcnJyYHuD] 0:00.000 n/a       Launching srun ./sqpatch.exe -n 35 -s 2
+                                   at Mon May 11 22:10:44 2020
+3  [PjcnJyYHuD] 0:04.482 0-23      Startup complete.
+4               0:04.484 n/a       Select process group All
+5  [LMVO4gAAAA] 0:04.492 0-23      Add tracepoint for sqpatch.cpp:75
+                                   Vars: domain.clist[0], domain.clist
+                                   Additional Information
+
+                                    Stacks
+
+                                   Processes          Function                            Source                                         Variables
+                                                                                                                    Rank 0, thread 1
+
+                                                                                                                        Name                       Value
+                                                                                                                   argc           Sparkline 5
+                                                                                                                   argv           Sparkline 0x7fffffff41f8
+                                                                                                                                  (from 0x7fffffff41e8 to 0x7fffffff41f8)
+                                                                                                                   constantsFile  <aggregate value>
+                                                                                                                   cubeSide       Sparkline 3
+                                                                                                                   d              <aggregate value>
+                                                                                                                   domain         <aggregate value>
+                                                                         const int rank = initAndGetRankId();      fileWriter     <aggregate value>
+                                                                                                                   maxStep        Sparkline 11
+                                                                         int main(int argc, char **argv)           nTasks         Sparkline 25
+                                   0-23      main (sqpatch.cpp:16)       {                                         ng0            Sparkline 133143986187
+                                                                             const int rank = initAndGetRankId();  ngmax          Sparkline 103079215119
+                                                                                                                   nullOutput     <aggregate value>
+                                                                             const ArgParser parser(argc, argv);   outDirectory   ""
+                                                                                                                   output         <aggregate value>
+                                                                                                                   parser         <aggregate value>
+                                                                                                                   printer        <aggregate value>
+                                                                                                                   quiet          Sparkline true
+                                                                                                                   rank           Sparkline 0
+6                                                                                                                  taskList       <aggregate value>
+                                                                                                                   timer          <aggregate value>
+                                                                                                                   totalTimer     <aggregate value>
+                                                                                                                   writeFrequency Sparkline 32767
+
+                                                                          
+
+                                                                         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+                                                                                                                    Rank 0, thread 1
+                                               sphexa::initAndGetRankId      int rank = 0;
+                                   0-23      (utils.hpp:11)              #ifdef USE_MPI                            Name    Value
+                                                                             MPI_Init(NULL, NULL);                 rank Sparkline 0
+                                                                             MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+                                                                         #endif
+                                                                             return rank;
+                                                                         }
+
+
+                                    Current Stack
+
+                                   #1 main (argc=5, argv=0x7fffffff41f8) at /scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/sphexa_ddt_sqpatch_024mpi_001omp_35n_2steps/sqpatch.cpp:16 (at 0x00000000004039f2)
+                                   #0 sphexa::initAndGetRankId () at /scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/sphexa_ddt_sqpatch_024mpi_001omp_35n_2steps/./include/utils.hpp:11 (at 0x0000000000403885)
+
+
+                                    Locals
+
+                                   Name    Value
+                                   rank Sparkline 0
+
+                                   Debugging : srun ./sqpatch.exe -n 35 -s 2
+                                   MPI implementation : Auto-Detect (SLURM (MPMD))
+7  [PjcnJyYHuD] 0:06.624 n/a       * number of processes : 24
+                                   * number of nodes : 1
+                                   Memory debugging enabled : No
+8      [6X]     0:06.624 0-23      Play
+9               0:08.675 3-23      Process stopped in PMPI_Abort from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/
+                                   lib/libmpich_gnu_82.so.3
+10 [8AtFqTYNq2] 0:08.676 3-23      Program stopped at MPI_Abort.
+                                   Additional Information
+
+                                    Stacks
+
+                                   Processes      Function                                                    Source                                                                     Variables
+                                                                                                                                                                    Rank 3, thread 1
+
+                                                                                                                                                                        Name                       Value
+                                                                                                                                                                   argc           Sparkline 5
+                                                                                                                                                                   argv           Sparkline 0x7fffffff41f8
+                                                                                                                                                                                  (from 0x7fffffff41e8 to 0x7fffffff41f8)
+                                                                                                                                                                   constantsFile  <aggregate value>
+                                                                                                                                                                   cubeSide       Sparkline 35
+                                                                                                                                                                   d              <aggregate value>
+                                                                                                                                                                   domain         <aggregate value>
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  fileWriter     <aggregate value>
+                                                                                                                                                                   maxStep        Sparkline 2
+                                                                         domain.synchronizeHalos(&d.c11, &d.c12, &d.c13, &d.c22, &d.c23, &d.c33);                  nTasks         Sparkline 1
+                                   3-23      main                        timer.step("mpi::synchronizeHalos");                                                      ng0            Sparkline 250
+                                             (sqpatch.cpp:91)            sph::computeMomentumAndEnergyIAD<Real>(taskList.tasks, d);                                ngmax          Sparkline 300
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  nullOutput     <aggregate value>
+                                                                         timer.step("MomentumEnergyIAD");                                                          outDirectory   ""
+                                                                         sph::computeTimestep<Real, sph::TimestepPress2ndOrder<Real, Dataset>>(taskList.tasks, d); output         <aggregate value>
+11                                                                       timer.step("Timestep"); // AllReduce(min:dt)                                              parser         <aggregate value>
+                                                                                                                                                                   printer        <aggregate value>
+                                                                                                                                                                   quiet          Sparkline false
+                                                                                                                                                                   rank           Sparkline 3 (from 3 to 23)
+                                                                                                                                                                   taskList       <aggregate value>
+                                                                                                                                                                   timer          <aggregate value>
+                                                                                                                                                                   totalNeighbors Sparkline 10658336
+                                                                                                                                                                   totalTimer     <aggregate value>
+                                                                                                                                                                   writeFrequency Sparkline -1
+
+                                                                  
+
+                                                                 MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                                    Rank 3, thread 1
+
+                                                                     }                                                                                             Name        Value
+                                   3-23        MPI::Comm::Abort      virtual void Abort( int v2 ) const                                                            err  Sparkline 32767
+                                             (mpicxx.h:1236)         {                                                                                             this Sparkline 0x63f380
+                                                                         MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                           v2   Sparkline 0
+                                                                     }
+                                                                     virtual void Free( void )
+                                                                     {
+
+                                   3-23          PMPI_Abort
+
+12              0:10.356 n/a       Select process 13
+                                   Additional Information
+
+                                    Current Stack
+13
+                                   #2 main (argc=5, argv=0x7fffffff41e8) at /scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/sphexa_ddt_sqpatch_024mpi_001omp_35n_2steps/sqpatch.cpp:91 (at 0x00000000004046b7)
+                                   #1 MPI::Comm::Abort (this=0x63f380, v2=0) at /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/include/mpicxx.h:1236 (at 0x0000000000405670)
+                                   #0 PMPI_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab1f12a0)
+
+14     [6X]     0:11.857 3-23      Play
+15              0:11.868 3-23      Process stopped in MPID_Abort from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/
+                                   lib/libmpich_gnu_82.so.3
+16 [8AtFqTYNq2] 0:11.868 3-23      Program stopped at MPID_Abort.
+                                   Additional Information
+
+                                    Stacks
+
+                                   Processes      Function                                                    Source                                                                     Variables
+                                                                                                                                                                    Rank 13, thread 1
+
+                                                                                                                                                                        Name                       Value
+                                                                                                                                                                   argc           Sparkline 5
+                                                                                                                                                                   argv           Sparkline 0x7fffffff41e8
+                                                                                                                                                                                  (from 0x7fffffff41e8 to 0x7fffffff41f8)
+                                                                                                                                                                   constantsFile  <aggregate value>
+                                                                                                                                                                   cubeSide       Sparkline 35
+                                                                                                                                                                   d              <aggregate value>
+                                                                                                                                                                   domain         <aggregate value>
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  fileWriter     <aggregate value>
+                                                                                                                                                                   maxStep        Sparkline 2
+                                                                         domain.synchronizeHalos(&d.c11, &d.c12, &d.c13, &d.c22, &d.c23, &d.c33);                  nTasks         Sparkline 1
+                                   3-23      main                        timer.step("mpi::synchronizeHalos");                                                      ng0            Sparkline 250
+                                             (sqpatch.cpp:91)            sph::computeMomentumAndEnergyIAD<Real>(taskList.tasks, d);                                ngmax          Sparkline 300
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  nullOutput     <aggregate value>
+                                                                         timer.step("MomentumEnergyIAD");                                                          outDirectory   ""
+                                                                         sph::computeTimestep<Real, sph::TimestepPress2ndOrder<Real, Dataset>>(taskList.tasks, d); output         <aggregate value>
+                                                                         timer.step("Timestep"); // AllReduce(min:dt)                                              parser         <aggregate value>
+                                                                                                                                                                   printer        <aggregate value>
+                                                                                                                                                                   quiet          Sparkline false
+                                                                                                                                                                   rank           Sparkline 13 (from 3 to 23)
+17                                                                                                                                                                 taskList       <aggregate value>
+                                                                                                                                                                   timer          <aggregate value>
+                                                                                                                                                                   totalNeighbors Sparkline 10658336
+                                                                                                                                                                   totalTimer     <aggregate value>
+                                                                                                                                                                   writeFrequency Sparkline -1
+
+                                                                  
+
+                                                                 MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                                    Rank 13, thread 1
+
+                                                                     }                                                                                             Name        Value
+                                   3-23        MPI::Comm::Abort      virtual void Abort( int v2 ) const                                                            err  Sparkline 32767
+                                             (mpicxx.h:1236)         {                                                                                             this Sparkline 0x63f380
+                                                                         MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                           v2   Sparkline 0
+                                                                     }
+                                                                     virtual void Free( void )
+                                                                     {
+
+                                   3-23          PMPI_Abort
+                                   3-23            MPID_Abort
+
+
+                                    Current Stack
+
+                                   #3 main (argc=5, argv=0x7fffffff41e8) at /scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/sphexa_ddt_sqpatch_024mpi_001omp_35n_2steps/sqpatch.cpp:91 (at 0x00000000004046b7)
+                                   #2 MPI::Comm::Abort (this=0x63f380, v2=0) at /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/include/mpicxx.h:1236 (at 0x0000000000405670)
+                                   #1 PMPI_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab1f15e6)
+                                   #0 MPID_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab2e3fd0)
+
+18     [6X]     0:14.369 3-23      Play
+19              0:14.384 3-23      Process stopped in abort from /lib64/libc.so.6
+20 [8AtFqTYNq2] 0:14.384 3-23      Program stopped at abort.
+                                   Check the Input/Output view for error messages.
+                                   Additional Information
+
+                                    Stacks
+
+                                   Processes      Function                                                    Source                                                                     Variables
+                                                                                                                                                                    Rank 13, thread 1
+
+                                                                                                                                                                        Name                       Value
+                                                                                                                                                                   argc           Sparkline 5
+                                                                                                                                                                   argv           Sparkline 0x7fffffff41e8
+                                                                                                                                                                                  (from 0x7fffffff41e8 to 0x7fffffff41f8)
+                                                                                                                                                                   constantsFile  <aggregate value>
+                                                                                                                                                                   cubeSide       Sparkline 35
+                                                                                                                                                                   d              <aggregate value>
+                                                                                                                                                                   domain         <aggregate value>
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  fileWriter     <aggregate value>
+                                                                                                                                                                   maxStep        Sparkline 2
+                                                                         domain.synchronizeHalos(&d.c11, &d.c12, &d.c13, &d.c22, &d.c23, &d.c33);                  nTasks         Sparkline 1
+                                   3-23      main                        timer.step("mpi::synchronizeHalos");                                                      ng0            Sparkline 250
+                                             (sqpatch.cpp:91)            sph::computeMomentumAndEnergyIAD<Real>(taskList.tasks, d);                                ngmax          Sparkline 300
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  nullOutput     <aggregate value>
+                                                                         timer.step("MomentumEnergyIAD");                                                          outDirectory   ""
+                                                                         sph::computeTimestep<Real, sph::TimestepPress2ndOrder<Real, Dataset>>(taskList.tasks, d); output         <aggregate value>
+                                                                         timer.step("Timestep"); // AllReduce(min:dt)                                              parser         <aggregate value>
+                                                                                                                                                                   printer        <aggregate value>
+                                                                                                                                                                   quiet          Sparkline false
+                                                                                                                                                                   rank           Sparkline 13 (from 3 to 23)
+                                                                                                                                                                   taskList       <aggregate value>
+21                                                                                                                                                                 timer          <aggregate value>
+                                                                                                                                                                   totalNeighbors Sparkline 10658336
+                                                                                                                                                                   totalTimer     <aggregate value>
+                                                                                                                                                                   writeFrequency Sparkline -1
+
+                                                                  
+
+                                                                 MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                                    Rank 13, thread 1
+
+                                                                     }                                                                                             Name        Value
+                                   3-23        MPI::Comm::Abort      virtual void Abort( int v2 ) const                                                            err  Sparkline 32767
+                                             (mpicxx.h:1236)         {                                                                                             this Sparkline 0x63f380
+                                                                         MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                           v2   Sparkline 0
+                                                                     }
+                                                                     virtual void Free( void )
+                                                                     {
+
+                                   3-23          PMPI_Abort
+                                   3-23            MPID_Abort
+                                   3-23              abort
+
+
+                                    Current Stack
+
+                                   #4 main (argc=5, argv=0x7fffffff41e8) at /scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/sphexa_ddt_sqpatch_024mpi_001omp_35n_2steps/sqpatch.cpp:91 (at 0x00000000004046b7)
+                                   #3 MPI::Comm::Abort (this=0x63f380, v2=0) at /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/include/mpicxx.h:1236 (at 0x0000000000405670)
+                                   #2 PMPI_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab1f15e6)
+                                   #1 MPID_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab2e4268)
+                                   #0 abort () from /lib64/libc.so.6 (at 0x00002aaaac44e9b0)
+
+22     [6X]     0:16.884 3-23      Play
+                                   Process stopped in raise from /lib64/libc.so.6 with signal SIGABRT (Aborted).
+23 [AAAAAElFTk] 0:16.923 3-23      Reason/Origin: tkill
+                                   Check the Input/Output view for error messages.
+                                   Additional Information
+
+                                    Stacks
+
+                                   Processes      Function                                                    Source                                                                     Variables
+                                                                                                                                                                    Rank 13, thread 1
+
+                                                                                                                                                                        Name                       Value
+                                                                                                                                                                   argc           Sparkline 5
+                                                                                                                                                                   argv           Sparkline 0x7fffffff41e8
+                                                                                                                                                                                  (from 0x7fffffff41e8 to 0x7fffffff41f8)
+                                                                                                                                                                   constantsFile  <aggregate value>
+                                                                                                                                                                   cubeSide       Sparkline 35
+                                                                                                                                                                   d              <aggregate value>
+                                                                                                                                                                   domain         <aggregate value>
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  fileWriter     <aggregate value>
+                                                                                                                                                                   maxStep        Sparkline 2
+                                                                         domain.synchronizeHalos(&d.c11, &d.c12, &d.c13, &d.c22, &d.c23, &d.c33);                  nTasks         Sparkline 1
+                                   3-23      main                        timer.step("mpi::synchronizeHalos");                                                      ng0            Sparkline 250
+                                             (sqpatch.cpp:91)            sph::computeMomentumAndEnergyIAD<Real>(taskList.tasks, d);                                ngmax          Sparkline 300
+                                                                 if (d.rank > 2 && d.iteration > 1) { MPI::COMM_WORLD.Abort(0); }                                  nullOutput     <aggregate value>
+                                                                         timer.step("MomentumEnergyIAD");                                                          outDirectory   ""
+                                                                         sph::computeTimestep<Real, sph::TimestepPress2ndOrder<Real, Dataset>>(taskList.tasks, d); output         <aggregate value>
+                                                                         timer.step("Timestep"); // AllReduce(min:dt)                                              parser         <aggregate value>
+                                                                                                                                                                   printer        <aggregate value>
+                                                                                                                                                                   quiet          Sparkline false
+                                                                                                                                                                   rank           Sparkline 13 (from 3 to 23)
+                                                                                                                                                                   taskList       <aggregate value>
+                                                                                                                                                                   timer          <aggregate value>
+24                                                                                                                                                                 totalNeighbors Sparkline 10658336
+                                                                                                                                                                   totalTimer     <aggregate value>
+                                                                                                                                                                   writeFrequency Sparkline -1
+
+                                                                  
+
+                                                                 MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                                    Rank 13, thread 1
+
+                                                                     }                                                                                             Name        Value
+                                   3-23        MPI::Comm::Abort      virtual void Abort( int v2 ) const                                                            err  Sparkline 32767
+                                             (mpicxx.h:1236)         {                                                                                             this Sparkline 0x63f380
+                                                                         MPIX_CALLREF( this, MPI_Abort( (MPI_Comm) the_real_comm, v2 ));                           v2   Sparkline 0
+                                                                     }
+                                                                     virtual void Free( void )
+                                                                     {
+
+                                   3-23          PMPI_Abort
+                                   3-23            MPID_Abort
+                                   3-23              abort
+                                   3-23                * raise
+
+
+                                    Current Stack
+
+                                   #5 main (argc=5, argv=0x7fffffff41e8) at /scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/sphexa_ddt_sqpatch_024mpi_001omp_35n_2steps/sqpatch.cpp:91 (at 0x00000000004046b7)
+                                   #4 MPI::Comm::Abort (this=0x63f380, v2=0) at /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/include/mpicxx.h:1236 (at 0x0000000000405670)
+                                   #3 PMPI_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab1f15e6)
+                                   #2 MPID_Abort () from /opt/cray/pe/mpt/7.7.10/gni/mpich-gnu/8.2/lib/libmpich_gnu_82.so.3 (at 0x00002aaaab2e4268)
+                                   #1 abort () from /lib64/libc.so.6 (at 0x00002aaaac44eb01)
+                                   #0 raise () from /lib64/libc.so.6 (at 0x00002aaaac44d520)
+
+
+
+  * Messages
+  * Tracepoints
+  * Output
+
+Tracepoints
+
+#   Time      Tracepoint    Processes                                             Values
+           main(int,                  domain.clist: std::vector of length 0, capacity 1786 domain.clist[0]: Sparkline
+1 0:07.258 char**)          0-23      from 0 to 19286
+           (sqpatch.cpp:75)
+           main(int,                  domain.clist: std::vector of length 0, capacity 1786 domain.clist[0]: Sparkline
+2 0:07.970 char**)          0-23      from 0 to 26171
+           (sqpatch.cpp:75)
+           main(int,                  domain.clist: std::vector of length 0, capacity 1786 domain.clist[0]: Sparkline
+3 0:08.873 char**)          0-23      from 0 to 19097
+           (sqpatch.cpp:75)
+
+
+
+  * Messages
+  * Tracepoints
+  * Output
+
+Output
+
+# domain::distribute: 0.0240391s # mpi::synchronizeHalos: 0.010513s #
+domain::buildTree: 0.0597781s # updateTasks: 0.0521056s # FindNeighbors:
+0.108175s # Density: 0.0835931s # EquationOfState: 0.000417334s #
+mpi::synchronizeHalos: 0.00704779s # IAD: 0.131039s # mpi::synchronizeHalos:
+0.0061915s # MomentumEnergyIAD: 0.263987s # Timestep: 0.000260464s #
+UpdateQuantities: 0.00155445s # EnergyConservation: 0.000288152s #
+UpdateSmoothingLength: 0.000405512s ### Check ### Global Tree Nodes: 73,
+Particles: 3825, Halos: 17729 ### Check ### Computational domain: -48.5714
+48.5714 -48.5714 48.5714 -50 50
+### Check ### Total Neighbors: 9968840, Avg neighbor count per particle: 232 ##
+# Check ### Total time: 1.1e-06, current time-step: 1.1e-06
+### Check ### Total energy: 2.08173e+10, (internal: 1e+06, cinetic:
+2.08163e+10) === Total time for iteration(0) 0.749878s # domain::distribute:
+0.0325234s # mpi::synchronizeHalos: 0.0498097s # domain::buildTree: 0.0777876s 
+# updateTasks: 0.0200001s # FindNeighbors: 0.104331s # Density: 0.0892833s #
+EquationOfState: 0.000561544s # mpi::synchronizeHalos: 0.0229655s # IAD:
+0.128188s # mpi::synchronizeHalos: 0.0545396s # MomentumEnergyIAD: 0.262395s #
+Timestep: 0.0508134s # UpdateQuantities: 0.00150533s # EnergyConservation:
+0.000450809s # UpdateSmoothingLength: 0.000451807s ### Check ### Global Tree
+Nodes: 73, Particles: 3402, Halos: 28448 ### Check ### Computational domain:
+-48.5717 48.5717 -48.5717 48.5717 -50 50 ### Check ### Total Neighbors:
+10658336, Avg neighbor count per particle: 248 ### Check ### Total time:
+2.31e-06, current time-step: 1.21e-06 ### Check ### Total energy: 2.08174e+10,
+(internal: 999894, cinetic: 2.08164e+10) === Total time for iteration(1)
+0.896437s # domain::distribute: 0.0291726s # mpi::synchronizeHalos: 0.0233049s 
+# domain::buildTree: 0.0461895s # updateTasks: 0.010203s # FindNeighbors:
+0.0925944s # Density: 0.0813646s
+# EquationOfState: 0.000462341s # mpi::synchronizeHalos: 0.0464937s # IAD:
+0.129588s # mpi::synchronizeHalos: 0.00796886s # MomentumEnergyIAD: 0.259464s 
+Rank 3 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 3
+Rank 4 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 4
+Rank 16 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 16
+Rank 17 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 17
+Rank 18 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 18
+Rank 19 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 19
+Rank 20 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 20 Rank 21 [Mon May 11 22:10:58 2020]
+[c0-0c0s0n3] application called MPI_Abort(MPI_COMM_WORLD, 0) - process 21
+Rank 22 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 22
+Rank 23 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 23
+Rank 5 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 5
+Rank 6 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 6
+Rank 7 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 7
+Rank 8 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 8
+Rank 9 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 9
+Rank 10 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 10
+Rank 11 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 11
+Rank 12 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 12
+Rank 14 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 14
+Rank 15 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 15
+Rank 13 [Mon May 11 22:10:58 2020] [c0-0c0s0n3] application called MPI_Abort
+(MPI_COMM_WORLD, 0) - process 13

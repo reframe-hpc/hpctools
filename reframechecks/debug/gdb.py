@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                           for cubesize in [15]
                           for steps in [0]
                           ])
-class SphExaNativeCheck(rfm.RegressionTest):
+class SphExaGDBCheck(rfm.RegressionTest):
     # {{{
     '''
     This class runs the test code with gdb (serial),
@@ -45,13 +45,13 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.testname = 'sqpatch'
         self.prebuild_cmd = ['module rm xalt']
         self.prgenv_flags = {
-            'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g',
+            'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O0',
                            '-DNDEBUG'],
-            'PrgEnv-intel': ['-I.', '-I./include', '-std=c++14', '-g',
+            'PrgEnv-intel': ['-I.', '-I./include', '-std=c++14', '-g', '-O0',
                              '-DNDEBUG'],
-            'PrgEnv-cray': ['-I.', '-I./include', '-std=c++17', '-g',
+            'PrgEnv-cray': ['-I.', '-I./include', '-std=c++17', '-g', '-O0',
                             '-DNDEBUG'],
-            'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g',
+            'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g', '-O0',
                            '-DNDEBUG'],
         }
         self.build_system = 'SingleSource'
