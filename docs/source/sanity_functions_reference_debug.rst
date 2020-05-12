@@ -19,10 +19,10 @@ cray_atp.py
    :members:
    :show-inheritance:
 
-Sanity checks
--------------
+arm_ddt.py
+==========
 
-.. .. automodule:: reframechecks.common.sphexa.sanity_nvidia
+.. autoclass:: reframechecks.debug.arm_ddt.SphExaDDTCheck
    :members:
    :show-inheritance:
 

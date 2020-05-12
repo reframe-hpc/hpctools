@@ -40,7 +40,7 @@ A successful ReFrame output will look like the following:
 
 Looking into the :class:`Class <reframechecks.debug.cray_atp.SphExaATPCheck>`
 shows how to setup and run the code with the tool. In this case, the code is
-knowingly written in order that the mpi ranks other than 0 and 1 will call
+knowingly written in order that the mpi ranks other than 0, 1 and 2 will call
 ``MPI::COMM_WORLD.Abort`` thus making the execution to crash.
 
 Bug reporting
@@ -59,7 +59,6 @@ Several files are created:
     atpMergedBT_line.dot
     core.atp.22398835.0.5324
     core.atp.22398835.1743.23855
-
 
 These files contains useful information about the crash:
     * ``atpMergedBT.dot``: File containing the merged backtrace tree at a simple,
