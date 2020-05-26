@@ -110,35 +110,33 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
     def set_sanity_gpu(self):
         '''
         This method runs sanity checks on the following logs:
-
-        - info_devices:
+        - info_devices,
+        - info_kernels,
+        - info_threads,
+        - info_navigate,
+        - info_stl,
+        - info_clist
 
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_devices.log
           :lines: 1-3
 
-        - info_kernels:
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_kernels.log
           :lines: 5-7
 
-        - info_threads:
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_threads.log
           :lines: 1-5, 458-459
 
-        - info_navigate:
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_navigate.log
           :lines: 5-6, 17-18, 33-34
           :emphasize-lines: 1, 3, 5
 
-        - info_stl:
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_std_vector.log
           :lines: 1-25
           :emphasize-lines: 4
 
-        - info_clist:
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_const_int.log
           :lines: 6-37
           :emphasize-lines: 17
-
         '''
         self.gpu_specs = {}
         self.gpu_specs_bool = {}
@@ -308,7 +306,7 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
 
     # {{{ self.perf_patterns:
     @rfm.run_before('performance')
-    def check_gpu_perf(self):
+    def set_perf_gpu(self):
         # print(type(self.res[0]))
         self.perf_patterns = {
             'info_kernel_nblocks': self.kernel_grid,
@@ -355,7 +353,7 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
 
 # {{{ set_sanity hook: compiler flags
     @rfm.run_before('compile')
-    def setflags(self):
+    def set_flags(self):
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
         self.nvccflags = \

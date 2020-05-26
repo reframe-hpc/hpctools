@@ -7,5 +7,3 @@ CSCS provides several debugging tools:
     * Cray :doc:`ATP <debug_atp>`
     * GNU :doc:`gdb <debug_gdb>`
     * Nvidia :doc:`Cuda gdb <debug_cudagdb>`
-
-.. .. include:: debug_atp.rst
