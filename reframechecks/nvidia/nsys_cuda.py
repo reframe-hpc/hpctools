@@ -17,7 +17,7 @@ import sphexa.sanity_nvidia as sphsnv
                           for mpitask in [2]
                           for steps in [0]
                           ])
-class SphExaNativeCheck(rfm.RegressionTest):
+class SphExaNsysCudaCheck(rfm.RegressionTest):
     # {{{
     '''
     This class runs the test code with Nvidia nsys systems (2 mpi tasks min)

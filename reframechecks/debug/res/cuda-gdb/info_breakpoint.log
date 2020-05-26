@@ -1,0 +1,16 @@
++set cuda break_on_launch application
++run -s 0 -n 30
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+[New Thread 0x2aaace130700 (LWP 9710)]
+[New Thread 0x2aaace331700 (LWP 9711)]
+[Switching focus to CUDA kernel 0, grid 3, block (0,0,0), thread (0,0,0), device 0, sm 0, warp 0, lane 0]
+sphexa::sph::cuda::kernels::density<double><<<(106,1,1),(256,1,1)>>> (n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aaafab3c800, clist=0x2aaafab3ca00, neighbors=0x2aaafe000000, neighborsCount=0x2aaafab57000, x=0x2aaafaa00000, y=0x2aaafaa34c00, z=0x2aaafaa69800, h=0x2aaafaa9e400, m=0x2aaafaad3000, ro=0x2aaafab07c00) at include/sph/cuda/cudaDensity.cu:23
+23	    const int tid = blockDim.x * blockIdx.x + threadIdx.x;
++break 27
+Breakpoint 1 at 0xdcad70: file include/sph/cuda/cudaDensity.cu, line 27.
++continue
+
+Thread 1 "mpi+omp+cuda" hit Breakpoint 1, sphexa::sph::cuda::kernels::density<double><<<(106,1,1),(256,1,1)>>> (n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aaafab3c800, clist=0x2aaafab3ca00, neighbors=0x2aaafe000000, neighborsCount=0x2aaafab57000, x=0x2aaafaa00000, y=0x2aaafaa34c00, z=0x2aaafaa69800, h=0x2aaafaa9e400, m=0x2aaafaad3000, ro=0x2aaafab07c00) at include/sph/cuda/cudaDensity.cu:27
+27	    const int nn = neighborsCount[tid];
++set logging off

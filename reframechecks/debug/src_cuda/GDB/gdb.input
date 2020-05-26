@@ -1,0 +1,200 @@
+# show logging
+# will append if logfile exists but logfile is new
+set pagination off
+set trace-commands off
+set logging overwrite on
+set logging off
+set cuda break_on_launch none
+# ----------------------------- first gpu kernel
+# set logging on info_breakpoint.log
+break main
+run -s 0 -n 15
+break 75
+info br
+continue
+# {{{ domain.clist (std::vector)
+set logging off
+print "std::vector"
+set trace-commands on
+set logging on info_std_vector.log
+p domain.clist
+# $1 = std::vector of length 1000, capacity 1000 = {0, 1, 2, ...
+ptype domain.clist
+# type = std::vector<int>
+p domain.clist.size()
+set $dclist_size = $
+print $dclist_size
+# $4 = 1000
+p domain.clist[0]
+# $5 = 0
+p domain.clist[$dclist_size - 1]
+# $10 = 999
+p domain.clist[0]@3
+# $17 = {0, 1, 2}
+# p domain.clist[10]@3
+p domain.clist[$dclist_size-1]@3
+# $18 = {10, 11, 12}
+set trace-commands off
+print "pvector:"
+pvector domain.clist 0 2
+set trace-commands on
+# elem[0]: $11 = 0
+# elem[1]: $12 = 1
+# elem[2]: $13 = 2
+# Vector size = 1000
+# Vector capacity = 1000
+# Element type = std::_Vector_base<int, std::allocator<int> >::pointer
+bt
+#0  main (argc=5, argv=0x7fffffff6098) at src/sqpatch/sqpatch.cpp:75
+# }}}
+#
+# {{{ clist (const int *)
+set logging off
+print "const_int*"
+set logging on info_const_int.log
+# break include/sph/density.hpp:68
+# info br
+set cuda break_on_launch application
+continue
+# continue
+bt
+list
+p clist
+#
+#(cuda-gdb) p clist
+#$1 = (const @generic int * @parameter) 0x2aab58b3ca00
+#(cuda-gdb) ptype clist
+#type = const @generic int * @parameter
+#
+# $1 = (const int *) 0x6bed10
+ptype clist
+# type = const int *
+# --- print clist[last_idx] (set in main):
+p n
+# $3 = 1000
+p $dclist_size
+# $4 = 1000
+p clist[$dclist_size - 1]
+# $5 = 999
+p clist[0]
+# $5 = 0
+# --- print clist[last_idx] (extracted with python):
+info args
+# clist.py depends on 'info args' 
+#   -> did not manage to extract info when inside cuda kernel :-(
+#   -> works fine on cpu
+# source clist.py
+# p $clist_len
+# p clist[$clist_len - 1]@3
+p clist[0]@3
+# $17 = {0, 1, 2}
+bt
+# }}}
+#
+set cuda break_on_launch application
+continue
+# {{{ info cuda
+# ----------------------------- devices
+set logging off
+print "info cuda devices"
+set logging on info_devices.log
+info cuda devices
+# ----------------------------- kernels
+set logging off
+print "info cuda kernels"
+set logging on info_kernels.log
+show logging
+info cuda kernels
+# ----------------------------- threads
+set logging off
+print "info cuda threads"
+set logging on info_threads.log
+info cuda threads
+# info cuda sms
+# info cuda warps
+# info cuda lanes
+# info cuda contexts
+# info cuda blocks
+# info cuda grid
+# }}}
+#
+# {{{ mygps_cmd
+set logging off
+# set trace-commands off
+define mygps_cmd
+set trace-commands off
+printf "gridDim=(%d,%d,%d) blockDim=(%d,%d,%d) blockIdx=(%d,%d,%d) threadIdx=(%d,%d,%d) warpSize=%d thid=%d\n", gridDim.x, gridDim.y, gridDim.z, blockDim.x, blockDim.y, blockDim.z, blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z, warpSize, blockDim.x * blockIdx.x + threadIdx.x
+source ./mygps.py
+### cuda kernel
+### cuda grid
+### cuda block
+### cuda thread
+### cuda device
+### cuda sm
+### cuda warp
+### cuda lane
+### ptype gridDim
+### type = struct {
+###     unsigned int x : 16;
+###     unsigned int y : 16;
+###     unsigned int z : 16;
+### }
+### ptype blockDim
+### ptype blockIdx
+### ptype threadIdx
+### p &threadIdx
+### # $2 = (dim3 *) 0xfffffffffffffff4
+set trace-commands on
+end
+document mygps_cmd
+Print info about current gpu thread
+end
+# set trace-commands on
+help mygps_cmd
+# TODO: cuobjdump
+# }}}
+#
+# {{{ navigate threads/blocks/sms
+set logging off
+print "navigate threads/blocks/sms"
+set logging on info_navigate.log
+cuda block 0 thread 0
+break include/sph/cuda/cudaDensity.cu:42
+set cuda break_on_launch none
+continue
+bt
+list
+set trace-commands off
+mygps_cmd
+set trace-commands on
+print "where is the ~last cuda thread ?"
+set $blockmax = gridDim.x - 1
+# not always true, use ./thid_sm.py instead:
+set $threadmax_block = blockDim.x - 1
+set trace-commands off
+#
+info cuda threads
+source ./thid_sm.py
+#
+set trace-commands on
+cuda block $blockmax thread $threadmax_block
+set trace-commands off
+mygps_cmd
+set trace-commands on
+#
+print "what thread is running on last sm ?"
+set trace-commands off
+source sms.py
+set trace-commands on
+set $last_sm =  $sm_max - 1
+print $last_sm
+print $threadmax_block
+# cuda sm $last_sm thread $threadmax_block
+cuda sm $last_sm
+set trace-commands off
+mygps_cmd
+set trace-commands on
+# }}}
+
+set logging off
+quit
