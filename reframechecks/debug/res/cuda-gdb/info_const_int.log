@@ -1,0 +1,55 @@
++set cuda break_on_launch application
++continue
+[Switching focus to CUDA kernel 0, grid 3, block (0,0,0), thread (0,0,0), device 0, sm 0, warp 0, lane 0]
+sphexa::sph::cuda::kernels::density<double><<<(106,1,1),(256,1,1)>>> (n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aab58b3c800, clist=0x2aab58b3ca00, neighbors=0x2aab5a000000, neighborsCount=0x2aab58b57000, x=0x2aab58a00000, y=0x2aab58a34c00, z=0x2aab58a69800, h=0x2aab58a9e400, m=0x2aab58ad3000, ro=0x2aab58b07c00) at include/sph/cuda/cudaDensity.cu:23
+23	    const int tid = blockDim.x * blockIdx.x + threadIdx.x;
++bt
+#0  sphexa::sph::cuda::kernels::density<double><<<(106,1,1),(256,1,1)>>> (n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aab58b3c800, clist=0x2aab58b3ca00, neighbors=0x2aab5a000000, neighborsCount=0x2aab58b57000, x=0x2aab58a00000, y=0x2aab58a34c00, z=0x2aab58a69800, h=0x2aab58a9e400, m=0x2aab58ad3000, ro=0x2aab58b07c00) at include/sph/cuda/cudaDensity.cu:23
++list
+18	{
+19	template <typename T>
+20	__global__ void density(const int n, const T sincIndex, const T K, const int ngmax, const BBox<T> *bbox, const int *clist,
+21	                        const int *neighbors, const int *neighborsCount, const T *x, const T *y, const T *z, const T *h, const T *m, T *ro)
+22	{
+23	    const int tid = blockDim.x * blockIdx.x + threadIdx.x;
+24	    if (tid >= n) return;
+25	
+26	    const int i = clist[tid];
+27	    const int nn = neighborsCount[tid];
++p clist
+$14 = (const @generic int * @parameter) 0x2aab58b3ca00
++ptype clist
+type = const @generic int * @parameter
++p n
+$15 = 27000
++p $dclist_size
+$16 = 27000
++p clist[$dclist_size - 1]
+$17 = 26999
++p clist[0]
+$18 = 0
++info args
+n = 27000
+sincIndex = 6
+K = 0.79043937697438049
+ngmax = 300
+bbox = 0x2aab58b3c800
+clist = 0x2aab58b3ca00
+neighbors = 0x2aab5a000000
+neighborsCount = 0x2aab58b57000
+x = 0x2aab58a00000
+y = 0x2aab58a34c00
+z = 0x2aab58a69800
+h = 0x2aab58a9e400
+m = 0x2aab58ad3000
+ro = 0x2aab58b07c00
++p clist[0]@3
+$19 = {0, 1, 2}
++bt
+#0  sphexa::sph::cuda::kernels::density<double><<<(106,1,1),(256,1,1)>>> (n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aab58b3c800, clist=0x2aab58b3ca00, neighbors=0x2aab5a000000, neighborsCount=0x2aab58b57000, x=0x2aab58a00000, y=0x2aab58a34c00, z=0x2aab58a69800, h=0x2aab58a9e400, m=0x2aab58ad3000, ro=0x2aab58b07c00) at include/sph/cuda/cudaDensity.cu:23
++set cuda break_on_launch application
++continue
+[Switching focus to CUDA kernel 0, grid 3, block (56,0,0), thread (128,0,0), device 0, sm 0, warp 13, lane 0]
+sphexa::sph::cuda::kernels::density<double><<<(106,1,1),(256,1,1)>>> (n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aab58b3c800, clist=0x2aab58b3ca00, neighbors=0x2aab5a000000, neighborsCount=0x2aab58b57000, x=0x2aab58a00000, y=0x2aab58a34c00, z=0x2aab58a69800, h=0x2aab58a9e400, m=0x2aab58ad3000, ro=0x2aab58b07c00) at include/sph/cuda/cudaDensity.cu:23
+23	    const int tid = blockDim.x * blockIdx.x + threadIdx.x;
++set logging off

@@ -1,0 +1,8 @@
++show logging
+Currently logging to "info_kernels.log".
+Logs will overwrite the log file.
+Output is being logged and displayed.
++info cuda kernels
+  Kernel Parent Dev Grid Status   SMs Mask   GridDim  BlockDim Invocation 
+*      0      -   0    3 Active 0xffffffff (106,1,1) (256,1,1) sphexa::sph::cuda::kernels::density<double>(n=27000, sincIndex=6, K=0.79043937697438049, ngmax=300, bbox=0x2aab58b3c800, clist=0x2aab58b3ca00, neighbors=0x2aab5a000000, neighborsCount=0x2aab58b57000, x=0x2aab58a00000, y=0x2aab58a34c00, z=0x2aab58a69800, h=0x2aab58a9e400, m=0x2aab58ad3000, ro=0x2aab58b07c00) 
++set logging off

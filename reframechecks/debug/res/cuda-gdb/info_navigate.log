@@ -1,0 +1,37 @@
++cuda block 0 thread 0
+[Switching focus to CUDA kernel 0, grid 3, block (0,0,0), thread (0,0,0), device 0, sm 0, warp 0, lane 0]
+0x0000000000edbec8	122	    return (idx >= lt::wharmonicLookupTableSize)
++set trace-commands off
+gridDim=(106,1,1) blockDim=(256,1,1) blockIdx=(0,0,0) threadIdx=(0,0,0) warpSize=32 thid=0
+kernel 0 grid 3 block (0,0,0) thread (0,0,0) device 0 sm 0 warp 0 lane 0
+
++set trace-commands on
++print "where is the ~last cuda thread ?"
+$24 = "where is the ~last cuda thread ?"
++set $blockmax = gridDim.x - 1
++set $threadmax_block = blockDim.x - 1
++cuda block $blockmax thread $threadmax_block
+[Switching focus to CUDA kernel 0, grid 3, block (105,0,0), thread (255,0,0), device 0, sm 43, warp 14, lane 31]
+23	    const int tid = blockDim.x * blockIdx.x + threadIdx.x;
++set trace-commands off
+gridDim=(106,1,1) blockDim=(256,1,1) blockIdx=(105,0,0) threadIdx=(255,0,0) warpSize=32 thid=27135
+kernel 0 grid 3 block (105,0,0) thread (255,0,0) device 0 sm 43 warp 14 lane 31
+
++set trace-commands on
++print "what thread is running on last sm ?"
+$25 = "what thread is running on last sm ?"
++set trace-commands off
++set $last_sm =  $sm_max - 1
++print $last_sm
+$26 = 55
++print $threadmax_block
+$27 = 255
++cuda sm $last_sm thread $threadmax_block
+[Switching focus to CUDA kernel 0, grid 3, block (55,0,0), thread (255,0,0), device 0, sm 55, warp 7, lane 31]
+33	    else if (b == 2)
++set trace-commands off
+gridDim=(106,1,1) blockDim=(256,1,1) blockIdx=(55,0,0) threadIdx=(255,0,0) warpSize=32 thid=14335
+kernel 0 grid 3 block (55,0,0) thread (255,0,0) device 0 sm 55 warp 7 lane 31
+
++set trace-commands on
++set logging off

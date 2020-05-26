@@ -1,0 +1,4 @@
++info cuda devices
+  Dev PCI Bus/Dev ID                 Name Description SM Type SMs Warps/SM Lanes/Warp Max Regs/Lane                    Active SMs Mask 
+*   0        02:00.0 Tesla P100-PCIE-16GB   GP100GL-A   sm_60  56       64         32           256 0x000000000000000000ffffffffffffff 
++set logging off

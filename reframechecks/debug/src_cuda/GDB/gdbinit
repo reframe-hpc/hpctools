@@ -1,0 +1,27 @@
+# {{{ STEP1 --- python/libstdcxx/v6/printers.py
+python
+import sys 
+sys.path.insert(0, '/opt/gcc/6.1.0/snos/share/gcc-6.1.0/python')
+sys.path.insert(0, '/opt/gcc/7.3.0/snos/share/gcc-7.3.0/python')
+sys.path.insert(0, '/opt/gcc/8.3.0/snos/share/gcc-8.3.0/python')
+sys.path.insert(0, '/opt/gcc/9.2.0/snos/share/gcc-9.2.0/python')
+sys.path.insert(0, '/opt/gcc/9.3.0/snos/share/gcc-9.3.0/python')
+# from libstdcxx.v6.printers import register_libstdcxx_printers
+# register_libstdcxx_printers (None)
+end
+# }}} 
+
+# {{{ STEP2 --- li bstdc++.so*-gdb.py
+# To avoid: auto-loading has been declined:
+add-auto-load-safe-path /opt/gcc/6.1.0/snos/lib64/libstdc++.so.6.0.22-gdb.py
+add-auto-load-safe-path /opt/gcc/7.3.0/snos/lib64/libstdc++.so.6.0.24-gdb.py
+add-auto-load-safe-path /opt/gcc/8.3.0/snos/lib64/libstdc++.so.6.0.25-gdb.py
+add-auto-load-safe-path /opt/gcc/9.2.0/snos/lib64/libstdc++.so.6.0.27-gdb.py
+add-auto-load-safe-path /opt/gcc/9.3.0/snos/lib64/libstdc++.so.6.0.28-gdb.py
+# SLES15: gcc/7.5.0
+add-auto-load-safe-path /usr/share/gdb/auto-load/usr/lib64/libstdc++.so.6.0.24-gdb.py
+# }}} 
+
+# {{{ STEP3 --- stl-views
+source ./stl-views-1.0.3.gdb
+# }}}
