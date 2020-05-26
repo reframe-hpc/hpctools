@@ -3,3 +3,4 @@
 # https://github.com/readthedocs/readthedocs.org/issues/3296
 # push to master OR build manually @ https://readthedocs.org/projects/hpctools/builds
 sphinx>2.3
+cxxfilt
