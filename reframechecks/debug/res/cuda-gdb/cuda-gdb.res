@@ -1,4 +1,5 @@
-[==========] Running 1 check(s)
+Reframe version: 3.0-dev6 (rev: 3f0c45d4)
+Launched on host: daint101
 
 [----------] started processing sphexa_cudagdb_sqpatch_001mpi_001omp_30n_0steps (Tool validation)
 [ RUN      ] sphexa_cudagdb_sqpatch_001mpi_001omp_30n_0steps on daint:gpu using PrgEnv-gnu
@@ -9,8 +10,8 @@
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-[==========] Finished on Tue May 26 20:44:23 2020
 ==============================================================================
+
 PERFORMANCE REPORT
 ------------------------------------------------------------------------------
 sphexa_cudagdb_sqpatch_001mpi_001omp_30n_0steps

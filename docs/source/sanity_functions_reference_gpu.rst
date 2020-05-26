@@ -11,7 +11,7 @@ Regression tests
 nsys_cuda.py
 ============
 
-.. autoclass:: reframechecks.nvidia.nsys_cuda.SphExaNativeCheck
+.. autoclass:: reframechecks.nvidia.nsys_cuda.SphExaNsysCudaCheck
    :members:
    :show-inheritance:
 

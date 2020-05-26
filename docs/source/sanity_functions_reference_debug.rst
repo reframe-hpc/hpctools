@@ -33,3 +33,10 @@ gdb.py
    :members:
    :show-inheritance:
 
+cuda_gdb.py
+===========
+
+.. autoclass:: reframechecks.debug.cuda_gdb.SphExaCudaGdbCheck
+   :members:
+   :show-inheritance:
+

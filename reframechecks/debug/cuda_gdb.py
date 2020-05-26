@@ -112,29 +112,32 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
         This method runs sanity checks on the following logs:
 
         - info_devices:
-        .. literalinclude:: ../../reframechecks/res/cuda-gdb/info_devices.log
-          :lines: 1-1
+
+        .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_devices.log
+          :lines: 1-3
 
         - info_kernels:
-        .. literalinclude:: ../../reframechecks/res/cuda-gdb/info_kernels.log
-          :lines: 1-1
+        .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_kernels.log
+          :lines: 5-7
 
         - info_threads:
-        .. literalinclude:: ../../reframechecks/res/cuda-gdb/info_threads.log
-          :lines: 1-1
+        .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_threads.log
+          :lines: 1-5, 458-459
 
         - info_navigate:
-        .. literalinclude:: ../../reframechecks/res/cuda-gdb/info_navigate.log
-          :lines: 1-1
+        .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_navigate.log
+          :lines: 5-6, 17-18, 33-34
+          :emphasize-lines: 1, 3, 5
 
         - info_stl:
-        .. literalinclude::
-            ../../reframechecks/res/cuda-gdb/info_std_vector.log
-          :lines: 1-1
+        .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_std_vector.log
+          :lines: 1-25
+          :emphasize-lines: 4
 
         - info_clist:
-        .. literalinclude:: ../../reframechecks/res/cuda-gdb/info_const_int.log
-          :lines: 1-1
+        .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_const_int.log
+          :lines: 6-37
+          :emphasize-lines: 17
 
         '''
         self.gpu_specs = {}
