@@ -1,5 +1,5 @@
-GNU GDB
-=======
+NVIDIA CUDA GDB
+===============
 
 .. https://docs.nvidia.com/cuda/cuda-gdb/index.html
 
