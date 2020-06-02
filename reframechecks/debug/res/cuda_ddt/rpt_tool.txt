@@ -1,0 +1,87 @@
+rpt_tool logbook
+
+Debugging mpi+omp+cuda
+
+
+  * Messages
+  * Tracepoints
+  * Output
+
+Messages
+[...]
+
+Tracepoints
+
+#   Time               Tracepoint              Processes                                      Values
+           sphexa::sph::cuda::kernels::density
+           <double>(int, double, double, int,
+           sphexa::BBox<double> const*, int
+1 0:17.610 const*, int const*, int const*,     0         clist[27000-1]@3: {[0] = 26999, [1] = 0, [2] = 0} clist: Sparkline
+           double const*, double const*,                 0x2aaafab3ca00
+           double const*, double const*,
+           double const*, double*)
+           (cudaDensity.cu:26)
+           sphexa::sph::cuda::kernels::density
+           <double>(int, double, double, int,
+           sphexa::BBox<double> const*, int
+2 0:21.716 const*, int const*, int const*,     0         clist[27000-1]@3: {[0] = 26999, [1] = 0, [2] = 0} clist: Sparkline
+           double const*, double const*,                 0x2aaafab3ca00
+           double const*, double const*,
+           double const*, double*)
+           (cudaDensity.cu:26)
+           sphexa::sph::cuda::kernels::density
+           <double>(int, double, double, int,
+           sphexa::BBox<double> const*, int
+3 0:23.074 const*, int const*, int const*,     0         clist[27000-1]@3: {[0] = 26999, [1] = 0, [2] = 0} clist: Sparkline
+           double const*, double const*,                 0x2aaafab3ca00
+           double const*, double const*,
+           double const*, double*)
+           (cudaDensity.cu:26)
+           sphexa::sph::cuda::kernels::density
+           <double>(int, double, double, int,
+           sphexa::BBox<double> const*, int
+4 0:24.383 const*, int const*, int const*,     0         clist[27000-1]@3: {[0] = 26999, [1] = 0, [2] = 0} clist: Sparkline
+           double const*, double const*,                 0x2aaafab3ca00
+           double const*, double const*,
+           double const*, double*)
+           (cudaDensity.cu:26)
+           sphexa::sph::cuda::kernels::density
+           <double>(int, double, double, int,
+           sphexa::BBox<double> const*, int
+5 0:25.628 const*, int const*, int const*,     0         clist[27000-1]@3: {[0] = 26999, [1] = 0, [2] = 0} clist: Sparkline
+           double const*, double const*,                 0x2aaafab3ca00
+           double const*, double const*,
+           double const*, double*)
+           (cudaDensity.cu:26)
+           sphexa::sph::cuda::kernels::density
+           <double>(int, double, double, int,
+           sphexa::BBox<double> const*, int
+6 0:26.876 const*, int const*, int const*,     0         clist[27000-1]@3: {[0] = 26999, [1] = 0, [2] = 0} clist: Sparkline
+           double const*, double const*,                 0x2aaafab3ca00
+           double const*, double const*,
+           double const*, double*)
+           (cudaDensity.cu:26)
+
+
+
+  * Messages
+  * Tracepoints
+  * Output
+
+Output
+
+# domain::distribute: 0.0320511s
+# mpi::synchronizeHalos: 7.83e-05s # domain::buildTree: 0.021509s #
+updateTasks: 0.000279277s # FindNeighbors: 0.456827s # Density: 12.998s #
+EquationOfState: 0.00109033s
+# mpi::synchronizeHalos: 2.0046e-05s # IAD: 21.4486s
+# mpi::synchronizeHalos: 3.2546e-05s # MomentumEnergyIAD: 55.7296s # Timestep:
+0.000583691s # UpdateQuantities: 0.00482532s # EnergyConservation: 0.000490205s
+# UpdateSmoothingLength: 0.00182539s ### Check ### Global Tree Nodes: 73,
+Particles: 27000, Halos: 0
+### Check ### Computational domain: -48.3333 48.3333 -48.3333 48.3333 -50 50
+### Check ### Total Neighbors: 6190320, Avg neighbor count per particle: 229
+### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
+### Check ### Total energy: 2.08112e+10, (internal: 1e+06, cinetic:
+2.08102e+10) === Total time for iteration(0) 90.697s
+# Total execution time of 0 iterations of SqPatch: 90.6971s
