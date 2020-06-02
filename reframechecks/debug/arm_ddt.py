@@ -21,7 +21,6 @@ class SphExaDDTCheck(rfm.RegressionTest):
     2 parameters can be set for simulation:
 
     :arg mpitask: number of mpi tasks,
-    :arg cubesize: set to small value as default,
     :arg steps: number of simulation steps.
     '''
     # }}}
