@@ -40,3 +40,10 @@ cuda_gdb.py
    :members:
    :show-inheritance:
 
+arm_ddt_cuda.py
+===============
+
+.. autoclass:: reframechecks.debug.arm_ddt_cuda.SphExaCudaDDTCheck
+   :members:
+   :show-inheritance:
+

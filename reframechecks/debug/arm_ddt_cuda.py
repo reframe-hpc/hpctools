@@ -145,7 +145,7 @@ class SphExaCudaDDTCheck(rfm.RegressionTest):
     @rfm.run_after('setup')
     def set_launcher(self):
         '''
-        Sets tracepoint for --offline debugging
+        Sets tracepoint for offline debugging
         '''
         srcfile = 'include/sph/cuda/cudaDensity.cu'
         linen = 26
