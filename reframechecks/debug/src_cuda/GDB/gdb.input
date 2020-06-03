@@ -24,16 +24,17 @@ ptype domain.clist
 p domain.clist.size()
 set $dclist_size = $
 print $dclist_size
-# $4 = 1000
+# with -n 30:
+# $4 = 27000
 p domain.clist[0]
 # $5 = 0
 p domain.clist[$dclist_size - 1]
-# $10 = 999
+# $10 = 26999
 p domain.clist[0]@3
 # $17 = {0, 1, 2}
 # p domain.clist[10]@3
 p domain.clist[$dclist_size-1]@3
-# $18 = {10, 11, 12}
+# $8 = {26999, 0, 0}
 set trace-commands off
 print "pvector:"
 pvector domain.clist 0 2

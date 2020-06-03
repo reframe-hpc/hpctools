@@ -63,3 +63,23 @@ An overview of the debugging data will typically look like this:
 
 .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/cuda-gdb.res
   :lines: 15-35
+
+It gives information about the limits of the gpu device:
+
++---------+--------+------+-------+---------+
+| cuda    | thread | warp | sm    | P100    |
++=========+========+======+=======+=========+
+| threads | 1      | 32   | 2'048 | 114'688 |
++---------+--------+------+-------+---------+
+| warps   | x      | 1    | 64    | 3'584   |
++---------+--------+------+-------+---------+
+| sms     | x      | x    | 1     | 56      |
++---------+--------+------+-------+---------+
+| P100    | x      | x    | x     | 1       |
++---------+--------+------+-------+---------+
+
+It can be read as: one P100 gpu leverages up to 32 threads per warp,
+2048 threads per sm, 114'688 threads per device, 
+64 warps per sm, 3'584 warps per device, 
+56 sms per device and so on.
+

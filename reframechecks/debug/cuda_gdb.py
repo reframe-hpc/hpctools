@@ -92,7 +92,7 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
         self.log_kernels = 'info_kernels.log'
         self.log_threads = 'info_threads.log'
         self.log_navigate = 'info_navigate.log'
-        self.log = 'info_std_vector.log'
+        self.log_stdvector = 'info_std_vector.log'
         self.pre_run = [
             'module rm xalt',
             'mv %s %s' % (self.target_executable + '.app',
@@ -108,36 +108,44 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
     # {{{ self.sanity_patterns:
     @rfm.run_before('sanity')
     def set_sanity_gpu(self):
+        # {{{
         '''
         This method runs sanity checks on the following logs:
-        - info_devices,
-        - info_kernels,
-        - info_threads,
-        - info_navigate,
-        - info_stl,
-        - info_clist
+
+        - info cuda devices
 
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_devices.log
           :lines: 1-3
 
+        - info cuda kernels
+
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_kernels.log
           :lines: 5-7
 
+        - info cuda threads
+
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_threads.log
           :lines: 1-5, 458-459
+
+        - navigate between cuda kernels/blocks/threads/
 
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_navigate.log
           :lines: 5-6, 17-18, 33-34
           :emphasize-lines: 1, 3, 5
 
+        - inspect variables (std::vector)
+
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_std_vector.log
           :lines: 1-25
           :emphasize-lines: 4
+
+        - inspect variables (int*)
 
         .. literalinclude:: ../../reframechecks/debug/res/cuda-gdb/info_const_int.log
           :lines: 6-37
           :emphasize-lines: 17
         '''
+        # }}}
         self.gpu_specs = {}
         self.gpu_specs_bool = {}
         ref_gpu_specs = {}
@@ -276,7 +284,7 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
 
         # {{{ info_std_vector.log:
         # --- get vector length(True means that extracted value matches ref):
-        self.rpt = os.path.join(self.stagedir, self.log)
+        self.rpt = os.path.join(self.stagedir, self.log_stdvector)
         # std::vector of length 27000, capacity 27000
         regex = r'std::vector of length (?P<vec_len1>\d+),'
         res = sn.extractsingle(regex, self.rpt, 'vec_len1', int)
@@ -358,10 +366,14 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
             self.prgenv_flags[self.current_environ.name]
         self.nvccflags = \
             self.prgenv_gpuflags[self.current_environ.name]
+        if self.current_system.name in ['dom', 'daint']:
+            cap = 'sm_60'
+        if self.current_system.name in ['cori']:
+            cap = 'sm_70'
         self.build_system.options = [
             self.target_executable, 'SRCDIR=.', 'BUILDDIR=.',
             'BINDIR=.', 'NVCCFLAGS="%s"' % " ".join(self.nvccflags),
-            'NVCCARCH=sm_70', 'CUDA_PATH=$CUDA_PATH',
+            'NVCCARCH=%s' % cap, 'CUDA_PATH=$CUDA_PATH',
             'MPICXX=%s' % self.build_system.cxx]
 #         if self.current_environ.name == 'PrgEnv-cray':
 #             # cce<9.1 fails to compile with -g
