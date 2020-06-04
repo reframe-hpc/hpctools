@@ -25,7 +25,8 @@ simulation codes to address their needs in performance analysis:
     help to quickly identify inefficient or faulty parts of a program.
 
 For further information, please check: 
- - `Training material <https://www.vi-hps.org/training/>`__
+ - `Training material <https://www.vi-hps.org/training/>`_.
+ - `VI-HPS Tools Guide <https://www.vi-hps.org/tools/tools.html>`_.
 
 .. include:: scorep_profiling.rst
 .. include:: scorep_tracing.rst

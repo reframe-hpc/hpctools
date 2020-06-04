@@ -8,6 +8,11 @@ Welcome to the HPCTools documentation
 regression tests for HPC systems. This repository showcases how to use ReFrame
 together with HPC tools.
 
+.. figure:: img/intro/overview.png
+   :align: center
+   :alt: HPC tools overview
+
+   HPC tools overview
 
 .. toctree::
    :caption: Table of Contents:

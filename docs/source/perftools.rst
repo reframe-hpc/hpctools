@@ -2,7 +2,7 @@
 CrayPAT
 *******
 
-`CrayPAT <https://pubs.cray.com/content/S-2632/1.0/cray-perftools-quick-start-guide/perftools-overview>`__
+`CrayPAT <https://pubs.cray.com/bundle/Cray_Performance_Measurement_and_Analysis_Tools_Installation_Guide_643_S-2474/page/About_the_Cray_Performance_Measurement_and_Analysis_Tools_Installation_Guide.html>`__
 (Cray Performance Measurement and Analysis toolset) is Cray's performance
 analysis tool.
 
