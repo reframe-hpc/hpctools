@@ -59,7 +59,7 @@ class SphExaGDBCheck(rfm.RegressionTest):
         self.sourcepath = '%s.cpp' % self.testname
         self.executable = 'gdb'
         self.target_executable = './%s.exe' % self.testname
-        self.prebuild_cmd = ['ln -s GDB/* .']
+        self.prebuild_cmds = ['ln -s GDB/* .']
 # }}}
 
 # {{{ run
