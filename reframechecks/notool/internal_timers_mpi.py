@@ -12,18 +12,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 import sphexa.sanity as sphs
 
 
-@rfm.parameterized_test(*[[mpitask, cubesize, steps]
-                          for mpitask in [24]
-                          for cubesize in [100]
-                          for steps in [0]
+@rfm.parameterized_test(*[[mpitasks, steps]
+                          for mpitasks in [24, 48, 96, 192, 384]
+                          for steps in [10]
+                          # for mpitasks in [24, 48, 96]
+                          # for steps in [1]
                           ])
 class SphExaNativeCheck(rfm.RegressionTest):
-# {{{
+    # {{{
     '''
     This class runs the test code without any tool (mpi only), and reports
     elapsed time from internal timers. 3 parameters can be set for simulation:
 
-    :arg mpitask: number of mpi tasks,
+    :arg mpitasks: number of mpi tasks,
     :arg cubesize: size of the cube in the 3D square patch test,
     :arg steps: number of simulation steps.
 
@@ -71,9 +72,11 @@ class SphExaNativeCheck(rfm.RegressionTest):
       # UpdateSmoothingLength: 0.00321161s
       ### Check ### Global Tree Nodes: 1097, Particles: 40947, Halos: 109194
       ### Check ### Computational domain: -49.5 49.5 -49.5 49.5 -50 50
-      ### Check ### Total Neighbors: 244628400, Avg neighbor count per particle: 244
+      ### Check ### Total Neighbors: 244628400, Avg neighbor count
+                                                per particle: 244
       ### Check ### Total time: 1.1e-06, current time-step: 1.1e-06
-      ### Check ### Total energy: 2.08323e+10, (internal: 1e+06, cinetic: 2.08313e+10)
+      ### Check ### Total energy: 2.08323e+10, (internal: 1e+06,
+                                                cinetic: 2.08313e+10)
       === Total time for iteration(0) 3.61153s
       stoptime=1579725961
 
@@ -108,20 +111,21 @@ class SphExaNativeCheck(rfm.RegressionTest):
             * %FindNeighbors: 9.8 %
             * %IAD: 17.36 %
     '''
-# }}}
-    def __init__(self, mpitask, cubesize, steps):
+    # }}}
+
+    def __init__(self, mpitasks, steps):
         # {{{ pe
         self.descr = 'Strong scaling study'
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
                                     'PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-pgi']
-        #self.valid_systems = ['daint:gpu', 'dom:gpu']
+        # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools'}
-# }}}
+        # }}}
 
-# {{{ compile
+        # {{{ compile
         self.testname = 'sqpatch'
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
@@ -139,28 +143,27 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # self.build_system.cxx = 'CC'
         self.sourcepath = '%s.cpp' % self.testname
         self.executable = '%s.exe' % self.testname
+        # }}}
 
-# }}}
-
-# {{{ run
+        # {{{ run
         ompthread = 1
-        # This dictionary sets cubesize = f(mpitask), for instance:
-        # if mpitask == 24:
+        # This dictionary sets cubesize = f(mpitasks), for instance:
+        # if mpitasks == 24:
         #     cubesize = 100
         size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857
                      }
-        cubesize = size_dict[mpitask]
+        cubesize = size_dict[mpitasks]
         self.name = 'sphexa_timers_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
+            self.testname, mpitasks, ompthread, cubesize, steps)
+        self.num_tasks = mpitasks
         self.num_tasks_per_node = 24  # 72
 # {{{ ht:
-        # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
+        # self.num_tasks_per_node = mpitasks if mpitasks < 36 else 36   # noht
         # self.use_multithreading = False  # noht
         # self.num_tasks_per_core = 1      # noht
 
-        # self.num_tasks_per_node = mpitask if mpitask < 72 else 72
+        # self.num_tasks_per_node = mpitasks if mpitasks < 72 else 72
         # self.use_multithreading = True # ht
         # self.num_tasks_per_core = 2    # ht
 # }}}
@@ -174,22 +177,21 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
         self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps]
-# }}}
+        # }}}
 
-# {{{ sanity
+        # {{{ sanity
         # sanity
         self.sanity_patterns = sn.all([
             # check the job output:
-            sn.assert_found('Total time for iteration\(0\)', self.stdout),
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
         ])
-# }}}
+        # }}}
 
-# {{{ performance
+        # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run = ['echo starttime=`date +%s`']
-        self.post_run = ['echo stoptime=`date +%s`']
-        #self.rpt = '%s.rpt' % self.testname
+        self.prerun_cmds = ['echo starttime=`date +%s`']
+        self.postrun_cmds = ['echo stoptime=`date +%s`']
         # }}}
 
         # {{{ perf_patterns:
@@ -246,12 +248,13 @@ class SphExaNativeCheck(rfm.RegressionTest):
                 '%IAD': (0, None, None, '%'),
             }
         }
-# }}}
-# }}}
+        # }}}
+        # }}}
 
     @rfm.run_before('compile')
     def setflags(self):
-        self.build_system.cxxflags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cxxflags = \
+            self.prgenv_flags[self.current_environ.name]
 
 # {{{
 # ok     def setup(self, partition, environ, **job_opts):
