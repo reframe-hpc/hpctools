@@ -14,11 +14,11 @@ import sphexa.sanity_mpip as sphsmpip
 
 
 @rfm.parameterized_test(*[[mpitasks, steps]
-                          for mpitasks in [24, 48, 96, 192, 384]
-                          for steps in [10]
-                          # for mpitasks in [24, 48, 96]
-                          # for mpitasks in [24]
-                          # for steps in [0]
+                          # for mpitasks in [24, 48, 96, 192, 384]
+                          # for steps in [10]
+                          # jenkins partition restricted to 1 cnode:
+                          for mpitasks in [24]
+                          for steps in [0]
                           ])
 class SphExaMpipCheck(sphsmpip.MpipBaseTest):
     # {{{
