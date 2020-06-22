@@ -19,6 +19,7 @@ together with HPC tools.
    :hidden:
 
    Getting Started <started>
+   Containers <containers>
    Intel tools <intel>
    VI-HPS tools <vi-hps>
    Extrae tools <extrae>

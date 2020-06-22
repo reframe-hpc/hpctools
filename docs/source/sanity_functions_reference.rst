@@ -34,6 +34,17 @@ Sanity checks
  .. * automethod:: reframechecks/common/sphexa/sanity.py -> elapsed_time_from_date
  .. automethod:: reframechecks.common.sphexa.sanity.elapsed_time_from_date
 
+internal_timers_mpi_containers.py
+=================================
+
+.. autoclass:: reframechecks.notool.internal_timers_mpi_containers.SphExa_Container_Base_Check
+   :members:
+   :show-inheritance:
+
+.. automodule:: reframechecks.notool.internal_timers_mpi_containers
+   :members:
+   :show-inheritance:
+
 Intel
 =====
 
