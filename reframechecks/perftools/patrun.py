@@ -56,7 +56,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         if self.current_system.name in ['dom']:
             self.modules = ['cdt/20.03']  # will load perftools-base/20.03.0
         self.modules += ['perftools-preload']
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],

@@ -54,7 +54,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         self.modules = ['craype-accel-nvidia60',
                         'nvidia-nsight-systems/2020.2.1.71']
                         # 'nvidia-nsight-systems/2020.1.1.65']
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
 
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile'

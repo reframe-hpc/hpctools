@@ -50,7 +50,7 @@ class SphExaVtuneCheck(sphsvtune.VtuneBaseTest):
 # {{{ compile
         self.testname = 'sqpatch'
         self.modules = ['vtune_profiler/2020']
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],

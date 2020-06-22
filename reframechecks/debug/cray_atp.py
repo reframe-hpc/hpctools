@@ -59,7 +59,7 @@ class SphExaATPCheck(rfm.RegressionTest):
         self.ini = '/opt/cray/elogin/eproxy/etc/eproxy.ini'
         self.cfg = '/opt/cray/elogin/eproxy/default/bin/eproxy_config.py'
         self.rpt_cfg = 'rpt.eproxy'
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'module rm xalt',
             'sed -i %s %s' % (insert_abort, self.sourcepath),
             # not strictly needed for atp but keeping as reminder:

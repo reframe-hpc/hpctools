@@ -51,7 +51,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
 # {{{ compile
         self.testname = 'sqpatch'
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],

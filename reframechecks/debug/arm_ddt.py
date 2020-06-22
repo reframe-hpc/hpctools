@@ -59,7 +59,7 @@ class SphExaDDTCheck(rfm.RegressionTest):
         insert_abort = (r'"/sph::computeMomentumAndEnergyIAD/a if (d.rank > 2 '
                         r'&& d.iteration > %s)'
                         r' { MPI::COMM_WORLD.Abort(0); }"' % self.step_abort)
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'module rm xalt',
             'sed -i %s %s' % (insert_abort, self.sourcepath),
         ]
