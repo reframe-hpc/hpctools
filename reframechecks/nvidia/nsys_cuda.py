@@ -127,7 +127,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.target_executable + '.app',
                           self.target_executable),
@@ -151,8 +151,8 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # self.rpt = '%s.rpt' % self.testname
         # }}}
 

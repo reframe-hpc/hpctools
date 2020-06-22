@@ -144,13 +144,13 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.executable, self.target_executable),
             '%s --version &> %s' % (self.tool, self.version_rpt),
             'which %s &> %s' % (self.tool, self.which_rpt),
         ]
-        self.post_run = [
+        self.postrun_cmds = [
             'cd %s ;ln -s nid?????.000 e000 ;cd -' % self.dir_rpt,
             '%s --report=survey --project-dir=%s &> %s' %
             (self.tool, self.dir_rpt, self.summary_rpt),
@@ -173,8 +173,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
 
         # {{{ perf_patterns:

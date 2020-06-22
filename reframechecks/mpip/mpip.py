@@ -126,7 +126,7 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
         }
         # self.mpi_isendline = '140'
         self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps, '2>&1']
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
         ]
 # }}}

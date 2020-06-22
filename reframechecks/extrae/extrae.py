@@ -120,7 +120,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.xml2 = 'extrae.xml'
         self.patch = 'extrae.xml.patch'
         self.version_file = 'extrae_version.h'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             # tool version
             'cp $EBROOTEXTRAE/include/extrae_version.h %s' % self.version_file,
@@ -134,7 +134,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'chmod u+x %s' % (self.tool),
         ]
         self.prv = '%s.prv' % self.target_executable[2:]  # stripping './'
-        self.post_run = [
+        self.postrun_cmds = [
             'stats-wrapper.sh %s -comms_histo' % self.prv,
         ]
         self.rpt_mpistats = '%s.comms.dat' % self.target_executable
@@ -156,8 +156,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # {{{  performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
 
         # {{{ perf_patterns:

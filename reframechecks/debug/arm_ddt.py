@@ -85,17 +85,17 @@ class SphExaDDTCheck(rfm.RegressionTest):
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         # self.csv_rpt = 'csv.rpt'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'ddt --version > %s' % self.version_rpt,
             'which ddt &> %s' % self.which_rpt,
         ]
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
         self.htm_rpt = 'rpt_ddt.html'
         self.txt_rpt = 'rpt_ddt.txt'
 
-        self.post_run = [
+        self.postrun_cmds = [
             'echo stoptime=`date +%s`',
             # htm2txt is the same as running with --output=rpt.txt, see hook
             'w3m -dump %s > %s' % (self.htm_rpt, self.txt_rpt),

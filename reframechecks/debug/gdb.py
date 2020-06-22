@@ -79,7 +79,7 @@ class SphExaGDBCheck(rfm.RegressionTest):
         }
         self.tool_input = 'gdb.input'
         tool_init = 'gdbinit'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.executable, self.target_executable),
             'sed -i -e "s@-s 0@-s %s@" -e "s@-n 15@-n %s@" %s' %
@@ -103,7 +103,7 @@ class SphExaGDBCheck(rfm.RegressionTest):
     def set_sanity_pgi(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             regex = r'sed -ie "s-print domain.clist\[1\]-print domain.clist-"'
-            self.pre_run += ['%s %s' % (regex, self.tool_input)]
+            self.prerun_cmds += ['%s %s' % (regex, self.tool_input)]
             pretty_printer_regex = \
                 r'^\s+members of std::_Vector_base::_Vector_impl: $'
             pvector_type_regex = r'^Element type = int \*'
