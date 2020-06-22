@@ -17,7 +17,7 @@ guide are freely available `here
 This page will guide you through writing ReFrame tests to analyze the
 performance of your code. You should be familiar with ReFrame, this link to the
 ReFrame `tutorial
-<https://reframe-hpc.readthedocs.io/en/stable/tutorial.html>`__ can serve as a
+<https://reframe-hpc.readthedocs.io/en/stable/tutorials.html>`__ can serve as a
 starting point. As a reference test code, we will use the `SPH-EXA
 <https://github.com/unibas-dmi-hpc/SPH-EXA_mini-app>`__ mini-app. This code is
 based on the smoothed particle hydrodynamics (SPH) method, which is a
@@ -28,7 +28,7 @@ flexible, and header-only code with no external software dependencies.
 Parallelism is expressed via multiple programming models such as OpenMP and HPX
 for node level parallelism, MPI for internode communication and Cuda, OpenACC
 and OpenMP targets for accelerators. Our reference HPC system is `Piz Daint
-<http://www.cscs.ch/computers/piz_daint/>`__.
+<https://www.cscs.ch/computers/piz_daint/>`__.
 
 .. ---------------------------------------------------------------------------- ko
  # https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#embedded-uris-and-aliases
