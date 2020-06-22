@@ -163,5 +163,5 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
         self.build_system.ldflags = self.build_system.cxxflags + \
-            ['-L$(EBROOTMPIP)/lib', '-Wl,--whole-archive -lmpiP',
+            ['-L$EBROOTMPIP/lib', '-Wl,--whole-archive -lmpiP',
              '-Wl,--no-whole-archive -lunwind', '-lbfd -liberty -ldl -lz']
