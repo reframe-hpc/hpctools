@@ -16,10 +16,10 @@ import sphexa.sanity as sphs
 size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
              960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
              6: 62, 3: 49, 1: 34}
-# mpi_tasks = [1]
-# steps = [0]
-mpi_tasks = [24, 48, 96, 192]
-steps = [2]
+mpi_tasks = [12]  # jenkins restricted to 1 cnode
+steps = [0]
+# mpi_tasks = [24, 48, 96, 192]
+# steps = [2]
 nativejob_stdout = 'rfm_native_job.out'
 
 
