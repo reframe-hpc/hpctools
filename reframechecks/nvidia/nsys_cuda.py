@@ -13,9 +13,10 @@ import sphexa.sanity as sphs
 import sphexa.sanity_nvidia as sphsnv
 
 
+# 3 steps minimum to avoid "delay timeout" error
 @rfm.parameterized_test(*[[mpitask, steps]
                           for mpitask in [2]
-                          for steps in [0]
+                          for steps in [3]
                           ])
 class SphExaNsysCudaCheck(rfm.RegressionTest):
     # {{{
@@ -36,6 +37,9 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
 
     .. literalinclude:: ../../reframechecks/nvidia/nsys_cuda.res
       :emphasize-lines: 26
+
+    # Total execution time of 2 iterations of SqPatch: 1.01668s
+    The application terminated before the delay timeout. No report was generated.
     '''
     # }}}
 
@@ -88,7 +92,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         #     cubesize = 100
         size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     2: 100
+                     2: 40
                      }
         cubesize = size_dict[mpitask]
         self.name = 'sphexa_nsyscuda_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'. \
@@ -167,7 +171,6 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         # tool's reference
         myzero_k = (0, None, None, 'KiB')
         myzero_p = (0, None, None, '%')
-        self.reference['*:%cudaMemcpy'] = myzero_p
         self.reference['*:%cudaMemcpy'] = myzero_p
         self.reference['*:%CUDA_memcpy_HtoD_time'] = myzero_p
         self.reference['*:%CUDA_memcpy_DtoH_time'] = myzero_p

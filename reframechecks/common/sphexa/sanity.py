@@ -96,7 +96,7 @@ def seconds_tree(self):
       # domain::buildTree: 0.084004s
       reports: * BuildTree: 0 s
     '''
-    regex = r'^# domain:BuildTree:\s+(?P<sec>.*)s'
+    regex = r'^# domain::buildTree:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 

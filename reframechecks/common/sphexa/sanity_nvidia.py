@@ -169,8 +169,8 @@ def nsys_report_momentumEnergy_pct(self):
       #         6678078  computeIAD
       #         1459594  density
       '''
-    regex = (r'^\s+(?P<pctg>\S+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+'
-             r'computeMomentumAndEnergyIAD\s+$')
+    # new regex:
+    regex = (r'^\s+(?P<pctg>\S+).*::computeMomentumAndEnergyIAD<')
     result = sn.round(sn.avg(sn.extractall(
         regex, self.stdout, 'pctg', float)), 1)
     return result
@@ -199,8 +199,8 @@ def nsys_report_computeIAD_pct(self):
       #         6678078  computeIAD
       #         1459594  density
       '''
-    regex = (r'^\s+(?P<pctg>\S+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+'
-             r'computeIAD\s+$')
+    # new regex:
+    regex = (r'^\s+(?P<pctg>\S+).*::computeIAD<')
     result = sn.round(sn.avg(sn.extractall(
         regex, self.stdout, 'pctg', float)), 1)
     return result
