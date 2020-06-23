@@ -13,11 +13,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 import sphexa.sanity as sphs
 
 
-size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
+size_dict = {12:78, 24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
              960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
              6: 62, 3: 49, 1: 34}
-mpi_tasks = [12]  # jenkins restricted to 1 cnode
-steps = [0]
+mpi_tasks = [12, 24]  # jenkins restricted to 1 cnode
+steps = [1]
 # mpi_tasks = [24, 48, 96, 192]
 # steps = [2]
 nativejob_stdout = 'rfm_native_job.out'
@@ -205,7 +205,7 @@ class MPI_Compute_Singularity_Test(SphExa_Container_Base_Check):
         ]
         self.postrun_cmds.extend(postrun_cmds)
         # }}}
-        self.rpt = None
+        self.rpt_dep = None
 # }}}
 
 
@@ -250,7 +250,7 @@ class MPI_Compute_Sarus_Test(SphExa_Container_Base_Check):
         ]
         super().__init__(mpi_task, step, container_d)
         # self.valid_systems = ['dom:mc', 'dom:gpu']
-        self.rpt = None
+        self.rpt_dep = None
 # }}}
 
 
@@ -308,19 +308,19 @@ class MPI_Collect_Logs_Test(rfm.RunOnlyRegressionTest):
             for mpi_task in mpi_tasks:
                 # native:
                 # testname = self.nativejob_stdout
-                self.rpt = os.path.join(self.stagedir, nativejob_stdout)
+                self.rpt_dep = os.path.join(self.stagedir, nativejob_stdout)
                 res_native = sn.evaluate(sphs.elapsed_time_from_date(self))
                 # rfm_postproc_containers_job.out: No such file or directory
                 # --> update sphs.elapsed_time_from_date with self.rpt
                 # --- singularity:
                 testname = f'compute_singularity_{mpi_task}mpi_{step}steps'
-                self.rpt = os.path.join(self.stagedir,
+                self.rpt_dep = os.path.join(self.stagedir,
                                         f'rfm_{testname}_{job_out}')
                 res_singularity = \
                     sn.evaluate(sphs.elapsed_time_from_date(self))
                 # --- sarus:
                 testname = f'compute_sarus_{mpi_task}mpi_{step}steps'
-                self.rpt = os.path.join(self.stagedir,
+                self.rpt_dep = os.path.join(self.stagedir,
                                         f'rfm_{testname}_{job_out}')
                 res_sarus = sn.evaluate(sphs.elapsed_time_from_date(self))
                 # --- termgraph data:

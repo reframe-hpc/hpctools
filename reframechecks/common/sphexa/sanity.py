@@ -30,9 +30,9 @@ def elapsed_time_from_date(self):
     '''
     regex_start_sec = r'^starttime=(?P<sec>\d+.\d+)'
     regex_stop_sec = r'^stoptime=(?P<sec>\d+.\d+)'
-    if self.rpt:
-        rpt = self.rpt
-    else:
+    try:
+        rpt = self.rpt_dep
+    except:
         rpt = self.stdout
 
     start_sec = sn.extractall(regex_start_sec, rpt, 'sec', int)

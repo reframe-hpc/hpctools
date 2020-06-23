@@ -102,6 +102,10 @@ class SphExaATPCheck(rfm.RegressionTest):
             'pkg-config --modversion AtpSigHandler >> %s' % self.version_rpt,
             'pkg-config --variable=atp_libdir AtpSigHandler &> %s' %
             self.which_rpt,
+            # atp/3.x:
+            f'pkg-config --modversion libAtpSigHandler >> {self.version_rpt}',
+            'pkg-config --variable=exec_prefix libAtpSigHandler &> %s' %
+            self.which_rpt,
         ]
         # use linux date as timer:
         self.prerun_cmds += ['echo starttime=`date +%s`']
