@@ -50,7 +50,7 @@ class SphExaVtuneCheck(sphsvtune.VtuneBaseTest):
 # {{{ compile
         self.testname = 'sqpatch'
         self.modules = ['vtune_profiler/2020']
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -121,7 +121,7 @@ class SphExaVtuneCheck(sphsvtune.VtuneBaseTest):
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
         self.srcfile_rpt = 'srcfile.rpt'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.executable, self.target_executable),
             '%s --version &> %s' % (self.tool, self.version_rpt),
@@ -129,7 +129,7 @@ class SphExaVtuneCheck(sphsvtune.VtuneBaseTest):
         ]
         column = ('"CPU Time:Self,CPU Time:Effective Time:Self,'
                   'CPU Time:Spin Time:Self,CPU Time:Overhead Time:Self"')
-        self.post_run = [
+        self.postrun_cmds = [
             # summary rpt: TODO: for ...
             # '%s -R hotspots -r %s* -column="CPU Time:Self" &> %s' %
             # (self.tool, self.dir_rpt, self.summary_rpt),
@@ -164,8 +164,8 @@ class SphExaVtuneCheck(sphsvtune.VtuneBaseTest):
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
 
 #        # {{{ perf_patterns:

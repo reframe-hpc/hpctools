@@ -56,7 +56,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         if self.current_system.name in ['dom']:
             self.modules = ['cdt/20.03']  # will load perftools-base/20.03.0
         self.modules += ['perftools-preload']
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -124,7 +124,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.csv_rpt = 'csv.rpt'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.executable, self.target_executable),
             '%s -V &> %s' % (self.tool, self.version_rpt),
@@ -132,13 +132,13 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
             # 'rm -fr $HOME/.craypat/*',
         ]
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run = ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds = ['echo stoptime=`date +%s`']
         # needed for sanity functions:
         self.rpt = 'rpt'
         csv_options = ('-v -O load_balance_group -s sort_by_pe=\'yes\' '
                        '-s show_data=\'csv\' -s pe=\'ALL\'')
-        self.post_run += [
+        self.postrun_cmds += [
             # patrun_num_of_compute_nodes
             'ls -1 %s+*s/xf-files/' % self.target_executable,
             'cp *_job.out %s' % self.rpt,
@@ -165,4 +165,4 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
 
 #     @rfm.run_before('sanity')
 #     def cp_stdout(self):
-#         self.post_run = ['cp *_job.out %s' % self.rpt]
+#         self.postrun_cmds = ['cp *_job.out %s' % self.rpt]

@@ -59,7 +59,7 @@ class SphExaATPCheck(rfm.RegressionTest):
         self.ini = '/opt/cray/elogin/eproxy/etc/eproxy.ini'
         self.cfg = '/opt/cray/elogin/eproxy/default/bin/eproxy_config.py'
         self.rpt_cfg = 'rpt.eproxy'
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'module rm xalt',
             'sed -i %s %s' % (insert_abort, self.sourcepath),
             # not strictly needed for atp but keeping as reminder:
@@ -96,15 +96,19 @@ class SphExaATPCheck(rfm.RegressionTest):
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.csv_rpt = 'csv.rpt'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'stat --version > %s' % self.version_rpt,
             'pkg-config --modversion AtpSigHandler >> %s' % self.version_rpt,
             'pkg-config --variable=atp_libdir AtpSigHandler &> %s' %
             self.which_rpt,
+            # atp/3.x:
+            f'pkg-config --modversion libAtpSigHandler >> {self.version_rpt}',
+            'pkg-config --variable=exec_prefix libAtpSigHandler &> %s' %
+            self.which_rpt,
         ]
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
         self.rpt_rkn = 'rpt.rkn'
         self.rpt_rk0 = 'rpt.rk0'
         gdb_command = (r'-e %s '
@@ -112,7 +116,7 @@ class SphExaATPCheck(rfm.RegressionTest):
                        r'--eval-command="bt" '
                        r'--eval-command="quit"' % self.executable)
         regex_not_rk0 = r'grep -m1 -v "\.0\."'
-        self.post_run = [
+        self.postrun_cmds = [
             'echo stoptime=`date +%s`',
             # --- rank 0: MPI_Allreduce
             'gdb -c core.atp.*.%s.* %s &> %s' % (0, gdb_command, self.rpt_rk0),

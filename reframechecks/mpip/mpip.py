@@ -13,9 +13,11 @@ import sphexa.sanity as sphs
 import sphexa.sanity_mpip as sphsmpip
 
 
-@rfm.parameterized_test(*[[mpitask, steps]
-                          # for mpitask in [24, 48, 96]
-                          for mpitask in [24]
+@rfm.parameterized_test(*[[mpitasks, steps]
+                          # for mpitasks in [24, 48, 96, 192, 384]
+                          # for steps in [10]
+                          # jenkins partition restricted to 1 cnode:
+                          for mpitasks in [24]
                           for steps in [0]
                           ])
 class SphExaMpipCheck(sphsmpip.MpipBaseTest):
@@ -26,14 +28,14 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
 
     2 parameters can be set for simulation:
 
-    :arg mpitask: number of mpi tasks; the size of the cube in the 3D
+    :arg mpitasks: number of mpi tasks; the size of the cube in the 3D
          square patch test is set with a dictionary depending on mpitask,
          but cubesize could also be on the list of parameters,
     :arg steps: number of simulation steps.
     '''
     # }}}
 
-    def __init__(self, mpitask, steps):
+    def __init__(self, mpitasks, steps):
         super().__init__()
         # {{{ pe
         self.descr = 'Tool validation'
@@ -50,7 +52,7 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
         self.testname = 'sqpatch'
         self.modules = ['mpiP']
         # unload xalt to avoid _buffer_decode error:
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -91,26 +93,26 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
 
 # {{{ run
         ompthread = 1
-        # This dictionary sets cubesize = f(mpitask), for instance:
-        # if mpitask == 24:
+        # This dictionary sets cubesize = f(mpitasks), for instance:
+        # if mpitasks == 24:
         #     cubesize = 100
         size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
                      960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
                      6: 62, 3: 49, 1: 34
                      }
-        cubesize = size_dict[mpitask]
+        cubesize = size_dict[mpitasks]
         self.name = 'sphexa_mpiP_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
+            self.testname, mpitasks, ompthread, cubesize, steps)
+        self.num_tasks = mpitasks
         self.num_tasks_per_node = 24
         self.num_tasks_per_core = 2
         self.use_multithreading = True
 # {{{ ht:
-        # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
+        # self.num_tasks_per_node = mpitasks if mpitasks < 36 else 36   # noht
         # self.use_multithreading = False  # noht
         # self.num_tasks_per_core = 1      # noht
 
-        # self.num_tasks_per_node = mpitask if mpitask < 72 else 72
+        # self.num_tasks_per_node = mpitasks if mpitasks < 72 else 72
         # self.use_multithreading = True # ht
         # self.num_tasks_per_core = 2    # ht
 # }}}
@@ -124,7 +126,7 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
         }
         # self.mpi_isendline = '140'
         self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps, '2>&1']
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
         ]
 # }}}
@@ -139,8 +141,8 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
 
 #        # {{{ perf_patterns:
@@ -161,5 +163,5 @@ class SphExaMpipCheck(sphsmpip.MpipBaseTest):
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
         self.build_system.ldflags = self.build_system.cxxflags + \
-            ['-L$(EBROOTMPIP)/lib', '-Wl,--whole-archive -lmpiP',
+            ['-L$EBROOTMPIP/lib', '-Wl,--whole-archive -lmpiP',
              '-Wl,--no-whole-archive -lunwind', '-lbfd -liberty -ldl -lz']

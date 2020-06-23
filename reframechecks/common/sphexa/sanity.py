@@ -30,9 +30,9 @@ def elapsed_time_from_date(self):
     '''
     regex_start_sec = r'^starttime=(?P<sec>\d+.\d+)'
     regex_stop_sec = r'^stoptime=(?P<sec>\d+.\d+)'
-    if self.rpt:
-        rpt = self.rpt
-    else:
+    try:
+        rpt = self.rpt_dep
+    except:
         rpt = self.stdout
 
     start_sec = sn.extractall(regex_start_sec, rpt, 'sec', int)
@@ -96,7 +96,7 @@ def seconds_tree(self):
       # domain::buildTree: 0.084004s
       reports: * BuildTree: 0 s
     '''
-    regex = r'^# domain:BuildTree:\s+(?P<sec>.*)s'
+    regex = r'^# domain::buildTree:\s+(?P<sec>.*)s'
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 
 

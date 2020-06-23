@@ -73,7 +73,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # {{{ compile
         self.testname = 'sqpatch'
         self.modules = ['inspector/2020']
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -146,13 +146,13 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
         # NOTE:
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.executable, self.target_executable),
             '%s --version &> %s' % (self.tool, self.version_rpt),
             'which %s &> %s' % (self.tool, self.which_rpt),
         ]
-        self.post_run = [
+        self.postrun_cmds = [
             '%s -r %s.* -report=summary &> %s' %
             (self.tool, self.dir_rpt, self.summary_rpt),
             # '%s -report=problems &> %s' % (self.tool, self.problems_rpt),
@@ -176,8 +176,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # self.rpt = '%s.rpt' % self.testname
         # }}}
 

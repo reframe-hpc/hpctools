@@ -41,7 +41,7 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
 
 # {{{ compile
         self.testname = 'sqpatch'
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.modules = ['craype-accel-nvidia60']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-std=c++14', '-g', '-O0', '-DNDEBUG'],
@@ -93,7 +93,7 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
         self.log_threads = 'info_threads.log'
         self.log_navigate = 'info_navigate.log'
         self.log_stdvector = 'info_std_vector.log'
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             'mv %s %s' % (self.target_executable + '.app',
                           self.target_executable),

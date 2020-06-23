@@ -60,7 +60,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
 # {{{ compile
         self.testname = 'sqpatch'
-        self.prebuild_cmd = ['module rm xalt']
+        self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -164,7 +164,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.tool = 'scalasca'
         # self.cubetool = 'cube_calltree'
         self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps]
-        self.pre_run = [
+        self.prerun_cmds = [
             'module rm xalt',
             '%s -V &> %s' % (self.tool, self.version_rpt),
             'scorep --version >> %s' % self.version_rpt,
@@ -173,7 +173,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'scorep-info config-summary &> %s' % self.info_rpt,
         ]
         cubetree = 'cube_calltree -m time -p -t 1'
-        self.post_run = [
+        self.postrun_cmds = [
             # can't test directly from vampir gui, dumping tracefile content:
             'otf2-print scorep_*_trace/traces.otf2 > %s' % self.rpt
             # 'otf2-print scorep-*/traces.otf2 > %s' % self.rpt
@@ -201,8 +201,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # {{{ performance
         # {{{ internal timers
         # use linux date as timer:
-        self.pre_run += ['echo starttime=`date +%s`']
-        self.post_run += ['echo stoptime=`date +%s`']
+        self.prerun_cmds += ['echo starttime=`date +%s`']
+        self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
 
         # {{{ perf_patterns:
