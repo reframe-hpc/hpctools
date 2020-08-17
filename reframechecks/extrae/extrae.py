@@ -15,7 +15,7 @@ import sphexa.sanity_extrae as sphsextrae
 
 # NOTE: jenkins restricted to 1 cnode
 mpi_tasks = [24]
-cubeside_dict = {24: 30}
+cubeside_dict = {24: 100}
 steps_dict = {24: 1}
 
 
