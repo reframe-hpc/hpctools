@@ -20,12 +20,13 @@ The test can be run from the command-line:
  module load reframe
  cd hpctools.git/reframechecks/extrae/
 
- ~/reframe.git/reframe.py \
+ ~/reframe.git/bin/reframe \
  -C ~/reframe.git/config/cscs.py \
  --system daint:gpu \
  --prefix=$SCRATCH -r \
  -p PrgEnv-gnu \
  --performance-report \
+ --report-file $HOME/rpt.json \
  --keep-stage-files \
  -c ./extrae.py
 
@@ -33,7 +34,6 @@ A successful ReFrame output will look like the following:
 
 .. code-block:: bash
 
- Reframe version: 2.22
  Launched on host: daint101
  
  [----------] started processing sphexa_extrae_sqpatch_024mpi_001omp_100n_1steps (Tool validation)

@@ -13,20 +13,21 @@ import sphexa.sanity as sphs
 import sphexa.sanity_extrae as sphsextrae
 
 
-@rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [24]
-                          for steps in [1]
-                          ])
-class SphExaNativeCheck(rfm.RegressionTest):
+# NOTE: jenkins restricted to 1 cnode
+mpi_tasks = [24]
+cubeside_dict = {24: 100}
+steps_dict = {24: 1}
+
+
+@rfm.parameterized_test(*[[mpi_task] for mpi_task in mpi_tasks])
+class SphExaExtraeCheck(rfm.RegressionTest):
     # {{{
     '''
     This class runs the test code with Extrae (mpi only)
+    3 parameters can be set for simulation:
 
-    2 parameters can be set for simulation:
-
-    :arg mpitask: number of mpi tasks; the size of the cube in the 3D
-         square patch test is set with a dictionary depending on mpitask,
-         but cubesize could also be on the list of parameters,
+    :arg mpi_task: number of mpi tasks,
+    :arg cubeside: size of the simulation domain,
     :arg steps: number of simulation steps.
 
     Typical performance reporting:
@@ -37,7 +38,7 @@ class SphExaNativeCheck(rfm.RegressionTest):
     '''
     # }}}
 
-    def __init__(self, mpitask, steps):
+    def __init__(self, mpi_task):
         # {{{ pe
         self.descr = 'Tool validation'
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -45,9 +46,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu'}
-# }}}
+        # }}}
 
-# {{{ compile
+        # {{{ compile
         self.testname = 'sqpatch'
         self.prebuild_cmds = ['module rm xalt']
         self.prgenv_flags = {
@@ -55,16 +56,16 @@ class SphExaNativeCheck(rfm.RegressionTest):
                            '-DUSE_MPI', '-DNDEBUG'],
         }
         # ---------------------------------------------------------------- tool
-        tool_ver = '3.7.1'
-        tc_ver = '19.10'
+        self.tool = 'tool.sh'
+        tool_ver = '3.8.1'
+        tc_ver = '20.08'
         self.tool_modules = {
-            'PrgEnv-gnu': ['Extrae/%s-CrayGNU-%s' % (tool_ver, tc_ver)],
+            'PrgEnv-gnu': [f'Extrae/{tool_ver}-CrayGNU-{tc_ver}'],
         }
         # ---------------------------------------------------------------- tool
         self.build_system = 'SingleSource'
         self.build_system.cxx = 'CC'
         self.sourcepath = '%s.cpp' % self.testname
-        self.tool = 'tool.sh'
         self.executable = self.tool
         self.target_executable = './%s.exe' % self.testname
 # {{{ openmp:
@@ -75,22 +76,17 @@ class SphExaNativeCheck(rfm.RegressionTest):
 # 'PrgEnv-cray': ['-fopenmp'],
 # # '-homp' if lang == 'F90' else '-fopenmp',
 # }}}
-# }}}
+        # }}}
 
-# {{{ run
+        # {{{ run
         ompthread = 1
-        # This dictionary sets cubesize = f(mpitask), for instance:
-        # if mpitask == 24:
-        #     cubesize = 100
-        size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
-                     960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     6: 30,
-                     }
-        cubesize = size_dict[mpitask]
+        self.cubeside = cubeside_dict[mpi_task]
+        self.steps = steps_dict[mpi_task]
         self.name = \
             'sphexa_extrae_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'. \
-            format(self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
+            format(self.testname, mpi_task, ompthread, self.cubeside,
+                   self.steps)
+        self.num_tasks = mpi_task
         self.num_tasks_per_node = 24  # 72
 # {{{ ht:
         # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
@@ -115,7 +111,8 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.rpt = 'rpt'
         self.tool = './tool.sh'
         self.executable = self.tool
-        self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps]
+        self.executable_opts = [
+            f'-- -n {self.cubeside}', f'-s {self.steps}', '2>&1']
         self.xml1 = '$EBROOTEXTRAE/share/example/MPI/extrae.xml'
         self.xml2 = 'extrae.xml'
         self.patch = 'extrae.xml.patch'
@@ -138,10 +135,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
             'stats-wrapper.sh %s -comms_histo' % self.prv,
         ]
         self.rpt_mpistats = '%s.comms.dat' % self.target_executable
-# }}}
+        # }}}
 
-# {{{ sanity
-        # sanity
+        # {{{ sanity
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
@@ -151,9 +147,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
             sn.assert_found(r'Congratulations! %s has been generated.' %
                             self.prv, self.stdout),
         ])
-# }}}
+        # }}}
 
-# {{{  performance
+        # {{{  performance
         # {{{ internal timers
         # use linux date as timer:
         self.prerun_cmds += ['echo starttime=`date +%s`']
@@ -194,10 +190,16 @@ class SphExaNativeCheck(rfm.RegressionTest):
         # sn.evaluate(sphsextrae.tool_reference_scoped_d(self))
         # self.reference = {**basic_reference, **tool_reference}
 # }}}
-# }}}
+        # }}}
+
+    # {{{ hooks
+    @rfm.run_before('run')
+    def set_prg_environment(self):
+        self.modules = self.tool_modules[self.current_environ.name]
 
     @rfm.run_before('compile')
-    def setflags(self):
+    def set_compiler_flags(self):
         self.modules = self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
+    # }}}
