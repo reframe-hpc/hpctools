@@ -13,10 +13,16 @@ import sphexa.sanity as sphs
 import sphexa.sanity_nvidia as sphsnv
 
 
-# 3 steps minimum to avoid "delay timeout" error
-@rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [2]
-                          for steps in [3]
+# NOTE: jenkins restricted to 1 cnode
+# NOTE: 3 steps minimum to avoid "delay timeout" error + cubeside >= 40 
+mpi_tasks = [2]
+cubeside_dict = {2: 40}
+steps_dict = {2: 3}
+
+
+# {{{ class SphExaNsysCudaCheck
+@rfm.parameterized_test(*[[mpi_task]
+                          for mpi_task in mpi_tasks
                           ])
 class SphExaNsysCudaCheck(rfm.RegressionTest):
     # {{{
@@ -43,7 +49,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
     '''
     # }}}
 
-    def __init__(self, mpitask, steps):
+    def __init__(self, mpi_task):
         # {{{ pe
         self.descr = 'Tool validation'
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -51,23 +57,35 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'gpu'}
-# }}}
+        # }}}
 
-# {{{ compile
+        # {{{ compile
         self.testname = 'sqpatch'
-        self.modules = ['craype-accel-nvidia60',
-                        'nvidia-nsight-systems/2020.2.1.71']
+        # self.modules = ['craype-accel-nvidia60', 'nvhpc']
+                        # 'nvidia-nsight-systems/2020.2.1.71']
                         # 'nvidia-nsight-systems/2020.1.1.65']
-        self.prebuild_cmds = ['module rm xalt']
-
+        # ---------------------------------------------------------------- tool
+        self.tool = 'nsys'
+        self.tool_mf = 'craype-accel-nvidia60 nvhpc'
+        tc_ver = '20.06'
+        self.tool_modules = {
+            'PrgEnv-gnu': [f'CrayGNU/.{tc_ver}', self.tool_mf],
+            'PrgEnv-intel': [f'CrayIntel/.{tc_ver}', self.tool_mf],
+            'PrgEnv-cray': [f'CrayCCE/.{tc_ver}', self.tool_mf],
+            'PrgEnv-pgi': [f'CrayPGI/.{tc_ver}', self.tool_mf],
+        }
+        # ---------------------------------------------------------------- tool
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile'
         self.build_system.nvcc = 'nvcc'
         self.build_system.cxx = 'CC'
         self.build_system.max_concurrency = 2
-        self.tool = 'nsys'
         self.executable = self.tool
         self.target_executable = 'mpi+omp+cuda'
+        self.prebuild_cmds = [
+            'module rm xalt',
+            'module list -t',
+        ]
         self.build_system.options = [
             self.target_executable, 'MPICXX=CC', 'SRCDIR=.', 'BUILDDIR=.',
             'BINDIR=.', 'CUDA_PATH=$CUDATOOLKIT_HOME',
@@ -82,23 +100,17 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
 # 'PrgEnv-cray': ['-fopenmp'],
 # # '-homp' if lang == 'F90' else '-fopenmp',
 # }}}
+        # }}}
 
-# }}}
-
-# {{{ run
+        # {{{ run
         ompthread = 1
-        # This dictionary sets cubesize = f(mpitask), for instance:
-        # if mpitask == 24:
-        #     cubesize = 100
-        size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
-                     960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     2: 40
-                     }
-        cubesize = size_dict[mpitask]
+        self.cubeside = cubeside_dict[mpi_task]
+        self.steps = steps_dict[mpi_task]
+        # cubesize = size_dict[mpitask]
         self.name = 'sphexa_nsyscuda_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'. \
-            format(self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = 1  # 72
+            format(self.testname, mpi_task, ompthread, self.cubeside, self.steps)
+        self.num_tasks = mpi_task
+        self.num_tasks_per_node = 1
 # {{{ ht:
         # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
         # self.use_multithreading = False  # noht
@@ -117,7 +129,6 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
-        self.tool = 'nsys'
         self.tool_opts = (r'profile --force-overwrite=true '
                           r'-o %h.%q{SLURM_NODEID}.%q{SLURM_PROCID}.qdstrm '
                           r'--trace=cuda,mpi,nvtx --mpi-impl=mpich '
@@ -126,8 +137,9 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         # deactivate cpu reporting:
         # tool_opts += '--sample=none '
         # tool_opts += '--trace=cublas,cuda,mpi,nvtx,osrt --mpi-impl=mpich '
-        self.executable_opts = [self.tool_opts, '%s' % self.target_executable,
-                                '-n %s' % cubesize, '-s %s' % steps, '2>&1']
+        self.executable_opts = [
+            self.tool_opts, self.target_executable,
+            f'-- -n {self.cubeside}', f'-s {self.steps}', '2>&1']
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
@@ -135,13 +147,12 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
             'module rm xalt',
             'mv %s %s' % (self.target_executable + '.app',
                           self.target_executable),
-            '%s --version &> %s' % (self.tool, self.version_rpt),
-            'which %s &> %s' % (self.tool, self.which_rpt),
+            f'{self.tool} --version &> {self.version_rpt}',
+            f'which {self.tool} &> {self.which_rpt}',
         ]
-# }}}
+        # }}}
 
-# {{{ sanity
-        # sanity
+        # {{{ sanity
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
@@ -150,7 +161,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
             # check the summary report:
             sn.assert_found('Exported successfully', self.stdout),
         ])
-# }}}
+        # }}}
 
 # {{{ performance
         # {{{ internal timers
@@ -179,4 +190,10 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         self.reference['*:%computeMomentumAndEnergyIAD'] = myzero_p
         self.reference['*:%computeIAD'] = myzero_p
 # }}}
+
+    # {{{ hooks
+    @rfm.run_before('compile')
+    def set_prg_environment(self):
+        self.modules = self.tool_modules[self.current_environ.name]
+    # }}}
 # }}}
