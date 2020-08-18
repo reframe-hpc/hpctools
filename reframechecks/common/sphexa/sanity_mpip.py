@@ -28,7 +28,7 @@ class MpipBaseTest(rfm.RegressionTest):
 
 # {{{ sanity patterns
     @rfm.run_before('sanity')
-    def mpip_version(self):
+    def mpip_sanity_patterns(self):
         '''Checks tool's version:
 
         .. code-block::
@@ -36,8 +36,7 @@ class MpipBaseTest(rfm.RegressionTest):
           > cat ./sqpatch.exe.6.31820.1.mpiP
           @ mpiP
           @ Command : sqpatch.exe -n 62 -s 1
-          @ Version                  : 3.4.2  <---
-          @ MPIP Build date          : Oct 15 2019, 16:52:21
+          @ Version : 3.4.2  <-- 57fc864
         '''
         reference_tool_version = {
             'daint': '3.4.2',
@@ -45,10 +44,13 @@ class MpipBaseTest(rfm.RegressionTest):
         }
         ref_version = reference_tool_version[self.current_system.name]
         regex = r'^@ Version\s+: (?P<toolversion>\S+)$'
-        version = sn.extractsingle(regex, self.rpt, 'toolversion')
-        self.sanity_patterns_l.append(
-            sn.assert_eq(version, ref_version)
-        )
+        res_version = sn.extractsingle(regex, self.rpt, 'toolversion')
+        self.sanity_patterns = sn.all([
+            # check the job output:
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
+            # check the tool version:
+            sn.assert_eq(res_version, ref_version),
+        ])
 # }}}
 
 # {{{ performance patterns
