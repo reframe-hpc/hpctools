@@ -27,8 +27,8 @@ class PerftoolsBaseTest(rfm.RegressionTest):
           CrayPat/X:  Version 20.03.0 Revision b18264180
         '''
         reference_tool_version = {
-            'daint': '7.1.1',
-            'dom': '20.03.0',
+            'daint': '20.08.0',
+            'dom': '20.08.0',
         }
         ref_version = reference_tool_version[self.current_system.name]
         regex = r'^CrayPat/X:\s+Version (?P<toolversion>\S+) Revision'
