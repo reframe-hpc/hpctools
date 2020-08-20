@@ -44,7 +44,8 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
 
     Versions:
         - cudatoolkit/10.2.89 has nsys/2019.5.2.16-b54ef97
-        - nvhpc/2020_207-cuda-10.2 has nsys/2020.3.1.54-2bd2a65 <--
+        - nvhpc/2020_207-cuda-10.2 has nsys/2020.3.1.54-2bd2a65
+        - nvidia-nsight-systems/2020.3.1.72 has nsys/2020.3.1.72-e5b8014 <--
     '''
     # }}}
 
@@ -61,7 +62,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         # {{{ compile
         self.testname = 'sqpatch'
         self.tool = 'nsys'
-        self.tool_mf = 'nvhpc'
+        self.tool_mf = 'nvidia-nsight-systems'
         tc_ver = '20.08'
         self.prebuild_cmds = ['module rm xalt', 'module list -t']
         self.tool_modules = {

@@ -190,10 +190,8 @@ def nsys_version(obj):
       returns: True or False
     '''
     reference_tool_version = {
-        'daint': '2020.2.1.71',
-        'dom': '2020.3.1.54',
-        # 'daint': '2020.1.1.65',
-        # 'dom': '2020.1.1.65',
+        'daint': '2020.3.1.72',
+        'dom': '2020.3.1.72',
     }
     regex = r'^NVIDIA Nsight Systems version (?P<toolversion>\S+)-'
     version = sn.extractsingle(regex, obj.version_rpt, 'toolversion')
