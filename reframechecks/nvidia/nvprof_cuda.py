@@ -20,15 +20,14 @@ cubeside_dict = {2: 40}
 steps_dict = {2: 3}
 
 
-# {{{ class SphExaNsysCudaCheck
+# {{{ class SphExaNvprofCudaCheck
 @rfm.parameterized_test(*[[mpi_task] for mpi_task in mpi_tasks])
-class SphExaNsysCudaCheck(rfm.RegressionTest):
+class SphExaNvprofCudaCheck(rfm.RegressionTest):
     # {{{
     '''
-    This class runs the test code with Nvidia nsys systems (2 mpi tasks min)
-    https://docs.nvidia.com/nsight-systems/index.html
+    This class runs the test code with Nvidia nvprof (2 mpi tasks min)
 
-    Available analysis types are: ``nsys profile -help``
+    Available analysis types are: ``nvprof --help``
 
     2 parameters can be set for simulation:
 
@@ -43,8 +42,8 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
       :emphasize-lines: 26
 
     Versions:
-        - cudatoolkit/10.2.89 has nsys/2019.5.2.16-b54ef97
-        - nvhpc/2020_207-cuda-10.2 has nsys/2020.3.1.54-2bd2a65 <--
+        - cudatoolkit/10.2.89 has nvprof/10.2.89
+        - nvhpc/2020_207-cuda-10.2 has nvprof/10.2.89 <--
     '''
     # }}}
 
@@ -60,7 +59,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
 
         # {{{ compile
         self.testname = 'sqpatch'
-        self.tool = 'nsys'
+        self.tool = 'nvprof'
         self.tool_mf = 'nvhpc'
         tc_ver = '20.08'
         self.prebuild_cmds = ['module rm xalt', 'module list -t']
@@ -88,7 +87,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         self.num_tasks = mpi_task
         self.cubeside = cubeside_dict[mpi_task]
         self.steps = steps_dict[mpi_task]
-        self.name = 'sphexa_nsyscuda_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'. \
+        self.name = 'sphexa_nvprofcuda_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'. \
             format(self.testname, mpi_task, ompthread, self.cubeside,
                    self.steps)
         self.num_tasks_per_node = 1
@@ -100,18 +99,14 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            # 'COMPUTE_PROFILE': '',
+            # 'PMI_NO_FORK': '1',
         }
-        self.tool_opts = (r'profile --force-overwrite=true '
-                          r'-o %h.%q{SLURM_NODEID}.%q{SLURM_PROCID}.qdstrm '
-                          r'--trace=cuda,mpi,nvtx --mpi-impl=mpich '
-                          r'--stats=true '
-                          r'--delay=2')
-        # deactivate cpu reporting:
-        # tool_opts += '--sample=none '
-        # tool_opts += '--trace=cublas,cuda,mpi,nvtx,osrt --mpi-impl=mpich '
+        self.tool_opts = ''
+        # self.tool_opts = r'-o nvprof.output.%h.%p'
         self.executable_opts = [
-            self.tool_opts, self.target_executable,
-            f'-- -n {self.cubeside}', f'-s {self.steps}', '2>&1']
+            self.tool_opts, f'./{self.target_executable}',
+            f'-n {self.cubeside}', f'-s {self.steps}', '2>&1']
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
@@ -132,9 +127,9 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
             # check the tool's version:
-            sn.assert_true(sphsnv.nsys_version(self)),
+            sn.assert_true(sphsnv.nvprof_version(self)),
             # check the summary report:
-            sn.assert_found('Exported successfully', self.stdout),
+            sn.assert_found('NVPROF is profiling process', self.stdout),
         ])
         # }}}
 
@@ -146,7 +141,7 @@ class SphExaNsysCudaCheck(rfm.RegressionTest):
 
         # {{{ perf_patterns:
         basic_perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
-        tool_perf_patterns = sn.evaluate(sphsnv.nsys_perf_patterns(self))
+        tool_perf_patterns = sn.evaluate(sphsnv.nvprof_perf_patterns(self))
         self.perf_patterns = {**basic_perf_patterns, **tool_perf_patterns}
         # }}}
 
