@@ -11,9 +11,9 @@ from reframe.core.launchers import LauncherWrapper
 
 
 # NOTE: jenkins restricted to 1 cnode
-mpi_tasks = [24]  # [24, 528, 8192]
-cubeside_dict = {24: 30, 528: 81, 8192: 201}
-steps_dict = {24: 2, 528: 2, 8192: 2}
+mpi_tasks = [24]  # [24, 480, 528, 8192]
+cubeside_dict = {24: 30, 480: 78, 528: 81, 8192: 201}
+steps_dict = {24: 2, 480: 2, 528: 2, 8192: 2}
 
 
 # {{{ class SphExaDDTCheck
@@ -263,20 +263,20 @@ class SphExaLegacyDDTCheck(rfm.RegressionTest):
             f'-- -n {self.cubeside}', f'-s {self.steps}', '2>&1']
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
+        self.lic_rpt = 'rpt_ddt.lic'
         self.prerun_cmds = [
             'module rm xalt',
             f'{self.tool} --version &> {self.version_rpt}',
             f'which {self.tool} &> {self.which_rpt}',
+            f'cat $EBROOTDDT/licences/Licence > {self.lic_rpt}',
         ]
         self.prerun_cmds += ['echo starttime=`date +%s`']
         self.txt_rpt = 'rpt_ddt.txt'
         self.htm_rpt = 'rpt_ddt.html'
-        self.lic_rpt = 'rpt_ddt.lic'
         self.postrun_cmds = [
             'echo stoptime=`date +%s`',
             # htm2txt is the same as running with --output=rpt.txt, see hook
             f'w3m -dump {self.htm_rpt} > {self.txt_rpt}',
-            f'cat $EBROOTDDT/licences/Licence > {self.lic_rpt}',
         ]
         # }}}
 
