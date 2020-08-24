@@ -27,7 +27,7 @@ def extrae_version(obj):
     '''
     reference_tool_version = {
         'daint': '371',
-        'dom': '371',
+        'dom': '381',
     }
     ref_file = obj.version_file
     regex = (r'#define EXTRAE_MAJOR (?P<v1>\d)\n'

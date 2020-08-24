@@ -1,1 +1,4 @@
 cxxfilt
+jsonschema
+numpy
+pip
