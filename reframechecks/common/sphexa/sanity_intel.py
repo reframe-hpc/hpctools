@@ -24,9 +24,9 @@ def inspector_version(obj):
     '''
     reference_tool_version = {
         'daint': '603904',  # 2020
-        'dom': '603904',    # 2020
+        'dom': '604588',    # 2020_update2
     }
-    regex = (r'^Intel\(R\) Inspector \d+\s+\(build (?P<toolsversion>\d+)')
+    regex = (r'^Intel\(R\) Inspector \d+\s+.*\(build (?P<toolsversion>\d+)')
     version = sn.extractsingle(regex, obj.version_rpt, 'toolsversion')
     TorF = sn.assert_eq(
         version, reference_tool_version[obj.current_system.name])
@@ -75,9 +75,9 @@ def vtune_version(obj):
     '''
     reference_tool_version = {
         'daint': '605129',  # 2020
-        'dom': '605129',    # 2020
+        'dom': '610396',    # 2020_update2
     }
-    regex = (r'^Intel\(R\) VTune\(TM\) Profiler \d+\s+\(build'
+    regex = (r'^Intel\(R\) VTune\(TM\) Profiler \d+\s+.*\(build'
              r'\s(?P<toolsversion>\d+)')
     version = sn.extractsingle(regex, obj.version_rpt, 'toolsversion')
     TorF = sn.assert_eq(
@@ -287,9 +287,9 @@ def advisor_version(obj):
     '''
     reference_tool_version = {
         'daint': '604394',  # 2020
-        'dom': '604394',    # 2020
+        'dom': '606470',    # 2020_u2
     }
-    regex = (r'^Intel\(R\) Advisor \d+\s+\(build (?P<toolsversion>\d+)')
+    regex = (r'^Intel\(R\) Advisor \d+\s+.*\(build (?P<toolsversion>\d+)')
     version = sn.extractsingle(regex, obj.version_rpt, 'toolsversion')
     TorF = sn.assert_eq(
         version, reference_tool_version[obj.current_system.name])
