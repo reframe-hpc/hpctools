@@ -20,11 +20,11 @@ cubeside_dict = {1: 10, 12: 20, 24: 30}
 steps_dict = {1: 0, 12: 0, 24: 0}
 
 
-# {{{ class SphExaPapiWrapCheck
+# {{{ class SphExaValgrind4hpcCheck
 @rfm.parameterized_test(*[[mpi_task]
                           for mpi_task in mpi_tasks
                           ])
-class SphExaPapiWrapCheck(rfm.RegressionTest):
+class SphExaValgrind4hpcCheck(rfm.RegressionTest):
     # {{{
     '''
     This class runs the test code with Cray valgrind4hpc
