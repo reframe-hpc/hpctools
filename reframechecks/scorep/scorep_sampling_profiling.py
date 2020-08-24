@@ -12,20 +12,22 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 import sphexa.sanity as sphs
 import sphexa.sanity_scorep as sphsscorep
 
+# NOTE: jenkins restricted to 1 cnode
+mpi_tasks = [24]
+cubeside_dict = {24: 100}
+steps_dict = {24: 4}
+cycles_dict = {24: 5000000}
 
-@rfm.parameterized_test(*[[mpitask, steps, cycles]
-                          for mpitask in [24]
-                          for steps in [4]
-                          for cycles in [5000000]
-                          ])
-class SphExaNativeCheck(rfm.RegressionTest):
+
+@rfm.parameterized_test(*[[mpi_task] for mpi_task in mpi_tasks])
+class SphExaScorepProfilingCheck(rfm.RegressionTest):
     # {{{
     '''
     This class runs the test code with Score-P (mpi only):
 
     3 parameters can be set for simulation:
 
-    :arg mpitask: number of mpi tasks; the size of the cube in the 3D
+    :arg mpi_task: number of mpi tasks; the size of the cube in the 3D
          square patch test is set with a dictionary depending on mpitask,
          but cubesize could also be on the list of parameters,
     :arg steps: number of simulation steps.
@@ -57,21 +59,29 @@ class SphExaNativeCheck(rfm.RegressionTest):
     '''
     # }}}
 
-    def __init__(self, mpitask, steps, cycles):
+    def __init__(self, mpi_task):
         # {{{ pe
         self.descr = 'Tool validation'
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
-                                    'PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
+                                    'PrgEnv-cray']
         # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu'}
-# }}}
+        # }}}
 
-# {{{ compile
+        # {{{ compile
         self.testname = 'sqpatch'
-        self.prebuild_cmds = ['module rm xalt']
+        self.tool = 'scorep'
+        self.prebuild_cmds = ['module rm xalt', 'module list -t']
+        tool_ver = '6.0'
+        tc_ver = '20.08'
+        self.tool_modules = {
+            'PrgEnv-gnu': [f'Score-P/{tool_ver}-CrayGNU-{tc_ver}'],
+            'PrgEnv-intel': [f'Score-P/{tool_ver}-CrayIntel-{tc_ver}'],
+            'PrgEnv-cray': [f'Score-P/{tool_ver}-CrayCCE-{tc_ver}'],
+            'PrgEnv-pgi': [f'Score-P/{tool_ver}-CrayPGI-{tc_ver}'],
+        }
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -79,52 +89,26 @@ class SphExaNativeCheck(rfm.RegressionTest):
                              '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-cray': ['-I.', '-I./include', '-std=c++17', '-g', '-Ofast',
                             '-DUSE_MPI', '-DNDEBUG'],
-            'PrgEnv-cray_classic': ['-I.', '-I./include', '-hstd=c++14', '-g',
-                                    '-O3', '-hnoomp', '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
         }
-        # ---------------------------------------------------------------- tool
-        tool_ver = '6.0'
-        tc_ver = '19.10'
-        self.tool_modules = {
-            'PrgEnv-gnu': ['Score-P/%s-CrayGNU-%s' % (tool_ver, tc_ver)],
-            'PrgEnv-intel': ['Score-P/%s-CrayIntel-%s' % (tool_ver, tc_ver)],
-            'PrgEnv-cray': ['Score-P/%s-CrayCCE-%s' % (tool_ver, tc_ver)],
-            'PrgEnv-cray_classic': ['Score-P/%s-CrayCCE-%s-classic' %
-                                    (tool_ver, tc_ver)],
-            'PrgEnv-pgi': ['Score-P/%s-CrayPGI-%s' % (tool_ver, tc_ver)]
-        }
-        # ---------------------------------------------------------------- tool
         self.build_system = 'SingleSource'
         self.build_system.cxx = 'scorep --mpp=mpi --nocompiler CC'
-        self.sourcepath = '%s.cpp' % self.testname
-        self.executable = '%s.exe' % self.testname
-# {{{ openmp:
-# 'PrgEnv-intel': ['-qopenmp'],
-# 'PrgEnv-gnu': ['-fopenmp'],
-# 'PrgEnv-pgi': ['-mp'],
-# 'PrgEnv-cray_classic': ['-homp'],
-# 'PrgEnv-cray': ['-fopenmp'],
-# # '-homp' if lang == 'F90' else '-fopenmp',
-# }}}
-# }}}
+        self.sourcepath = f'{self.testname}.cpp'
+        self.executable = f'./{self.testname}.exe'
+        # }}}
 
-# {{{ run
+        # {{{ run
         ompthread = 1
-        # This dictionary sets cubesize = f(mpitask), for instance:
-        # if mpitask == 24:
-        #     cubesize = 100
-        size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
-                     960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     6: 30, 64: 100,
-                     }
-        cubesize = size_dict[mpitask]
+        self.num_tasks = mpi_task
+        self.cubeside = cubeside_dict[mpi_task]
+        self.steps = steps_dict[mpi_task]
+        cycles = cycles_dict[mpi_task]
         self.name = \
             'sphexa_scorepS+P_{}_{:03d}mpi_{:03d}omp_{}n_{}steps_{}cycles'. \
-            format(self.testname, mpitask, ompthread, cubesize, steps, cycles)
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = 24  # 72
+            format(self.testname, mpi_task, ompthread, self.cubeside,
+                   self.steps, cycles)
+        self.num_tasks_per_node = 24
 # {{{ ht:
         # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
         # self.use_multithreading = False  # noht
@@ -156,19 +140,20 @@ class SphExaNativeCheck(rfm.RegressionTest):
             # 'SCOREP_TIMER': 'clock_gettime',
             # 'SCOREP_PROFILING_MAX_CALLPATH_DEPTH': '1',
             # 'SCOREP_VERBOSE': 'true',
+            # 'SCOREP_TOTAL_MEMORY': '1G',
         }
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
-        self.info_rpt = 'scorep-info.rpt'
+        self.info_rpt = 'info.rpt'
         self.rpt = 'rpt'
         self.rpt_inclusive = '%s.inclusive' % self.rpt
         self.rpt_exclusive = '%s.exclusive' % self.rpt
-        self.tool = 'scorep'
-        self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps]
+        self.executable_opts = [
+            f'-n {self.cubeside}', f'-s {self.steps}', '2>&1']
         self.prerun_cmds = [
             'module rm xalt',
-            '%s --version &> %s' % (self.tool, self.version_rpt),
-            'which %s &> %s' % (self.tool, self.which_rpt),
+            f'{self.tool} --version &> {self.version_rpt}',
+            f'which {self.tool} &> {self.which_rpt}',
             'scorep-info config-summary &> %s' % self.info_rpt,
         ]
         cubetree = 'cube_calltree -m time -p -t 1'
@@ -186,10 +171,9 @@ class SphExaNativeCheck(rfm.RegressionTest):
             '(%s -i scorep-*/profile.cubex ;rm -f core*) >> %s' \
             % (cubetree, self.rpt_inclusive),
         ]
-# }}} 
+        # }}}
 
-# {{{ sanity
-        # sanity
+        # {{{ sanity
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
@@ -202,11 +186,10 @@ class SphExaNativeCheck(rfm.RegressionTest):
             sn.assert_found(r'Estimated aggregate size of event trace',
                             self.rpt)
         ])
-# }}}
+        # }}}
 
-# {{{ performance
+        # {{{ performance
         # {{{ internal timers
-        # use linux date as timer:
         self.prerun_cmds += ['echo starttime=`date +%s`']
         self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
@@ -228,22 +211,25 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
         # {{{ reference:
         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
-        # tool
+        # tool:
         self.reference['*:scorep_elapsed'] = (0, None, None, 's')
         self.reference['*:%scorep_USR'] = (0, None, None, '%')
         self.reference['*:%scorep_MPI'] = (0, None, None, '%')
         top1_name = sphsscorep.scorep_top1_name(self)
-        self.reference['*:scorep_top1'] = (0, None, None, top1_name)
+        # TODO: self.reference['*:scorep_top1'] = (0, None, None, top1_name)
+        self.reference['*:scorep_top1'] = (0, None, None, '')
         self.reference['*:%scorep_Energy_exclusive'] = (0, None, None, '%')
         self.reference['*:%scorep_Energy_inclusive'] = (0, None, None, '%')
-# }}}
-# }}}
+        # }}}
+        # }}}
 
+    # {{{ hooks
     @rfm.run_before('compile')
-    def setflags(self):
-        self.modules = self.tool_modules[self.current_environ.name]
+    def set_compiler_flags(self):
+        self.modules += self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
+    # }}}
 
     # TODO:
     # def setup(self, partition, environ, **job_opts):
