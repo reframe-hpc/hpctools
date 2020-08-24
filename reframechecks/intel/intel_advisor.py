@@ -13,12 +13,14 @@ import sphexa.sanity as sphs
 import sphexa.sanity_intel as sphsintel
 
 
-@rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [24]
-                          for steps in [0]
-                          # for cubesize in [100]
-                          ])
-class SphExaNativeCheck(rfm.RegressionTest):
+# NOTE: jenkins restricted to 1 cnode
+mpi_tasks = [24]
+cubeside_dict = {24: 100}
+steps_dict = {24: 0}
+
+
+@rfm.parameterized_test(*[[mpi_task] for mpi_task in mpi_tasks])
+class SphExaIntelAdvisorCheck(rfm.RegressionTest):
     # {{{
     '''
     This class runs the test code with Intel Advisor (mpi only):
@@ -59,22 +61,34 @@ class SphExaNativeCheck(rfm.RegressionTest):
     '''
     # }}}
 
-    def __init__(self, mpitask, steps):
+    def __init__(self, mpi_task):
         # {{{ pe
         self.descr = 'Tool validation'
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
-                                    'PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
+                                    'PrgEnv-cray']
         # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu'}
-# }}}
+        # }}}
 
-# {{{ compile
+        # {{{ compile
         self.testname = 'sqpatch'
-        self.modules = ['advisor/2020']
-        self.prebuild_cmds = ['module rm xalt']
+        self.tool = 'advixe-cl'
+        self.modules = ['advisor']
+        self.prebuild_cmds = ['module rm xalt', 'module list -t']
+        self.tool_v = '2020_update2'
+        tc_ver = '20.08'
+        self.tool_modules = {
+            'PrgEnv-gnu': [f'CrayGNU/.{tc_ver}',
+                           f'{self.modules[0]}/{self.tool_v}'],
+            'PrgEnv-intel': [f'CrayIntel/.{tc_ver}',
+                             f'{self.modules[0]}/{self.tool_v}'],
+            'PrgEnv-cray': [f'CrayCCE/.{tc_ver}',
+                            f'{self.modules[0]}/{self.tool_v}'],
+            'PrgEnv-pgi': [f'CrayPGI/.{tc_ver}',
+                           f'{self.modules[0]}/{self.tool_v}'],
+        }
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
@@ -82,41 +96,25 @@ class SphExaNativeCheck(rfm.RegressionTest):
                              '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-cray': ['-I.', '-I./include', '-std=c++17', '-g', '-Ofast',
                             '-DUSE_MPI', '-DNDEBUG'],
-            'PrgEnv-cray_classic': ['-I.', '-I./include', '-hstd=c++14', '-g',
-                                    '-O3', '-hnoomp', '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG'],
         }
         self.build_system = 'SingleSource'
-        self.build_system.cxx = 'CC'
-        self.sourcepath = '%s.cpp' % self.testname
-        self.tool = 'advixe-cl'
+        # self.build_system.cxx = 'CC'
+        self.sourcepath = f'{self.testname}.cpp'
         self.executable = self.tool
-        self.target_executable = './%s.exe' % self.testname
-# {{{ openmp:
-# 'PrgEnv-intel': ['-qopenmp'],
-# 'PrgEnv-gnu': ['-fopenmp'],
-# 'PrgEnv-pgi': ['-mp'],
-# 'PrgEnv-cray_classic': ['-homp'],
-# 'PrgEnv-cray': ['-fopenmp'],
-# # '-homp' if lang == 'F90' else '-fopenmp',
-# }}}
-# }}}
+        self.target_executable = f'./{self.testname}.exe'
+        self.postbuild_cmds = [f'mv {self.tool} {self.target_executable}']
+        # }}}
 
-# {{{ run
+        # {{{ run
         ompthread = 1
-        # This dictionary sets cubesize = f(mpitask), for instance:
-        # if mpitask == 24:
-        #     cubesize = 100
-        size_dict = {24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
-                     960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-                     6: 30,
-                     }
-        cubesize = size_dict[mpitask]
+        self.num_tasks = mpi_task
+        self.cubeside = cubeside_dict[mpi_task]
+        self.steps = steps_dict[mpi_task]
         self.name = 'sphexa_advisor_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = 24  # 72
+            self.testname, mpi_task, ompthread, self.cubeside, self.steps)
+        self.num_tasks_per_node = 24
 # {{{ ht:
         # self.num_tasks_per_node = mpitask if mpitask < 36 else 36   # noht
         # self.use_multithreading = False  # noht
@@ -134,31 +132,33 @@ class SphExaNativeCheck(rfm.RegressionTest):
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            # to avoid core when reporting (venv/jenkins):
+            'LANG': 'C',
+            'LC_ALL': 'C',
         }
         self.dir_rpt = 'rpt'
         self.tool_opts = '--collect=survey --search-dir src:rp=. ' \
                          '--data-limit=0 --no-auto-finalize --trace-mpi ' \
                          '--project-dir=%s -- ' % self.dir_rpt
-        self.executable_opts = [self.tool_opts, '%s' % self.target_executable,
-                                '-n %s' % cubesize, '-s %s' % steps, '2>&1']
+        self.executable_opts = [self.tool_opts, self.target_executable,
+                                f'-n {self.cubeside}', f'-s {self.steps}',
+                                '2>&1']
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.summary_rpt = 'summary.rpt'
         self.prerun_cmds = [
             'module rm xalt',
-            'mv %s %s' % (self.executable, self.target_executable),
-            '%s --version &> %s' % (self.tool, self.version_rpt),
-            'which %s &> %s' % (self.tool, self.which_rpt),
+            f'{self.tool} --version >> {self.version_rpt}',
+            f'which {self.tool} &> {self.which_rpt}',
         ]
         self.postrun_cmds = [
-            'cd %s ;ln -s nid?????.000 e000 ;cd -' % self.dir_rpt,
-            '%s --report=survey --project-dir=%s &> %s' %
-            (self.tool, self.dir_rpt, self.summary_rpt),
+            f'cd {self.dir_rpt} ;ln -s nid?????.000 e000 ;cd -',
+            f'{self.tool} --report=survey --project-dir={self.dir_rpt} '
+            f'&> {self.summary_rpt}',
         ]
-# }}}
+        # }}}
 
-# {{{ sanity
-        # sanity
+        # {{{ sanity
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
@@ -168,11 +168,10 @@ class SphExaNativeCheck(rfm.RegressionTest):
             sn.assert_found(r'advixe: This data has been saved',
                             self.summary_rpt),
         ])
-# }}}
+        # }}}
 
-# {{{ performance
+        # {{{ performance
         # {{{ internal timers
-        # use linux date as timer:
         self.prerun_cmds += ['echo starttime=`date +%s`']
         self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
@@ -188,45 +187,20 @@ class SphExaNativeCheck(rfm.RegressionTest):
 
         # {{{ reference:
         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
-        # tool
+        # tool:
         self.reference['*:advisor_elapsed'] = (0, None, None, 's')
-        loop1_fname = sphsintel.advisor_loop1_filename(self)
+        # TODO: fix loop1_fname to avoid error with --report-file:
+        # "Object of type '_DeferredExpression' is not JSON serializable"
+        # loop1_fname = sphsintel.advisor_loop1_filename(self)
+        loop1_fname = ''
         self.reference['*:advisor_loop1_line'] = (0, None, None, loop1_fname)
-        # NOTE: this also works:
-        # 'advisor_loop1_line': (0, None, None,
-        #   sphsintel.advisor_loop1_filename(self)),
-#         self.reference = {
-#             '*': {
-#                 'Elapsed': (0, None, None, 's'),
-#                 '_Elapsed': (0, None, None, 's'),
-#                 #
-#                 'domain_distribute': (0, None, None, 's'),
-#                 'mpi_synchronizeHalos': (0, None, None, 's'),
-#                 'BuildTree': (0, None, None, 's'),
-#                 'FindNeighbors': (0, None, None, 's'),
-#                 'Density': (0, None, None, 's'),
-#                 'EquationOfState': (0, None, None, 's'),
-#                 'IAD': (0, None, None, 's'),
-#                 'MomentumEnergyIAD': (0, None, None, 's'),
-#                 'Timestep': (0, None, None, 's'),
-#                 'UpdateQuantities': (0, None, None, 's'),
-#                 'EnergyConservation': (0, None, None, 's'),
-#                 'SmoothingLength': (0, None, None, 's'),
-#                 # top%
-#                 '%MomentumEnergyIAD': (0, None, None, '%'),
-#                 '%Timestep': (0, None, None, '%'),
-#                 '%mpi_synchronizeHalos': (0, None, None, '%'),
-#                 '%FindNeighbors': (0, None, None, '%'),
-#                 '%IAD': (0, None, None, '%'),
-#                 # tool
-#                 'advisor_elapsed': (0, None, None, 's'),
-#                 'advisor_loop1_line': (0, None, None, loop1_fname),
-#             }
-#         }
-# }}}
-# }}}
+        # }}}
+        # }}}
 
+    # {{{ hooks
     @rfm.run_before('compile')
-    def setflags(self):
+    def set_compiler_flags(self):
+        self.modules += self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
+    # }}}
