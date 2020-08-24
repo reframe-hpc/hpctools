@@ -92,6 +92,9 @@ class SphExaValgrind4hpcCheck(rfm.RegressionTest):
         self.sourcepath = f'{self.testname}.cpp'
         self.executable = self.tool
         self.target_executable = f'./{self.testname}.exe'
+        self.postbuild_cmds = [
+            f'mv {self.executable} {self.target_executable}',
+        ]
         # }}}
 
         # {{{ run
@@ -129,7 +132,6 @@ class SphExaValgrind4hpcCheck(rfm.RegressionTest):
         self.which_rpt = 'which.rpt'
         self.prerun_cmds = [
             'module rm xalt',
-            f'mv {self.executable} {self.target_executable}',
             f'echo $VALGRIND4HPC_VERSION > {self.version_rpt}',
             f'grep PACKAGE_VERSION $VALGRIND4HPC_INSTALL_DIR/include/'
             f'valgrind/config.h >> {self.version_rpt}',

@@ -15,8 +15,8 @@ from reframe.core.backends import getlauncher
 
 
 # NOTE: jenkins restricted to 1 cnode
-# mpi_tasks = [12, 24,48,  240]
-mpi_tasks = [240]
+# mpi_tasks = [12, 24, 48, 240]
+mpi_tasks = [12]
 cubeside_dict = {1: 10, 12: 20, 24: 30, 48: 36, 240: 62}
 steps_dict = {1: 1, 12: 1, 24: 1, 48: 1, 240: 1}
 
