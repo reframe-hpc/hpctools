@@ -1,0 +1,14 @@
+# --- input commands for gdb4hpc ---
+# this line is mandatory (cray case #224617):
+maint set sync on
+# this line is needed in C++ to avoid: "Debugger error: Missing PMI_Init symbol"
+maint set unsafe on
+launch $tst{AA} BB --sbatch=CC --args="DD"
+break 75
+### run
+continue
+list
+print domain.clist[1]
+continue
+print domain.clist[1]
+quit
