@@ -61,6 +61,8 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
         self.tool = 'cuda-gdb'
         self.executable = self.tool
         self.target_executable = 'mpi+omp+cuda'
+        self.postbuild_cmds = [f'mv {self.target_executable}.app '
+                               f'{self.target_executable}']
 # }}}
 
 # {{{ run
@@ -95,8 +97,6 @@ class SphExaCudaGdbCheck(rfm.RegressionTest):
         self.log_stdvector = 'info_std_vector.log'
         self.prerun_cmds = [
             'module rm xalt',
-            'mv %s %s' % (self.target_executable + '.app',
-                          self.target_executable),
             'ln -fs GDB/* .',
             'sed -i -e "s@-s 0@-s %s@" -e "s@-n 15@-n %s@" %s' %
             (steps, cubesize, self.tool_input),

@@ -60,6 +60,9 @@ class SphExaGDBCheck(rfm.RegressionTest):
         self.executable = 'gdb'
         self.target_executable = './%s.exe' % self.testname
         self.prebuild_cmds = ['ln -s GDB/* .']
+        self.postbuild_cmds = [
+            f'mv {self.executable} {self.target_executable}',
+        ]
 # }}}
 
 # {{{ run
@@ -81,7 +84,6 @@ class SphExaGDBCheck(rfm.RegressionTest):
         tool_init = 'gdbinit'
         self.prerun_cmds = [
             'module rm xalt',
-            'mv %s %s' % (self.executable, self.target_executable),
             'sed -i -e "s@-s 0@-s %s@" -e "s@-n 15@-n %s@" %s' %
             (steps, cubesize, self.tool_input),
         ]

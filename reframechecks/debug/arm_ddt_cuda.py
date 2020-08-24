@@ -48,6 +48,7 @@ class SphExaCudaDDTCheck(rfm.RegressionTest):
         self.tool = 'ddt'
         self.executable = 'mpi+omp+cuda'
         self.prebuild_cmds = ['module rm xalt']
+        self.postbuild_cmds = [f'mv {self.executable}.app {self.executable}']
         # }}}
 
         # {{{ run
@@ -71,7 +72,6 @@ class SphExaCudaDDTCheck(rfm.RegressionTest):
         self.which_rpt = 'which.rpt'
         self.prerun_cmds = [
             'module rm xalt',
-            'mv %s %s' % (self.executable + '.app', self.executable),
             '%s --version > %s' % (self.tool, self.version_rpt),
             'which %s &> %s' % (self.tool, self.which_rpt),
             # use linux date as timer:
