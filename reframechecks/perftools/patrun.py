@@ -16,7 +16,7 @@ import sphexa.sanity_perftools as sphsperft
 # NOTE: jenkins restricted to 1 cnode but this check needs 2
 mpi_tasks = [48]
 cubeside_dict = {24: 100, 48: 125}
-steps_dict = {24: 1, 48: 1}
+steps_dict = {24: 5, 48: 5}
 
 
 # {{{ class SphExaPatRunCheck
@@ -145,7 +145,7 @@ class SphExaPatRunCheck(sphsperft.PerftoolsBaseTest):
     # {{{ hooks
     @rfm.run_before('compile')
     def set_compiler_flags(self):
-        self.modules = self.tool_modules[self.current_environ.name]
+        self.modules += self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
 

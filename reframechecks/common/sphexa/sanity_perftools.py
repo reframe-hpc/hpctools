@@ -352,9 +352,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
 
         '''
         rpt = os.path.join(self.stagedir, self.rpt)
-        regex = (r'^Table \d+:  Profile by Function\n(.*\n){19}\|+\s+'
-                 r'(?P<sam_pct>\S+)%(\s+\|\s+\S+){2}\s\|\s+'
-                 r'(?P<imb_pct>\S+)%\s\|\s+(?P<fname>\S+)')
+        regex = (r'^Table \d+:  Profile by Function\n(.*\n){20}\|+\s+'
+                 r'(?P<sam_pct>\S+)%.* (?P<imb_pct>\S+)%\s+\|\s+'
+                 r'(?P<fname>\S+)')
         res = {}
         res['mpi_h1'] = sn.extractsingle(regex, rpt, 'sam_pct', float)
         res['mpi_h1_imb'] = sn.extractsingle(regex, rpt, 'imb_pct', float)
