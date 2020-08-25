@@ -80,6 +80,8 @@ class SphExaNvprofCudaCheck(rfm.RegressionTest):
             # The makefile adds -DUSE_MPI
             # 'CXXFLAGS=',
         ]
+        self.postbuild_cmds = [f'mv {self.target_executable}.app '
+                               f'{self.target_executable}']
         # }}}
 
         # {{{ run
@@ -115,8 +117,6 @@ class SphExaNvprofCudaCheck(rfm.RegressionTest):
         self.postrun_cmds = ['cat /etc/modprobe.d/nvidia.conf']
         self.prerun_cmds = [
             'module rm xalt',
-            'mv %s %s' % (self.target_executable + '.app',
-                          self.target_executable),
             f'{self.tool} --version &> {self.version_rpt}',
             f'which {self.tool} &> {self.which_rpt}',
         ]

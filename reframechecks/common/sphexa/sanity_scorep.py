@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
 
 
-# {{{ sanity_function: scorep
+# {{{ sanity_function: scorep_version
 @sn.sanity_function
 def scorep_version(obj):
     '''Checks tool's version:
@@ -34,6 +34,8 @@ def scorep_version(obj):
     # print('version=%s' % version)
     # print('ref_version=%s' % reference_tool_version[obj.current_system.name])
     return TorF
+# }}}
+
 
 # {{{ --- scorep-info:
 @sn.sanity_function
@@ -76,7 +78,22 @@ def scorep_info_unwinding_support(obj):
     regex = r'^\s+Unwinding support:\s+(?P<yn>\w+)'
     TorF = sn.assert_eq(3, sn.count(sn.extractall(regex, obj.info_rpt, 'yn')))
     return TorF
+
+
+@sn.sanity_function
+def scorep_info_cuda_support(obj):
+    '''Checks tool's configuration (Cuda support)
+
+    .. code-block::
+
+      > scorep-info config-summary
+      CUDA support:  yes
+    '''
+    regex = r'^\s+CUDA support:\s+(?P<yn>\w+)'
+    TorF = sn.assert_eq(3, sn.count(sn.extractall(regex, obj.info_rpt, 'yn')))
+    return TorF
 # }}}
+
 
 # {{{ --- profiling:
 @sn.sanity_function
@@ -218,6 +235,7 @@ def scorep_inclusivepct_energy(obj):
     return sn.extractsingle(regex, obj.rpt_inclusive, 'pct', float)
 # }}}
 
+
 # {{{ --- tracing:
 @sn.sanity_function
 def program_begin_count(obj):
@@ -260,6 +278,4 @@ def ipc_rk0(obj):
     tot_cyc_rk0 = sn.extractall(regex2, obj.rpt, 'cyc', float)
     ipc = [a/b for a, b in zip(tot_ins_rk0, tot_cyc_rk0)]
     return sn.round(max(ipc), 6)
-# }}}
-
 # }}}
