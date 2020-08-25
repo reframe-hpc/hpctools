@@ -100,7 +100,7 @@ class SphExaDDTCheck(rfm.RegressionTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
         self.executable_opts = [
-            f'-- -n {self.cubeside}', f'-s {self.steps}', '2>&1']
+            f'-n {self.cubeside}', f'-s {self.steps}', '2>&1']
         self.version_rpt = 'version.rpt'
         self.which_rpt = 'which.rpt'
         self.prerun_cmds = [
@@ -156,7 +156,7 @@ class SphExaDDTCheck(rfm.RegressionTest):
     # {{{ hooks
     @rfm.run_before('compile')
     def set_compiler_flags(self):
-        self.modules = self.tool_modules[self.current_environ.name]
+        self.modules += self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
 
@@ -326,7 +326,7 @@ class SphExaLegacyDDTCheck(rfm.RegressionTest):
     # {{{ hooks
     @rfm.run_before('compile')
     def set_compiler_flags(self):
-        self.modules = self.tool_modules[self.current_environ.name]
+        self.modules += self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
 
