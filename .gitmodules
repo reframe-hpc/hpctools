@@ -1,0 +1,4 @@
+[submodule "reframechecks/SPH-EXA_mini-app.git"]
+	path = reframechecks/SPH-EXA_mini-app.git
+	url = https://github.com/jgphpc/SPH-EXA_mini-app.git
+	branch = hpctools
