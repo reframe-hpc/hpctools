@@ -3,7 +3,6 @@
 [ReFrame](https://github.com/eth-cscs/reframe) is a regression testing
 framework to facilitate the sanity checking of HPC systems. 
 This repository showcases how to use ReFrame together with HPC tools.
-Check out the [documentation](https://hpctools.readthedocs.io/en/latest/) to get started.
 
 <!-- DOCUMENTATION -->
 [![Documentation Status](https://readthedocs.org/projects/hpctools/badge/?version=latest)](https://hpctools.readthedocs.io/en/latest/?badge=latest)
@@ -17,10 +16,25 @@ Check out the [documentation](https://hpctools.readthedocs.io/en/latest/) to get
 ![contributors](https://img.shields.io/github/contributors/eth-cscs/hpctools)
 <!-- ![# languages](https://img.shields.io/github/languages/count/eth-cscs/hpctools) -->
 
+## Getting started
 
+Assuming that you have already installed https://github.com/eth-cscs/reframe,
+you may clone the hpctools (together with the example code) repo as follows:
 
+```bash
+python3 -m venv --system-site-packages myvenv
+source myvenv/bin/activate
+git clone --recurse-submodules \
+    https://github.com/eth-cscs/hpctools.git \
+    hpctools.git 
+cd hpctools.git/
+pip install -r requirements.txt
+cd reframechecks/
+# deactivate
+```
 
-
+Check out the [documentation](https://hpctools.readthedocs.io/en/latest/) to
+launch the tests.
 
 <!--
 # GitHub forks:	GitHub forks badge	https://img.shields.io/github/forks/eth-cscs/hpctools
