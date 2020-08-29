@@ -12,10 +12,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 # import sphexa.sanity as sphs
 
 
-@rfm.parameterized_test(*[[mpitask, cubesize, steps]
-                          for mpitask in [1]
-                          for cubesize in [15]
-                          for steps in [0]
+# NOTE: jenkins restricted to 1 cnode
+mpi_tasks = [1]
+cubeside_dict = {1: 15}
+steps_dict = {1: 0}
+
+
+# {{{ class SphExaGDBCheck
+@rfm.parameterized_test(*[[mpi_task]
+                          for mpi_task in mpi_tasks
                           ])
 class SphExaGDBCheck(rfm.RegressionTest):
     # {{{
@@ -29,47 +34,54 @@ class SphExaGDBCheck(rfm.RegressionTest):
     '''
     # }}}
 
-    def __init__(self, mpitask, cubesize, steps):
+    def __init__(self, mpi_task):
         # {{{ pe
         self.descr = 'Tool validation'
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel',
-                                    'PrgEnv-cray', 'PrgEnv-cray',
-                                    'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
+                                    'PrgEnv-cray']
         # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_systems = ['*']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'debug'}
-# }}}
+        # }}}
 
-# {{{ compile
+        # {{{ compile
         self.testname = 'sqpatch'
-        self.prebuild_cmds = ['module rm xalt']
+        tc_ver = '20.08'
+        self.tool_modules = {
+            'PrgEnv-gnu': [f'CrayGNU/.{tc_ver}'],
+            'PrgEnv-intel': [f'CrayIntel/.{tc_ver}'],
+            'PrgEnv-cray': [f'CrayCCE/.{tc_ver}'],
+            'PrgEnv-pgi': [f'CrayPGI/.{tc_ver}'],
+        }
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O0',
-                           '-DNDEBUG'],
+                           '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-intel': ['-I.', '-I./include', '-std=c++14', '-g', '-O0',
-                             '-DNDEBUG'],
+                             '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-cray': ['-I.', '-I./include', '-std=c++17', '-g', '-O0',
-                            '-DNDEBUG'],
+                            '-DUSE_MPI', '-DNDEBUG'],
             'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g', '-O0',
-                           '-DNDEBUG'],
+                           '-DUSE_MPI', '-DNDEBUG'],
         }
         self.build_system = 'SingleSource'
-        # self.build_system.cxx = 'CC'
-        self.sourcepath = '%s.cpp' % self.testname
+        self.sourcepath = f'{self.testname}.cpp'
+        self.target_executable = f'./{self.testname}.exe'
         self.executable = 'gdb'
-        self.target_executable = './%s.exe' % self.testname
-        self.prebuild_cmds = ['ln -s GDB/* .']
+        self.prebuild_cmds = ['module rm xalt', 'module list -t',
+                              'ln -s GDB/* .']
         self.postbuild_cmds = [
             f'mv {self.executable} {self.target_executable}',
         ]
-# }}}
+        # }}}
 
-# {{{ run
+        # {{{ run
         ompthread = 1
+        self.num_tasks = mpi_task
+        self.cubeside = cubeside_dict[mpi_task]
+        self.steps = steps_dict[mpi_task]
         self.name = 'sphexa_gdb_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
+            self.testname, mpi_task, ompthread, self.cubeside, self.steps)
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 1
@@ -84,22 +96,20 @@ class SphExaGDBCheck(rfm.RegressionTest):
         tool_init = 'gdbinit'
         self.prerun_cmds = [
             'module rm xalt',
-            'sed -i -e "s@-s 0@-s %s@" -e "s@-n 15@-n %s@" %s' %
-            (steps, cubesize, self.tool_input),
+            f'sed -i -e "s@-s 0@-s {self.steps}@" '
+            f'-e "s@-n 15@-n {self.cubeside}@" {self.tool_input}',
         ]
         self.executable_opts = ['--nh', '--init-command ./%s' % tool_init,
                                 '--batch', '--command=./%s' % self.tool_input,
                                 self.target_executable]
-# }}}
+    # }}}
 
-# {{{ set_sanity hook:
+    # {{{ hooks:
     @rfm.run_before('compile')
-    def setflags(self):
+    def set_compiler_flags(self):
+        self.modules += self.tool_modules[self.current_environ.name]
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
-        if self.current_environ.name == 'PrgEnv-cray':
-            # cce<9.1 fails to compile with -g
-            self.modules = ['cdt/20.03']
 
     @rfm.run_before('run')
     def set_sanity_pgi(self):
@@ -119,7 +129,6 @@ class SphExaGDBCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.all([
             # --- check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
-            #
             # --- check the tool output:
             #     -> 'print domain.clist[1]'
             #   $1 = std::vector of length 3375, capacity 3375 = {0, ...
@@ -150,4 +159,5 @@ class SphExaGDBCheck(rfm.RegressionTest):
             sn.assert_found(r'[Inferior 1 (process \d+) exited normally]',
                             self.stdout),
         ])
+    # }}}
 # }}}
