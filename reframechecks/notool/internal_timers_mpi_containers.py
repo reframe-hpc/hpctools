@@ -13,14 +13,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 import sphexa.sanity as sphs
 
 
-size_dict = {12:78, 24: 100, 48: 125, 96: 157, 192: 198, 384: 250, 480: 269,
-             960: 340, 1920: 428, 3840: 539, 7680: 680, 15360: 857,
-             6: 62, 3: 49, 1: 34}
-mpi_tasks = [12, 24]  # jenkins restricted to 1 cnode
-steps = [1]
-# mpi_tasks = [24, 48, 96, 192]
-# steps = [2]
-nativejob_stdout = 'rfm_native_job.out'
+# NOTE: jenkins restricted to 1 cnode
+mpi_tasks = [24, 96]  # [24, 48, 96, 192]
+cubeside_dict = {1: 30, 12: 78, 24: 100, 48: 125, 96: 157, 192: 198}
+steps_dict = {1: 1, 12: 1, 24: 1, 48: 1, 96: 1, 192: 1}  # use same step
 
 
 # {{{ class SphExa_Container_Base_Check
@@ -42,7 +38,6 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
     # }}}
 
     def __init__(self, mpi_task, step, container_d):
-        super().__init__()
         # {{{ pe
         self.descr = 'Tool validation'
         self.valid_prog_environs = ['builtin', 'PrgEnv-gnu', 'PrgEnv-intel',
@@ -58,9 +53,9 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
         self.testname = 'sqpatch'
         self.modules = [container_d['modulefiles']]
         self.build_system = 'SingleSource'
-        # self.build_system.cxx = 'CC'
-        self.sourcepath = '%s.cpp' % self.testname
-        self.native_executable = './%s.exe' % self.testname
+        self.sourcepath = f'{self.testname}.cpp'
+        self.executable = f'./{self.testname}.exe'
+        self.native_executable = self.executable
         # unload xalt to avoid _buffer_decode error and,
         # unload container to build native app:
         prebuild_cmds = [
@@ -80,12 +75,13 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
             'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g', '-O2',
                            '-DUSE_MPI', '-DNDEBUG'],
         }
-        # self.executable = self.native_executable
         # }}}
 
         # {{{ run
         ompthread = 1
         self.num_tasks = mpi_task
+        self.cubeside = cubeside_dict[mpi_task]
+        self.steps = steps_dict[mpi_task]
         self.num_tasks_per_node = 24
         self.num_tasks_per_core = 2
         self.use_multithreading = True
@@ -93,7 +89,6 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
         self.exclusive = True
         self.time_limit = '10m'
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
-        # ---------------------------------------------------------------------
         # Note: do not use "container_platform_options = 'run'"
         container_platform_options = container_d['options']
         container_platform_projectdir = container_d['projectdir']
@@ -104,6 +99,7 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
         executable_arguments = container_d['executable_opts']
         self.prerun_cmds += [
             'module rm xalt',
+            'module list -t',
             f'## rsync -av {container_platform_projectdir} '
             f'{container_platform_repo}',
         ]
@@ -123,17 +119,16 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
 
         # {{{ performance
         # {{{ internal timers
-        # use linux date as timer:
         self.prerun_cmds += ['echo starttime=`date +%s`']
         self.postrun_cmds += ['echo stoptime=`date +%s`']
         # }}}
 
         # {{{ perf_patterns:
-        self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
+        # self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
         # }}}
 
         # {{{ reference:
-        self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
+        # self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
         # self.reference = sn.evaluate(sphsintel.vtune_tool_reference(self))
         # }}}
         # }}}
@@ -143,23 +138,12 @@ class SphExa_Container_Base_Check(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
-
-#    @rfm.run_before('run')
-#    def set_launcher(self):
-#        self.nativejob_launcher = getlauncher('srun')()
-
-#     @rfm.run_after('setup')
-#     def set_launcher(self):
-#         self.job.launcher = LauncherWrapper(self.job.launcher, '', '')
     # }}}
 # }}}
 
 
 # {{{ class MPI_Compute_Singularity_Test:
-@rfm.parameterized_test(*[[mpi_task, step]
-                          for mpi_task in mpi_tasks
-                          for step in steps
-                          ])
+@rfm.parameterized_test(*[[mpi_task] for mpi_task in mpi_tasks])
 class MPI_Compute_Singularity_Test(SphExa_Container_Base_Check):
     # {{{
     '''
@@ -168,14 +152,16 @@ class MPI_Compute_Singularity_Test(SphExa_Container_Base_Check):
     '''
     # }}}
 
-    def __init__(self, mpi_task, step):
+    def __init__(self, mpi_task):
         # share args with TestBase class
+        step = steps_dict[mpi_task]
+        cubeside = cubeside_dict[mpi_task]
         self.name = f'compute_singularity_{mpi_task}mpi_{step}steps'
-        self.step = step
-        self.mpi_task = mpi_task
-        cubesize = size_dict[mpi_task]
+        nativejob_stdout = 'rfm_' + \
+            self.name.replace("singularity", "native") + '_job.out'
         container_d = {
-            'modulefiles': 'singularity/3.5.3-daint',
+            # for now: module use ~/easybuild/dom/haswell/modules/all
+            'modulefiles': 'singularity/3.5.3-dom',
             'runtime': 'singularity',
             'options': 'exec',
             'projectdir': '/project/csstaff/piccinal/CONTAINERS/sph',
@@ -185,19 +171,18 @@ class MPI_Compute_Singularity_Test(SphExa_Container_Base_Check):
             'variables': '',
             'mount': '',  # '-B"/x:/x"'
             'executable': '/home/bin/gnu8/mpi+omp.app',
-            'executable_opts': f'-n {cubesize} -s {step}'
+            'executable_opts': f'-n {cubeside} -s {step}'
         }
         self.variables['SINGULARITYENV_LD_LIBRARY_PATH'] = \
             '/opt/gcc/8.3.0/snos/lib64:$SINGULARITYENV_LD_LIBRARY_PATH'
         super().__init__(mpi_task, step, container_d)
-        # self.valid_systems = ['dom:mc', 'dom:gpu']
         # {{{ --- run the native executable too:
         nativejob_launcher = 'srun'
-        # self.nativejob_stdout = 'rfm_native_job.out'
         # TODO: self.nativejob_launcher = self.current_partition.launcher
         postrun_cmds = [
             # native app:
             # f'ldd {self.native_executable}',
+            '# --- native run (no container) ---',
             f'echo starttime=`date +%s` > {nativejob_stdout} 2>&1',
             f"{nativejob_launcher} {self.native_executable} "
             f"{container_d['executable_opts']} >> {nativejob_stdout} 2>&1",
@@ -210,10 +195,7 @@ class MPI_Compute_Singularity_Test(SphExa_Container_Base_Check):
 
 
 # {{{ class MPI_Compute_Sarus_Test:
-@rfm.parameterized_test(*[[mpi_task, step]
-                          for mpi_task in mpi_tasks
-                          for step in steps
-                          ])
+@rfm.parameterized_test(*[[mpi_task] for mpi_task in mpi_tasks])
 class MPI_Compute_Sarus_Test(SphExa_Container_Base_Check):
     # {{{
     '''
@@ -221,12 +203,11 @@ class MPI_Compute_Sarus_Test(SphExa_Container_Base_Check):
     '''
     # }}}
 
-    def __init__(self, mpi_task, step):
+    def __init__(self, mpi_task):
         # share args with TestBase class
+        step = steps_dict[mpi_task]
+        cubeside = cubeside_dict[mpi_task]
         self.name = f'compute_sarus_{mpi_task}mpi_{step}steps'
-        self.step = step
-        self.mpi_task = mpi_task
-        cubesize = size_dict[mpi_task]
         container_d = {
             'modulefiles': 'sarus/1.1.0',
             'runtime': 'sarus',
@@ -239,17 +220,16 @@ class MPI_Compute_Sarus_Test(SphExa_Container_Base_Check):
             'variables': '',
             'mount': '',
             'executable': '/home/bin/gnu8/mpi+omp.app',
-            'executable_opts': f'-n {cubesize} -s {step}'
+            'executable_opts': f'-n {cubeside} -s {step}'
         }
         self.prerun_cmds = [
-            # # sarus rmi ...
+            # sarus rmi ...
             f"{container_d['runtime']} load "
             f"{container_d['scratch']}/{container_d['localimage']} "
             f"{container_d['image']}",
             f"{container_d['runtime']} images",
         ]
         super().__init__(mpi_task, step, container_d)
-        # self.valid_systems = ['dom:mc', 'dom:gpu']
         self.rpt_dep = None
 # }}}
 
@@ -270,19 +250,24 @@ class MPI_Collect_Logs_Test(rfm.RunOnlyRegressionTest):
         # --- construct list of dependencies from container1 (from testname):
         self.testnames_singularity = \
             [f'compute_singularity_{mpi_task}mpi_{step}steps'
-             for step in steps for mpi_task in mpi_tasks]
+             for step in set(steps_dict.values()) for mpi_task in mpi_tasks]
+        # print('self.testnames_singularity=', self.testnames_singularity)
         for test in self.testnames_singularity:
             self.depends_on(test)
 
         # --- construct list of dependencies from container2 (from testname):
         self.testnames_sarus = \
             [f'compute_sarus_{mpi_task}mpi_{step}steps'
-             for step in steps for mpi_task in mpi_tasks]
+             for step in set(steps_dict.values()) for mpi_task in mpi_tasks]
+        # print('self.testnames_sarus=', self.testnames_sarus)
         for test in self.testnames_sarus:
             self.depends_on(test)
 
     @rfm.require_deps
     def collect_logs(self):
+        """
+        cp all the stdout logs from the compute jobs for postprocessing
+        """
         job_out = '*_job.out'
         # --- singularity test logs:
         for test_index in range(len(self.testnames_singularity)):
@@ -297,31 +282,39 @@ class MPI_Collect_Logs_Test(rfm.RunOnlyRegressionTest):
 
     @rfm.run_after('run')
     def extract_data(self):
+        """
+        returns the time taken by srun by reading timings of all the compute
+        jobs (linux date start/stop command) and write results in timings.rpt
+        """
         ftgin = open(os.path.join(self.stagedir, 'timings.rpt'), "w")
         # termgraph header:
         # ftgin.write('# Elapsed_time (seconds) = f(mpi_tasks)\n')
         ftgin.write('@ native,singularity,sarus\n')
-        # title of column1 not needed, this is wrong: ('@ mpi,t1,t2\n')
+        # title of column1 not needed i.e this is wrong: ('@ mpi,t1,t2\n')
         job_out = 'job.out'
         # TODO: reuse self.testnames_native here
-        for step in steps:
+        # for step in steps:
+        for step in set(steps_dict.values()):
             for mpi_task in mpi_tasks:
-                # native:
+                # native (i.e no container) -> res_native
                 # testname = self.nativejob_stdout
-                self.rpt_dep = os.path.join(self.stagedir, nativejob_stdout)
+                testname = f'compute_native_{mpi_task}mpi_{step}steps'
+                self.rpt_dep = os.path.join(self.stagedir,
+                                            f'rfm_{testname}_{job_out}')
+                # self.rpt_dep = os.path.join(self.stagedir, nativejob_stdout)
                 res_native = sn.evaluate(sphs.elapsed_time_from_date(self))
                 # rfm_postproc_containers_job.out: No such file or directory
                 # --> update sphs.elapsed_time_from_date with self.rpt
-                # --- singularity:
+                # --- singularity -> res_singularity
                 testname = f'compute_singularity_{mpi_task}mpi_{step}steps'
                 self.rpt_dep = os.path.join(self.stagedir,
-                                        f'rfm_{testname}_{job_out}')
+                                            f'rfm_{testname}_{job_out}')
                 res_singularity = \
                     sn.evaluate(sphs.elapsed_time_from_date(self))
-                # --- sarus:
+                # --- sarus -> res_sarus
                 testname = f'compute_sarus_{mpi_task}mpi_{step}steps'
                 self.rpt_dep = os.path.join(self.stagedir,
-                                        f'rfm_{testname}_{job_out}')
+                                            f'rfm_{testname}_{job_out}')
                 res_sarus = sn.evaluate(sphs.elapsed_time_from_date(self))
                 # --- termgraph data:
                 ftgin.write(f'{mpi_task},{res_native},{res_singularity},'
@@ -339,11 +332,10 @@ class MPI_Plot_Test(rfm.RunOnlyRegressionTest):
         # This test will be skipped if --system does not match:
         self.valid_systems = ['dom:mc', 'dom:gpu']
         self.valid_prog_environs = ['*']
-        # self.prerun_cmds = \
-        #   ['module use /users/piccinal/easybuild/dom/haswell/modules/tools']
-        self.modules = ['termgraph/0.3.1-python3']
+        self.modules = ['termgraph/0.4.2-python3']
         self.depends_on('postproc_containers')
-        self.executable = 'python3.7'
+        self.executable = 'python3'
+        # TODO: avg time per step
         self.sanity_patterns = \
             sn.assert_not_found(r'ordinal not in range', self.stderr)
 
@@ -355,5 +347,6 @@ class MPI_Plot_Test(rfm.RunOnlyRegressionTest):
         self.executable_opts = [
             f'{tgraph}', f'{rpt}', '--color', '{green,yellow,red}', '--suffix',
             's', '--title', '"Elapsed time (seconds)"']
+        self.postrun_cmds = [f'# cat termgraph.rpt']
 
 # }}}
