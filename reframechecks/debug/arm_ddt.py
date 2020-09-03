@@ -69,7 +69,7 @@ class SphExaDDTCheck(rfm.RegressionTest):
         }
         self.build_system = 'SingleSource'
         self.sourcepath = f'{self.testname}.cpp'
-        self.executable = f'./{self.testname}'
+        self.executable = f'./{self.testname}.exe'
         # make mpi ranks > 2 crash after second iteration:
         self.step_abort = 1
         insert_abort = (r'"/sph::computeMomentumAndEnergyIAD/a if (d.rank > 2 '

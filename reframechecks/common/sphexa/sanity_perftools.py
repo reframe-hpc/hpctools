@@ -24,7 +24,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         .. code-block::
 
           > pat_run -V
-          CrayPat/X:  Version 20.03.0 Revision b18264180
+          CrayPat/X:  Version 20.08.0 Revision 28ef35c9f
         '''
         reference_tool_version = {
             'daint': '20.08.0',
@@ -92,10 +92,10 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         regex = (r'^Table \d+:  Wall Clock Time, Memory High Water Mark\n'
                  r'(.*\n){4}\s+(.*\n)\s+(?P<proct>\S+)\s+\|\s+(?P<mem>\S+)'
                  r' \| Total$')
-        res['patrun_wallt_avg'] = sn.extractsingle(regex, self.stdout,
-                                                   'proct', float)
-        res['patrun_mem_avg'] = sn.extractsingle(regex, self.stdout,
-                                                 'mem', float)
+        res['patrun_wallt_avg'] = sn.extractsingle(regex, self.stdout, 'proct',
+                                                   float)
+        res['patrun_mem_avg'] = sn.extractsingle(regex, self.stdout, 'mem',
+                                                 float)
         # --- max
         regex = (r'^Table \d+:  Wall Clock Time, Memory High Water Mark\n'
                  r'(.*\n){4}\s+(.*\n){2}\|\s+(?P<proct>\S+) \|\s+(?P<mem>\S+)'
@@ -173,13 +173,13 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         '''
         res = {}
         regex = (r'^Table \d+:\s+Memory Bandwidth by Numanode\n(.*\n){7}\|\s+'
-                 r'(?P<GBytes>\S+)\s+\|\s+(?P<GBytes_local>\S+)'
+                 r'(?P<GBytes>\S+)\s+\|\s+(?P<GBytes_localm>\S+)'
                  r'(\s+\|\s+\S+){2,3}\s+\|\s+(?P<peak_pct>\S+)%')
 
         res['memory_traffic_global'] = sn.extractsingle(regex, self.stdout,
                                                         'GBytes', float)
         res['memory_traffic_local'] = sn.extractsingle(regex, self.stdout,
-                                                       'GBytes_local', float)
+                                                       'GBytes_localm', float)
         res['memory_traffic_peak'] = sn.extractsingle(regex, self.stdout,
                                                       'peak_pct', float)
         #
