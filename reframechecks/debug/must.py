@@ -51,7 +51,7 @@ class SphExa_Must_Base_Check(rfm.RegressionTest):
         tc_ver = '20.08'
         # need to set version to avoid module load to fail.
         self.tool_modules = {
-            'PrgEnv-gnu': [f'MUST/{tool_ver}-CrayGNU-{tc_ver}-debug'],  # <---
+            'PrgEnv-gnu': [f'MUST/{tool_ver}-CrayGNU-{tc_ver}'],
         }
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g', '-O2',
