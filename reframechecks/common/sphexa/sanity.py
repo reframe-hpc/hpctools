@@ -32,13 +32,16 @@ def elapsed_time_from_date(self):
     regex_stop_sec = r'^stoptime=(?P<sec>\d+.\d+)'
     try:
         rpt = self.rpt_dep
-    except:
+        # if rpt is None:
+        #     rpt = self.stdout
+    except None:
         rpt = self.stdout
 
     start_sec = sn.extractall(regex_start_sec, rpt, 'sec', int)
     stop_sec = sn.extractall(regex_stop_sec, rpt, 'sec', int)
     return (stop_sec[0] - start_sec[0])
 # }}}
+
 
 #  {{{ sanity_function: internal timers
 # @property
@@ -239,6 +242,7 @@ def seconds_smoothinglength(self):
     return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
 # }}}
 
+
 # {{{ sanity_function: internal timers %
 @sn.sanity_function
 def pctg_MomentumEnergyIAD(obj):
@@ -270,6 +274,7 @@ def pctg_IAD(obj):
     return sn.round((100 * seconds_iad(obj) / seconds_elaps(obj)), 2)
 
 # }}}
+
 
 # {{{ sanity_function: perf patterns for internal timers
 @sn.sanity_function
@@ -310,6 +315,7 @@ def basic_perf_patterns(obj):
     })
     return perf_patterns
 # }}}
+
 
 # {{{ sanity_function: perf reference for internal timers
 @sn.sanity_function

@@ -61,6 +61,7 @@ def inspector_not_deallocated(obj):
 #     return result
 # }}}
 
+
 # {{{ sanity_function: intel_vtune
 # {{{ vtune_version
 @sn.sanity_function
@@ -84,6 +85,7 @@ def vtune_version(obj):
         version, reference_tool_version[obj.current_system.name])
     return TorF
 # }}}
+
 
 # {{{ vtune_time
 @sn.sanity_function
@@ -158,6 +160,7 @@ def vtune_time(self):
     return result_d
 # }}}
 
+
 # {{{ vtune_physical_core_utilization
 @sn.sanity_function
 def vtune_physical_core_utilization(self):
@@ -174,6 +177,7 @@ def vtune_physical_core_utilization(self):
     return sn.round(sn.min(sn.extractall(regex, self.stdout, 'pct', float)), 4)
 # }}}
 
+
 # {{{ vtune_logical_core_utilization
 @sn.sanity_function
 def vtune_logical_core_utilization(self):
@@ -189,6 +193,7 @@ def vtune_logical_core_utilization(self):
     regex = r'^\s+Effective Logical Core Utilization: (?P<pct>\S+)%'
     return sn.round(sn.min(sn.extractall(regex, self.stdout, 'pct', float)), 4)
 # }}}
+
 
 # {{{ vtune_momentumAndEnergyIAD
 @sn.sanity_function
@@ -222,6 +227,7 @@ def vtune_momentumAndEnergyIAD(self):
 # 40.919s / 24 = 1.7 s = 32% of 5.3 s
 # }}}
 
+
 # {{{ vtune_perf_patterns
 @sn.sanity_function
 def vtune_perf_patterns(obj):
@@ -243,6 +249,7 @@ def vtune_perf_patterns(obj):
     }
     return res_d
 # }}}
+
 
 # {{{ vtune_tool_reference
 @sn.sanity_function
@@ -273,6 +280,7 @@ def vtune_tool_reference(obj):
     return reference
 # }}}
 # }}}
+
 
 # {{{ sanity_function: intel_advisor
 @sn.sanity_function
