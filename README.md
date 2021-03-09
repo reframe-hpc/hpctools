@@ -24,13 +24,18 @@ you may clone the hpctools (together with the example code) repo as follows:
 ```bash
 python3 -m venv --system-site-packages myvenv
 source myvenv/bin/activate
-git clone --recurse-submodules \
-    https://github.com/eth-cscs/hpctools.git \
-    hpctools.git 
+git clone https://github.com/eth-cscs/hpctools.git hpctools.git 
 cd hpctools.git/
 pip install -r requirements.txt
 cd reframechecks/
 # deactivate
+```
+
+I use https://github.com/unibas-dmi-hpc/SPH-EXA_mini-app.git as test code:
+```
+    origin/sfc-integration
+    commit a5e75148d83524a243b41959bc3217ad4f7f660f 
+    Date: Tue Mar 9 16:32:20 2021 +0100
 ```
 
 Check out the [documentation](https://hpctools.readthedocs.io/en/latest/) to
