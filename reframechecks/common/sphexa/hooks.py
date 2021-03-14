@@ -58,7 +58,8 @@ class setup_pe(rfm.RegressionMixin):
     def set_prgenv_flags(self):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile'
-        self.executable = 'mpi+omp'
+        if self.executable is None:
+            self.executable = 'mpi+omp'
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG', '-fopenmp'],
@@ -77,12 +78,16 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
+        if self.target_executable is None:
+            exe = self.executable
+        else:
+            exe = self.target_executable
+
         self.build_system.options = [
-            self.executable,
-            f'MPICXX=CC', 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
+            exe, f'MPICXX=CC', 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
             # NOTE: self.build_system.cxx is empty
         ]
-        self.postbuild_cmds = [f'mv {self.executable}.app {self.executable}']
+        self.postbuild_cmds = [f'mv {exe}.app {exe}']
     # }}}
 
     # {{{ set_system_attributes
