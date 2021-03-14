@@ -15,7 +15,7 @@ import sphexa.hooks as hooks
 
 # {{{ class SphExa_timers
 @rfm.simple_test
-class SphExa_timers_Check(rfm.RegressionTest, hooks.setup_pe,
+class SphExa_Timers_Check(rfm.RegressionTest, hooks.setup_pe,
                           hooks.setup_code):
     steps = parameter([0])
     compute_node = parameter([1])
@@ -27,7 +27,10 @@ class SphExa_timers_Check(rfm.RegressionTest, hooks.setup_pe,
         self.valid_prog_environs = [
             'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-cray',
             'PrgEnv-aocc', 'cpeAMD', 'cpeCray', 'cpeGNU', 'cpeIntel']
-        self.valid_systems = ['*']
+        self.valid_systems = [
+            'dom:mc', 'dom:gpu', 'daint:mc', 'daint:gpu',
+            'eiger:mc', 'pilatus:mc'
+        ]
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu', 'craype'}
         # }}}

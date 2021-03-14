@@ -28,7 +28,7 @@ class setup_pe(rfm.RegressionMixin):
             'README.md',
             'rn.sh',
             'scripts',
-            'src',
+            # 'src',
             'test',
             'tools'
         ]
@@ -37,12 +37,13 @@ class setup_pe(rfm.RegressionMixin):
         src_files_remove.remove('Makefile')
         src_files_remove.remove('domain')
         # src_files_remove.remove('include')
-        src_files_remove.remove('src')
+        # src_files_remove.remove('src')
         sed_ifdef = (r'"s-#include \"cuda/sph.cuh\"-#ifdef USE_CUDA\n'
                      r'#include \"cuda/sph.cuh\"\n#endif-"')
         self.prebuild_cmds += [
             'module rm xalt',
             'module list',
+            'rm -fr .git*',
             f'rm -f {" ".join(src_files_remove)}',
             '#',
             f'sed -i {sed_ifdef} include/sph/findNeighbors.hpp',
@@ -87,45 +88,117 @@ class setup_pe(rfm.RegressionMixin):
     # {{{ set_system_attributes
     @rfm.run_before('run')
     def set_system_attributes(self):
-        cs = self.current_system.name
+        cs = self.current_system.name  # cs=dom
+        cpf = self.current_partition.fullname  # cpf=dom:gpu
         cp = self.current_partition
-        self.arch = cp.processor.arch
-        self.num_cpus = cp.processor.num_cpus
-        self.num_cpus_per_core = cp.processor.num_cpus_per_core
-        self.num_cpus_per_socket = cp.processor.num_cpus_per_socket
-        self.num_sockets = cp.processor.num_sockets
-        self.num_cores = cp.processor.num_cores
-        self.num_cores_per_socket = cp.processor.num_cores_per_socket
-        # self.num_numa_nodes = cp.processor.num_numa_nodes
-        # self.num_cores_per_numa_node = cp.processor.num_cores_per_numa_node
+        if cp.processor.arch is None:
+            processor = {
+                'eiger:mc': {
+                    'arch': 'zen2', 'num_cpus': 256, 'num_cpus_per_core': 2,
+                    'num_cpus_per_socket': 128, 'num_sockets': 2,
+                    'num_cores': 128, 'num_cores_per_socket': 64,
+                    'num_numa_nodes': 8, 'num_cores_per_numa_node': 16,
+                },
+                'daint:mc': {
+                    'arch': 'broadwell', 'num_cpus': 72,
+                    'num_cpus_per_core': 2,
+                    'num_cpus_per_socket': 36, 'num_sockets': 2,
+                    'num_cores': 36, 'num_cores_per_socket': 18,
+                    'num_numa_nodes': 2, 'num_cores_per_numa_node': 18,
+                },
+                'daint:gpu': {
+                    'arch': 'haswell', 'num_cpus': 24, 'num_cpus_per_core': 2,
+                    'num_cpus_per_socket': 24, 'num_sockets': 1,
+                    'num_cores': 12, 'num_cores_per_socket': 12,
+                    'num_numa_nodes': 1, 'num_cores_per_numa_node': 12,
+                },
+            }
+            processor['pilatus:mc'] = processor['eiger:mc'].copy()
+            processor['dom:mc'] = processor['daint:mc'].copy()
+            processor['dom:gpu'] = processor['daint:gpu'].copy()
+            #
+            self.arch = processor[cpf]['arch']
+            self.num_cpus = processor[cpf]['num_cpus']
+            self.num_cpus_per_core = processor[cpf]['num_cpus_per_core']
+            self.num_cpus_per_socket = processor[cpf]['num_cpus_per_socket']
+            self.num_sockets = processor[cpf]['num_sockets']
+            self.num_cores = processor[cpf]['num_cores']
+            self.num_cores_per_socket = processor[cpf]['num_cores_per_socket']
+            self.num_numa_nodes = processor[cpf]['num_numa_nodes']
+            self.num_cores_per_numa_node = \
+                processor[cpf]['num_cores_per_numa_node']
+        else:
+            self.arch = cp.processor.arch
+            self.num_cpus = cp.processor.num_cpus
+            self.num_cpus_per_core = cp.processor.num_cpus_per_core
+            self.num_cpus_per_socket = cp.processor.num_cpus_per_socket
+            self.num_sockets = cp.processor.num_sockets
+            self.num_cores = cp.processor.num_cores
+            self.num_cores_per_socket = cp.processor.num_cores_per_socket
+            # self.num_numa_nodes = cp.processor.num_numa_nodes
+            # self.num_cores_per_numa_node = \
+            #    cp.processor.num_cores_per_numa_node
+
         self.num_tasks = self.compute_node * self.num_sockets
         self.num_tasks_per_node = self.num_cores // self.num_cores_per_socket
-        if cs in {'pilatus', 'eiger'}:
-            # {{{ arch=zen2 # 'AMD EPYC 7742 64-Core Processor'
-            # num_cpus=256
-            # num_cpus_per_core=2
-            # num_cpus_per_socket=128
-            # num_sockets=2
-            # +num_cores=128
-            # +num_cores_per_socket=64
-            # +num_numa_nodes=None
-            # +num_cores_per_numa_node=None }}}
-            self.num_numa_nodes = 8
-            self.num_cores_per_numa_node = 16
-        elif cp in {'dom:mc', 'daint:mc'}:
-            # {{{ arch=broadwell # 'Intel(R) Xeon(R) CPU E5-2695 v4'
-            # num_cpus=72
-            # num_cpus_per_core=2
-            # num_cpus_per_socket=36
-            # num_sockets=2
-            # +num_cores=
-            # +num_cores_per_socket=
-            # +num_numa_nodes=None
-            # +num_cores_per_numa_node=None }}}
-            self.num_numa_nodes = 2
-            self.num_cores_per_numa_node = 18
+# {{{
+#         if cs in {'pilatus', 'eiger'}:
+#             # {{{ arch=zen2 # 'AMD EPYC 7742 64-Core Processor'
+#             # num_cpus=256
+#             # num_cpus_per_core=2
+#             # num_cpus_per_socket=128
+#             # num_sockets=2
+#             # +num_cores=128
+#             # +num_cores_per_socket=64
+#             # +num_numa_nodes=None
+#             # +num_cores_per_numa_node=None }}}
+# #             self.arch = 'zen2'
+# #             self.num_cpus = 256
+# #             self.num_cpus_per_core = 2
+# #             self.num_cpus_per_socket = 128
+# #             self.num_sockets = 2
+#             #
+#             self.num_numa_nodes = 8
+#             self.num_cores_per_numa_node = 16
+#         elif cp in {'dom:mc', 'daint:mc'}:
+#             # {{{ arch=broadwell # 'Intel(R) Xeon(R) CPU E5-2695 v4'
+#             # num_cpus=72
+#             # num_cpus_per_core=2
+#             # num_cpus_per_socket=36
+#             # num_sockets=2
+#             # +num_cores=
+#             # +num_cores_per_socket=
+#             # +num_numa_nodes=None
+#             # +num_cores_per_numa_node=None }}}
+# #             self.arch = 'broadwell'
+# #             self.num_cpus = 72
+# #             self.num_cpus_per_core = 2
+# #             self.num_cpus_per_socket = 36
+# #             self.num_sockets = 2
+#             #
+#             self.num_numa_nodes = 2
+#             self.num_cores_per_numa_node = 18
+#         elif cp in {'dom:gpu', 'daint:gpu'}:
+#             # {{{ arch=haswell # 'Intel(R) Xeon(R) CPU E5-2690 v3'
+#             # num_cpus=24
+#             # num_cpus_per_core=2
+#             # num_cpus_per_socket=24
+#             # num_sockets=1
+#             # +num_cores=
+#             # +num_cores_per_socket=
+#             # +num_numa_nodes=None
+#             # +num_cores_per_numa_node=None }}}
+# #             self.arch = 'haswell'
+# #             self.num_cpus = 24
+# #             self.num_cpus_per_core = 2
+# #             self.num_cpus_per_socket = 24
+# #             self.num_sockets = 1
+#             #
+#             self.num_numa_nodes = 1
+#             self.num_cores_per_numa_node = 12
+# }}}
 
-        self.num_cpus_per_task = self.num_cores
+        self.num_cpus_per_task = self.num_cores // self.num_tasks_per_node
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.exclusive = True
@@ -144,6 +217,7 @@ class setup_pe(rfm.RegressionMixin):
 
 class setup_code(rfm.RegressionMixin):
     # {{{ set_cubeside
+    # @rfm.run_after('setup')
     @rfm.run_before('run')
     def set_cubeside(self):
         self.modules += ['hwloc']
@@ -177,6 +251,7 @@ class setup_code(rfm.RegressionMixin):
     # {{{ set_perf_patterns:
     @rfm.run_after('sanity')
     def set_perf_patterns(self):
+        # if not skip_perf_report:
         self.perf_patterns = {
             'Elapsed': sphs.seconds_elaps(self),
             '_Elapsed': sphs.elapsed_time_from_date(self),
@@ -198,16 +273,18 @@ class setup_code(rfm.RegressionMixin):
         }
         # top%
         self.perf_patterns.update({
-            '%MomentumEnergyIAD':       sphs.pctg_MomentumEnergyIAD(self),
-            '%mpi_synchronizeHalos':    sphs.pctg_mpi_synchronizeHalos(self),
-            '%FindNeighbors':           sphs.pctg_FindNeighbors(self),
-            '%IAD':                     sphs.pctg_IAD(self),
+            '%MomentumEnergyIAD':    sphs.pctg_MomentumEnergyIAD(self),
+            '%mpi_synchronizeHalos': sphs.pctg_mpi_synchronizeHalos(self),
+            '%FindNeighbors':        sphs.pctg_FindNeighbors(self),
+            '%IAD':                  sphs.pctg_IAD(self),
         })
+
     # }}}
 
     # {{{ set_reference:
     @rfm.run_after('sanity')
     def set_reference(self):
+        # if not skip_perf_report:
         myzero_s = (0, None, None, 's')
         myzero_p = (0, None, None, '%')
         self.reference = {

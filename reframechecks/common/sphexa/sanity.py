@@ -98,7 +98,12 @@ def seconds_elaps(self):
     '''
     regex = r'^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
     # regex = r'^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
-    return sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
+    res = sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
+    if res > 0:
+        return sn.round(sn.sum(sn.extractall(regex, self.stdout,
+                                             'sec', float)), 4)
+    else:
+        return 1
 # }}}
 
 

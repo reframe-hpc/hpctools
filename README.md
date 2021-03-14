@@ -33,9 +33,7 @@ cd reframechecks/
 
 I use https://github.com/unibas-dmi-hpc/SPH-EXA_mini-app.git as test code:
 ```
-    origin/sfc-integration
-    commit a5e75148d83524a243b41959bc3217ad4f7f660f 
-    Date: Tue Mar 9 16:32:20 2021 +0100
+> f2ebf91 (HEAD -> develop, origin/develop, origin/HEAD) merged develop
 ```
 
 Check out the [documentation](https://hpctools.readthedocs.io/en/latest/) to
