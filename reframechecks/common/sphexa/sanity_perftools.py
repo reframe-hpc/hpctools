@@ -29,11 +29,14 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         reference_tool_version = {
             'daint': '20.08.0',
             'dom': '20.08.0',
+            'eiger': '20.11.0',
+            'pilatus': '20.11.0',
         }
         ref_version = reference_tool_version[self.current_system.name]
         regex = r'^CrayPat/X:\s+Version (?P<toolversion>\S+) Revision'
         res_version = sn.extractsingle(regex, self.version_rpt, 'toolversion')
-        self.sanity_patterns_l.append(sn.assert_eq(res_version, ref_version))
+        # self.sanity_patterns_l.append(sn.assert_eq(res_version, ref_version,
+        # msg='sanityV failed "{0}"'))
 # }}}
 # }}}
 
@@ -56,6 +59,25 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         '''
         regex = r'^(?P<cn>\d+.xf)$'
         self.num_cn = sn.count(sn.extractall(regex, self.stdout, 'cn'))
+# }}}
+
+# {{{ perftools-lite: Memory
+    @rfm.run_before('performance')
+    def perftools_lite_memory(self):
+        '''
+          # 20.10.0 / AMD
+          High Memory:      85,743.7 MiBytes     669.9 MiBytes per PE
+          # More --> pat_report -O himem exe+141047-1002s/index.ap2 > rpt.mem
+        '''
+        res = {}
+        regex = (r'^High Memory:\s+(?P<mem_cn>\S+) MiBytes\s+(?P<mem_c>\S+) '
+                 r'MiBytes per PE')
+        self.ptl_high_mem = sn.extractsingle(
+            regex, self.stdout, 'mem_cn',
+            conv=lambda x: int(x.replace(',', '').split('.')[0]))
+        self.ptl_high_mem_c = sn.extractsingle(
+            regex, self.stdout, 'mem_c',
+            conv=lambda x: int(x.replace(',', '').split('.')[0]))
 # }}}
 
 # {{{ patrun: table Wall Clock Time, Memory
@@ -267,15 +289,18 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             * patrun_avg_power: 692.806 W
         '''
         res = {}
+        # eiger:
         regex = (r'^Table \d+:\s+Program energy and power usage \(from Cray '
-                 r'PM\)\n(.*\n){5}\s+(?P<nrgy>\S+)\s+\|\s+(?P<power>\S+).*'
-                 r'Total$')
+                 r'PM\).*\n(.*\n){5}\s+(?P<nrgy>\S+)\s+\|\s+(?P<power>\S+).*'
+                 r'(Total|Avg of PE values)$')
         res['energy_avg'] = \
             sn.extractsingle(regex, self.stdout, 'nrgy',
-                             conv=lambda x: int(x.replace(',', ''))) \
+                             conv=lambda x: int(float(x.replace(',', '')))) \
             / self.num_cn
-        res['power_avg'] = sn.extractsingle(regex, self.stdout, 'power',
-                                            float) / self.num_cn
+        res['power_avg'] = \
+            sn.extractsingle(regex, self.stdout, 'power',
+                             conv=lambda x: int(float(x.replace(',', '')))) \
+            / self.num_cn
         if self.patrun_perf_d:
             self.patrun_perf_d = {**self.patrun_perf_d, **res}
         else:
@@ -308,9 +333,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
 # {{{ patrun: hotspot1
     @rfm.run_after('sanity')
     def patrun_hotspot1(self):
-        regex = (r'^Table \d+:  Profile by Group, Function, and Line\n'
+        regex = (r'^Table \d+:  Profile by Group, Function, and Line.*\n'
                  r'(.*\n){7}\s+.*Total\n(.*\n){3}(\|)+\s+(?P<pct>\S+)%.*\|\s+'
-                 r'.*(?P<fname>sphexa.*)$')
+                 r'(?P<fname>(sphexa.*|MPI_.*))$')
         # --- ok:
         rpt = os.path.join(self.stagedir, self.rpt)
         self.patrun_hotspot1_pct = sn.extractsingle(regex, rpt, 'pct', float)
@@ -352,11 +377,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
 
         '''
         rpt = os.path.join(self.stagedir, self.rpt)
-        regex = (r'^Table 1:  Profile by Function(.*\n)*\|\|=*\n.*MPI\n\|\|-*'
-                 r'\n\|+\s+(?P<sam_pct>\S+)%.* (?P<imb_pct>\S+)%\s+\|\s+'
-                 r'(?P<fname>\S+)')
+        regex = (r'^Table 1:  Profile by Function(.*\n){10}.*^\|.* '
+                 r'(?P<samp_pct>\S+)%.* (?P<imb_pct>\S+)%.*'
+                 r'(?P<fname>sphexa\S+|MPI_\S+)')
         res = {}
-        res['mpi_h1'] = sn.extractsingle(regex, rpt, 'sam_pct', float)
+        res['mpi_h1'] = sn.extractsingle(regex, rpt, 'samp_pct', float)
         res['mpi_h1_imb'] = sn.extractsingle(regex, rpt, 'imb_pct', float)
         res['mpi_h1_name'] = sn.extractsingle(regex, rpt, 'fname')
         #
@@ -386,22 +411,53 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         rpt = os.path.join(self.stagedir, self.csv_rpt)
         # self.num_tasks
         # USER:
-        regex = r'^\d+,\S+,(?P<samples>\S+),USER/pe.(?P<pe>\d+)$'
+        #  Level,Samp%,Samp,Group/Thread
+        #  0,100.0%,118.0,Total
+        #  1,81.4%,96.0,USER
+        #  2,83.1%,98.0,USER/thread.7
+        #  2,81.4%,96.0,USER/thread.0
+        #
+        #  1,24.1%,77.0,USER
+        #  2,25.4%,81.0,USER/pe.0
+        #  3,25.4%,81.0,USER/pe.0/thread.0
+        #  3,21.0%,67.0,USER/pe.0/thread.22
+        # TODO: fix regex for craypat version 20.x
+        # CrayPat/X:  Version 20.10.0 Revision 7ec62de47
+        # CrayPat/X:  Version 21.02.0 Revision ee5549f05
+        regex = r'^CrayPat/X:\s+Version (?P<toolversion>\d+)'
+        version_rpt = os.path.join(self.stagedir, self.version_rpt)
+        res_version = sn.extractsingle(regex, version_rpt, 'toolversion')
+        regex_tool = {
+            '21': {
+                'user': r'^\d+,\S+,(?P<samples>\S+),USER/pe.(?P<pe>\d+)$',
+                'mpi': r'^\d+,\S+,(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$',
+                'etc': r'^\d+,\S+,(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$',
+                },
+            '20': {
+                'user': r'^\d+,\S+,(?P<samples>\S+),USER/pe.(?P<pe>\d+)$',
+                'mpi': r'^\d+,\S+,(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$',
+                'etc': r'^\d+,\S+,(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$',
+                },
+        }
+        regex = regex_tool[sn.evaluate(res_version)]['user']
         res_user_sm_l = sn.extractall(regex, rpt, 'samples', float)
         res_user_pe_l = sn.extractall(regex, rpt, 'pe')
         # MPI:
-        regex = r'^\d+,\S+,(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$'
+        regex = regex_tool[sn.evaluate(res_version)]['mpi']
         res_mpi_sm_l = sn.extractall(regex, rpt, 'samples', float)
         res_mpi_pe_l = sn.extractall(regex, rpt, 'pe')
+        # if not res_mpi_sm_l:
+        #     res_mpi_sm_l = [0 for i in res_user_sm_l]
+        #     res_mpi_pe_l = [i for i in res_user_pe_l]
         # ETC:
-        regex = r'^\d+,\S+,(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$'
+        regex = regex_tool[sn.evaluate(res_version)]['etc']
         res_etc_sm_l = sn.extractall(regex, rpt, 'samples', float)
         res_etc_pe_l = sn.extractall(regex, rpt, 'pe')
         # DICT from LISTs: dict(zip(pe,usr))
         # TOTAL = USER+MPI+ETC
         res_total_sm_l = []
         # WARNING: this fails if data is not sorted by pe, use pat_report with:
-        # -s sort_by_pe='yes' !!!!!!!!!!!!!!
+        # -s sort_by_pe='yes' !!!
         res_total_sm_l = [sum(sam) for sam in zip(res_user_sm_l, res_mpi_sm_l,
                                                   res_etc_sm_l)]
         # USER pes
@@ -558,6 +614,8 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         res['mpi_slowest_pe'] = mpi_slowest_pe
         res['etc_slowest_pe'] = etc_slowest_pe
         res['total_slowest_pe'] = total_slowest_pe
+        # sn.print(res_user_sm_l)
+        # sn.print(res_user_pe_l)
         res['%user_slowest'] = sn.round(100 * res_user_sm_l[user_slowest_pe] /
                                         res_total_sm_l[user_slowest_pe], 1)
         res['%mpi_slowest'] = sn.round(100 * res_mpi_sm_l[user_slowest_pe] /
@@ -569,12 +627,26 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         res['mpi_fastest_pe'] = mpi_fastest_pe
         res['etc_fastest_pe'] = etc_fastest_pe
         res['total_fastest_pe'] = total_fastest_pe
-        res['%user_fastest'] = sn.round(100 * res_user_sm_l[user_fastest_pe] /
-                                        res_total_sm_l[user_fastest_pe], 1)
-        res['%mpi_fastest'] = sn.round(100 * res_mpi_sm_l[user_fastest_pe] /
-                                       res_total_sm_l[user_fastest_pe], 1)
-        res['%etc_fastest'] = sn.round(100 * res_etc_sm_l[user_fastest_pe] /
-                                       res_total_sm_l[user_fastest_pe], 1)
+        try:
+            res['%user_fastest'] = \
+                sn.round(100 * res_user_sm_l[user_fastest_pe] /
+                         res_total_sm_l[user_fastest_pe], 1)
+        except ValueError:
+            res['%user_fastest'] = 0
+
+        try:
+            res['%mpi_fastest'] = \
+                sn.round(100 * res_mpi_sm_l[user_fastest_pe] /
+                         res_total_sm_l[user_fastest_pe], 1)
+        except ValueError:
+            res['%mpi_fastest'] = 0
+
+        try:
+            res['%etc_fastest'] = \
+                sn.round(100 * res_etc_sm_l[user_fastest_pe] /
+                         res_total_sm_l[user_fastest_pe], 1)
+        except ValueError:
+            res['%etc_fastest'] = 0
         # }}}
         self.patrun_stats_d = res
 # }}}
@@ -597,11 +669,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
 
 # {{{ performance patterns
     # --- 1
-    @rfm.run_before('performance')
-    def set_basic_perf_patterns(self):
-        '''A set of basic perf_patterns shared between the tests
-        '''
-        self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
+#     @rfm.run_before('performance')
+#     def set_basic_perf_patterns(self):
+#         '''A set of basic perf_patterns shared between the tests
+#         '''
+#         self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
 
 # {{{ --- 2
     @rfm.run_before('performance')
@@ -625,51 +697,54 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             self.patrun_stats_d['%etc_samples'], 1)
         perf_pattern = {
             'patrun_cn': self.num_cn,
-            'patrun_wallt_max': self.patrun_perf_d['patrun_wallt_max'],
-            'patrun_wallt_avg': self.patrun_perf_d['patrun_wallt_avg'],
-            'patrun_wallt_min': self.patrun_perf_d['patrun_wallt_min'],
-            #
-            'patrun_mem_max': self.patrun_perf_d['patrun_mem_max'],
-            # 'patrun_mem_avg': self.patrun_perf_d['patrun_mem_avg'],
-            'patrun_mem_min': self.patrun_perf_d['patrun_mem_min'],
-            #
-            'patrun_memory_traffic_global':
-                self.patrun_perf_d['memory_traffic_global'],
-            'patrun_memory_traffic_local':
-                self.patrun_perf_d['memory_traffic_local'],
-            '%patrun_memory_traffic_peak':
-                self.patrun_perf_d['memory_traffic_peak'],
-            #
-            'patrun_memory_traffic': self.patrun_hwc_d['memory_traffic'],
-            'patrun_ipc': self.patrun_hwc_d['ipc'],
-            '%patrun_stallcycles': self.patrun_hwc_d['stallcycles'],
+            # 'patrun_wallt_max': self.patrun_perf_d['patrun_wallt_max'],
+            # 'patrun_wallt_avg': self.patrun_perf_d['patrun_wallt_avg'],
+            # 'patrun_wallt_min': self.patrun_perf_d['patrun_wallt_min'],
+            # #
+            # 'patrun_mem_max': self.patrun_perf_d['patrun_mem_max'],
+            # # 'patrun_mem_avg': self.patrun_perf_d['patrun_mem_avg'],
+            # 'patrun_mem_min': self.patrun_perf_d['patrun_mem_min'],
+            # #
+            # 'patrun_memory_traffic_global':
+            #     self.patrun_perf_d['memory_traffic_global'],
+            # 'patrun_memory_traffic_local':
+            #     self.patrun_perf_d['memory_traffic_local'],
+            # '%patrun_memory_traffic_peak':
+            #     self.patrun_perf_d['memory_traffic_peak'],
+            # #
+            # 'patrun_memory_traffic': self.patrun_hwc_d['memory_traffic'],
+            # 'patrun_ipc': self.patrun_hwc_d['ipc'],
+            # '%patrun_stallcycles': self.patrun_hwc_d['stallcycles'],
+            # #
+            # 'ptl_high_mem': self.ptl_high_mem,
+            # 'ptl_high_mem_c': self.ptl_high_mem_c,
             # %
             '%patrun_user': self.patrun_stats_d['%user_samples'],
             '%patrun_mpi': self.patrun_stats_d['%mpi_samples'],
             '%patrun_etc': self.patrun_stats_d['%etc_samples'],
             '%patrun_total': self.patrun_stats_d['%total_samples'],
-            #
-            '%patrun_user_slowest': self.patrun_stats_d['%user_slowest'],
-            '%patrun_mpi_slowest': self.patrun_stats_d['%mpi_slowest'],
-            '%patrun_etc_slowest': self.patrun_stats_d['%etc_slowest'],
-            #
-            '%patrun_user_fastest': self.patrun_stats_d['%user_fastest'],
-            '%patrun_mpi_fastest': self.patrun_stats_d['%mpi_fastest'],
-            '%patrun_etc_fastest': self.patrun_stats_d['%etc_fastest'],
-            #
-            '%patrun_avg_usr_reported': usr_pct,
-            '%patrun_avg_mpi_reported': mpi_pct,
-            '%patrun_avg_etc_reported': etc_pct,
-            '%patrun_hotspot1': self.patrun_hotspot1_pct,
-            #
-            '%patrun_mpi_h1': self.mpi_h1,
-            '%patrun_mpi_h1_imb': self.mpi_h1_imb,
-            # ko:
-            # '%patrun_mpi_h1': self.patrun_perf_d['mpi_h1'],
-            # '%patrun_mpi_h1_imb': self.patrun_perf_d['mpi_h1_imb'],
-            #
-            'patrun_avg_energy': self.patrun_perf_d['energy_avg'],
-            'patrun_avg_power': self.patrun_perf_d['power_avg'],
+            # #
+            # '%patrun_user_slowest': self.patrun_stats_d['%user_slowest'],
+            # '%patrun_mpi_slowest': self.patrun_stats_d['%mpi_slowest'],
+            # '%patrun_etc_slowest': self.patrun_stats_d['%etc_slowest'],
+            # #
+            # '%patrun_user_fastest': self.patrun_stats_d['%user_fastest'],
+            # '%patrun_mpi_fastest': self.patrun_stats_d['%mpi_fastest'],
+            # '%patrun_etc_fastest': self.patrun_stats_d['%etc_fastest'],
+            # #
+            # '%patrun_avg_usr_reported': usr_pct,
+            # '%patrun_avg_mpi_reported': mpi_pct,
+            # '%patrun_avg_etc_reported': etc_pct,
+            # '%patrun_hotspot1': self.patrun_hotspot1_pct,
+            # #
+            # '%patrun_mpi_h1': self.mpi_h1,
+            # '%patrun_mpi_h1_imb': self.mpi_h1_imb,
+            # # ko:
+            # # '%patrun_mpi_h1': self.patrun_perf_d['mpi_h1'],
+            # # '%patrun_mpi_h1_imb': self.patrun_perf_d['mpi_h1_imb'],
+            # #
+            # 'patrun_avg_energy': self.patrun_perf_d['energy_avg'],
+            # 'patrun_avg_power': self.patrun_perf_d['power_avg'],
         }
         if self.perf_patterns:
             self.perf_patterns = {**self.perf_patterns, **perf_pattern}
@@ -681,13 +756,13 @@ class PerftoolsBaseTest(rfm.RegressionTest):
 
 # {{{ performance reference
     # --- 1
-    @rfm.run_before('performance')
-    def set_basic_reference(self):
-        self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
+#     @rfm.run_before('performance')
+#     def set_basic_reference(self):
+#         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
 
 # {{{ --- 2
     @rfm.run_before('performance')
-    def set_mpip_reference(self):
+    def set_tool_reference(self):
         ref = ScopedDict()
         # first, copy the existing self.reference (if any):
         if self.reference:
@@ -704,21 +779,24 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         myzero_gb = (0, None, None, 'GB')
         myzero_sam = (0, None, None, 'samples')
         # -----------------------------------------------------------
-        h1_name = '%% (%s)' % self.patrun_hotspot1_name
-        myzero_h1 = (0, None, None, h1_name)
-        # mpi_h1_name = '%% (%s)' % self.patrun_perf_d['mpi_h1_name']
-        mpi_h1_name = '%% (%s)' % self.mpi_h1_name
-        myzero_mpi_h1 = (0, None, None, mpi_h1_name)
-        # -----------------------------------------------------------
-        user_slowest_pe = '%% (pe.%s)' % self.patrun_stats_d['user_slowest_pe']
-        myzero_slowest = (0, None, None, user_slowest_pe)
-        # -----------------------------------------------------------
-        user_fastest_pe = '%% (pe.%s)' % self.patrun_stats_d['user_fastest_pe']
-        myzero_fastest = (0, None, None, user_fastest_pe)
-        # -----------------------------------------------------------
+        # h1_name = '%% (%s)' % self.patrun_hotspot1_name
+        # myzero_h1 = (0, None, None, h1_name)
+        # # mpi_h1_name = '%% (%s)' % self.patrun_perf_d['mpi_h1_name']
+        # mpi_h1_name = '%% (%s)' % self.mpi_h1_name
+        # myzero_mpi_h1 = (0, None, None, mpi_h1_name)
+        # # -----------------------------------------------------------
+        # user_slowest_pe = '%% (pe.%s)' %
+        #   self.patrun_stats_d['user_slowest_pe']
+        # myzero_slowest = (0, None, None, user_slowest_pe)
+        # # -----------------------------------------------------------
+        # user_fastest_pe =
+        #   '%% (pe.%s)' % self.patrun_stats_d['user_fastest_pe']
+        # myzero_fastest = (0, None, None, user_fastest_pe)
+        # # -----------------------------------------------------------
+
         # %patrun_user: 76.4 % (slowest:1015.0 [pe71] / mean:950.2 /
         #                       median:985.0 / fastest:20.0 [pe94])
-        user_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+        user_stats = ('%% (slow: %s samp [pe%s] / mean:%s median:%s / '
                       'fast:%s [pe%s])') \
             % (self.patrun_stats_d['user_samples_max'],
                self.patrun_stats_d['user_slowest_pe'],
@@ -730,7 +808,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # -----------------------------------------------------------
         # %patrun_mpi: 18.2 % (slowest:1178.0 [pe95] / mean:226.8 /
         #                      median:191.5 / fastest:150.0 [pe20])
-        mpi_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+        mpi_stats = ('%% (slow: %s samp [pe%s] / mean:%s median:%s / '
                      'fast:%s [pe%s])') \
             % (self.patrun_stats_d['mpi_samples_max'],
                # 'xx',
@@ -744,7 +822,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # -----------------------------------------------------------
         # %patrun_etc: 5.4 % (slowest:83.0 [pe21] / mean:67.3 /
         #                     median:67.5 / fastest:41.0 [pe93])
-        etc_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+        etc_stats = ('%% (slow: %s samp [pe%s] / mean:%s median:%s / '
                      'fast:%s [pe%s])') \
             % (self.patrun_stats_d['etc_samples_max'],
                # 'xx',
@@ -758,7 +836,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # -----------------------------------------------------------
         # %patrun_total: 100%  (slowest:1250.0 [pe33] / mean:1244.3 /
         #                       median:1245.0 / fastest:1234.0 [pe20])
-        total_stats = ('%% (slow: %s smp [pe%s] / mean:%s median:%s / '
+        total_stats = ('%% (slow: %s samp [pe%s] / mean:%s median:%s / '
                        'fast:%s [pe%s])') \
             % (self.patrun_stats_d['total_samples_max'],
                # 'xx',
@@ -771,45 +849,50 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         myzero_total = (0, None, None, total_stats)
         # -----------------------------------------------------------
         ref['patrun_cn'] = myzero
-        ref['patrun_wallt_max'] = myzero_s
-        ref['patrun_wallt_avg'] = myzero_s
-        ref['patrun_wallt_min'] = myzero_s
-        #
-        ref['patrun_mem_max'] = myzero_mb
-        # ref['patrun_mem_avg'] = myzero_mb
-        ref['patrun_mem_min'] = myzero_mb
-        #
-        ref['patrun_memory_traffic_global'] = myzero_gb
-        ref['patrun_memory_traffic_local'] = myzero_gb
-        ref['%patrun_memory_traffic_peak'] = myzero_p
-        #
-        ref['patrun_memory_traffic'] = myzero_gb
-        ref['patrun_ipc'] = myzero
-        ref['%patrun_stallcycles'] = myzero_p
-        #
+# {{{
+#         ref['patrun_wallt_max'] = myzero_s
+#         ref['patrun_wallt_avg'] = myzero_s
+#         ref['patrun_wallt_min'] = myzero_s
+#         #
+#         ref['patrun_mem_max'] = myzero_mb
+#         # ref['patrun_mem_avg'] = myzero_mb
+#         ref['patrun_mem_min'] = myzero_mb
+#         #
+#         ref['patrun_memory_traffic_global'] = myzero_gb
+#         ref['patrun_memory_traffic_local'] = myzero_gb
+#         ref['%patrun_memory_traffic_peak'] = myzero_p
+#         #
+#         ref['patrun_memory_traffic'] = myzero_gb
+#         ref['patrun_ipc'] = myzero
+#         ref['%patrun_stallcycles'] = myzero_p
+#         #
+#         ref['ptl_high_mem'] = myzero_mb
+#         ref['ptl_high_mem_c'] = myzero_mb
+#         #
         ref['%patrun_user'] = myzero_user
         ref['%patrun_mpi'] = myzero_mpi
         ref['%patrun_etc'] = myzero_etc
         ref['%patrun_total'] = myzero_total
-        #
-        ref['%patrun_user_slowest'] = myzero_slowest
-        ref['%patrun_mpi_slowest'] = myzero_slowest
-        ref['%patrun_etc_slowest'] = myzero_slowest
-        #
-        ref['%patrun_user_fastest'] = myzero_fastest
-        ref['%patrun_mpi_fastest'] = myzero_fastest
-        ref['%patrun_etc_fastest'] = myzero_fastest
-        #
-        ref['%patrun_avg_usr_reported'] = myzero_p
-        ref['%patrun_avg_mpi_reported'] = myzero_p
-        ref['%patrun_avg_etc_reported'] = myzero_p
-        ref['%patrun_hotspot1'] = myzero_h1
-        #
-        ref['%patrun_mpi_h1'] = myzero_mpi_h1
-        ref['%patrun_mpi_h1_imb'] = myzero_mpi_h1
-        #
-        ref['patrun_avg_power'] = myzero_w
-        ref['patrun_avg_energy'] = myzero_j
+#         #
+#         ref['%patrun_user_slowest'] = myzero_slowest
+#         ref['%patrun_mpi_slowest'] = myzero_slowest
+#         ref['%patrun_etc_slowest'] = myzero_slowest
+#         #
+#         ref['%patrun_user_fastest'] = myzero_fastest
+#         ref['%patrun_mpi_fastest'] = myzero_fastest
+#         ref['%patrun_etc_fastest'] = myzero_fastest
+#         #
+#         ref['%patrun_avg_usr_reported'] = myzero_p
+#         ref['%patrun_avg_mpi_reported'] = myzero_p
+#         ref['%patrun_avg_etc_reported'] = myzero_p
+#         ref['%patrun_hotspot1'] = myzero_h1
+#         #
+#         ref['%patrun_mpi_h1'] = myzero_mpi_h1
+#         ref['%patrun_mpi_h1_imb'] = myzero_mpi_h1
+#         #
+#         ref['patrun_avg_power'] = myzero_w
+#         ref['patrun_avg_energy'] = myzero_j
+# }}}
         # final reference:
         self.reference = ref
 # }}}
