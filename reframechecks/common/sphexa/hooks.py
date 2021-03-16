@@ -58,8 +58,6 @@ class setup_pe(rfm.RegressionMixin):
     def set_prgenv_flags(self):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile'
-        if self.executable is None:
-            self.executable = 'mpi+omp'
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG', '-fopenmp'],
@@ -78,16 +76,23 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
-        if self.target_executable is None:
-            exe = self.executable
-        else:
-            exe = self.target_executable
+        # FIXME: why ??
+        if self.executable[2:] == self.name:
+            self.executable = 'mpi+omp'
+        # if not hasattr(self, 'executable'):
+        #     self.executable = 'mpi+omp'
+
+        if not hasattr(self, 'target_executable'):
+            self.target_executable = 'mpi+omp'
 
         self.build_system.options = [
-            exe, f'MPICXX=CC', 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
+            self.target_executable, f'MPICXX=CC',
+            'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
             # NOTE: self.build_system.cxx is empty
         ]
-        self.postbuild_cmds = [f'mv {exe}.app {exe}']
+        self.postbuild_cmds = [
+            f'mv {self.target_executable}.app {self.target_executable}'
+        ]
     # }}}
 
     # {{{ set_system_attributes
@@ -236,7 +241,8 @@ class setup_code(rfm.RegressionMixin):
         self.prerun_cmds += ['module rm xalt', 'module list']
         self.affinity_rpt = 'affinity.rpt'
         self.postrun_cmds += [
-            # TODO: python
+            f'echo "exes:|{self.executable}|{self.target_executable}|"',
+            # TODO: do this in python
             f'grep cpu-bind= {self.stderr} |'
             'awk \'{print $5,$9}\' |sort -nk1 |'
             'awk \'{print "echo "$2" |hwloc-calc -H core |grep Core: |'
