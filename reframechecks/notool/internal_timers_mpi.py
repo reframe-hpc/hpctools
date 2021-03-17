@@ -38,6 +38,7 @@ class SphExa_Timers_Check(rfm.RegressionTest, hooks.setup_pe,
         # {{{ run
         self.testname = 'sedov'
         self.time_limit = '10m'
+        # self.executable = 'mpi+omp'
         # }}}
 
         # {{{ sanity

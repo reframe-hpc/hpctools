@@ -30,7 +30,7 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
         * ``pat_help``
     '''
     # }}}
-    steps = parameter([1])
+    steps = parameter([4])
     compute_node = parameter([1])
     # compute_node = parameter([2**i for i in range(8)])  # 1:128 cn
     np_per_c = parameter([1e4])
@@ -39,8 +39,9 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
         # {{{ pe
         self.descr = 'Tool validation'
         self.valid_prog_environs = [
-            'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-cray',
-            'PrgEnv-aocc', 'cpeGNU', 'cpeIntel', 'cpeAMD', 'cpeCray',
+            'PrgEnv-gnu', 'cpeGNU',
+            # 'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-cray',
+            # 'PrgEnv-aocc', 'cpeGNU', 'cpeIntel', 'cpeAMD', 'cpeCray',
         ]
         self.valid_systems = [
             'dom:mc', 'dom:gpu', 'daint:mc', 'daint:gpu',
