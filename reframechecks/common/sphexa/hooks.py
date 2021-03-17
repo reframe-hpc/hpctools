@@ -76,11 +76,10 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
-        # FIXME: why ??
+        # If self.executable is not set, ReFrame will set it to self.name:
+        # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html
         if self.executable[2:] == self.name:
             self.executable = 'mpi+omp'
-        # if not hasattr(self, 'executable'):
-        #     self.executable = 'mpi+omp'
 
         if not hasattr(self, 'target_executable'):
             self.target_executable = 'mpi+omp'
@@ -241,7 +240,7 @@ class setup_code(rfm.RegressionMixin):
         self.prerun_cmds += ['module rm xalt', 'module list']
         self.affinity_rpt = 'affinity.rpt'
         self.postrun_cmds += [
-            f'echo "exes:|{self.executable}|{self.target_executable}|"',
+            f'echo "# exes:|{self.executable}|{self.target_executable}|"',
             # TODO: do this in python
             f'grep cpu-bind= {self.stderr} |'
             'awk \'{print $5,$9}\' |sort -nk1 |'
