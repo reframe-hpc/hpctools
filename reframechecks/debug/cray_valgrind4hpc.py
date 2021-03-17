@@ -97,27 +97,17 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
             f'grep PACKAGE_VERSION $VALGRIND4HPC_INSTALL_DIR/include/'
             f'valgrind/config.h >> {self.version_rpt}',
         ]
-
-        self.tool_opts = (
-            f' -n{self.num_tasks}'
-            f' --valgrind-args="--track-origins=yes --leak-check=full"'
-            # f' --from-ranks=0-{self.num_tasks-1} '
-            # f' --launcher-args=""'
-        )
-        self.executable_opts = [
-            self.tool_opts, self.target_executable, '--',
-        ]
         # }}}
 
         # {{{ sanity
         sanity_1 = r'Conditional jump or move depends on uninitialised value'
-        sanity_2 = r'Uninitialised value was created by a heap allocation'
+        sanity_2 = r'Uninitialised value was created by a \S+ allocation'
         sanity_3 = r'All heap blocks were freed -- no leaks are possible'
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
-            sn.assert_not_found(sanity_1, self.stdout),
-            sn.assert_not_found(sanity_2, self.stdout),
+            sn.assert_found(sanity_1, self.stdout),
+            sn.assert_found(sanity_2, self.stdout),
             # sn.assert_found(sanity_3, self.stdout),
         ])
         # }}}
@@ -125,6 +115,7 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
         # {{{ performance
         # the tool flushes stdout hence we need this trick:
         self.time_rpt = 'time.rpt'
+        self.rpt_dep = self.time_rpt
         self.prerun_cmds += [f'echo starttime=`date +%s` > {self.time_rpt}']
         self.postrun_cmds += [
             f'echo stoptime=`date +%s` >> {self.time_rpt}',
@@ -149,6 +140,21 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
         # The job launcher has to be changed because
         # the tool can be called without srun
         self.job.launcher = getlauncher('local')()
+    # }}}
+
+    # {{{ set_opts
+    @rfm.run_before('run')
+    def set_opts(self):
+        self.tool_opts = (
+            f' -n{self.num_tasks}'
+            f' --valgrind-args="--track-origins=yes --leak-check=summary"'
+            f' --from-ranks=0-0 '
+            # f' --from-ranks=0-{self.num_tasks-1} '
+            # f' --launcher-args=""'
+        )
+        self.executable_opts = [
+            self.tool_opts, self.target_executable, '--',
+        ]
     # }}}
     # }}}
 # }}}

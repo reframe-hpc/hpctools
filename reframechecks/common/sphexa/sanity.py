@@ -22,7 +22,7 @@ def elapsed_time_from_date(self):
     '''
     regex_start_sec = r'^starttime=(?P<sec>\d+.\d+)'
     regex_stop_sec = r'^stoptime=(?P<sec>\d+.\d+)'
-    if 'self.rpt_dep' in globals():
+    if hasattr(self, 'rpt_dep'):
         rpt = self.rpt_dep
     else:
         rpt = self.stdout
@@ -85,7 +85,7 @@ def seconds_timers(self, region):
 # }}}
 
 
-#  {{{ sanity_function: internal timers
+# {{{ sanity_function: internal timers
 # @property
 @sn.sanity_function
 def seconds_elaps(self):
@@ -97,7 +97,6 @@ def seconds_elaps(self):
       reports: * Elapsed: 3.6115 s
     '''
     regex = r'^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
-    # regex = r'^=== Total time for iteration\(\d+\)\s+(?P<sec>\d+\D\d+)s'
     res = sn.round(sn.sum(sn.extractall(regex, self.stdout, 'sec', float)), 4)
     if res > 0:
         return sn.round(sn.sum(sn.extractall(regex, self.stdout,
@@ -142,95 +141,6 @@ def pctg_IAD(obj):
     return sn.round((100 * seconds_timers(obj, 7) / seconds_elaps(obj)), 2)
     # return sn.round((100 * seconds_iad(obj) / seconds_elaps(obj)), 2)
 
-# }}}
-
-
-# {{{ sanity_function: perf patterns for internal timers
-@sn.sanity_function
-def basic_perf_patterns(obj):
-    '''Sets a set of basic perf_patterns to be shared between the tests.
-    The equivalent from inside the check is:
-
-    .. code-block:: python
-
-     perf_patterns = {
-         'Elapsed': sphs.seconds_elaps(self)
-         }
-    '''
-    perf_patterns = {
-        'Elapsed':              seconds_elaps(obj),
-        '_Elapsed':             elapsed_time_from_date(obj),
-        #
-        'domain_sync': seconds_timers(obj, 1),
-        'updateTasks': seconds_timers(obj, 2),
-        'FindNeighbors': seconds_timers(obj, 3),
-        'Density': seconds_timers(obj, 4),
-        'EquationOfState': seconds_timers(obj, 5),
-        'mpi_synchronizeHalos': seconds_timers(obj, 6),
-        'IAD': seconds_timers(obj, 7),
-        'MomentumEnergyIAD': seconds_timers(obj, 8),
-        'Timestep': seconds_timers(obj, 9),
-        'UpdateQuantities': seconds_timers(obj, 10),
-        'EnergyConservation': seconds_timers(obj, 11),
-        'UpdateSmoothingLength': seconds_timers(obj, 12),
-        # 'domain_distribute'
-        # 'BuildTree'
-    }
-    # top%
-    perf_patterns.update({
-        '%MomentumEnergyIAD':    pctg_MomentumEnergyIAD(obj),
-        '%Timestep':             pctg_Timestep(obj),
-        '%mpi_synchronizeHalos': pctg_mpi_synchronizeHalos(obj),
-        '%FindNeighbors':        pctg_FindNeighbors(obj),
-        '%IAD':                  pctg_IAD(obj),
-    })
-    return perf_patterns
-# }}}
-
-
-# {{{ sanity_function: perf reference for internal timers
-@sn.sanity_function
-def basic_reference_scoped_d(self):
-    '''Sets a set of basic perf_reference to be shared between the tests.
-    The equivalent from inside the check is:
-
-    .. code-block:: python
-
-      self.reference = {
-          '*': {
-              'Elapsed': (0, None, None, 's'),
-          }
-      }
-    '''
-    myzero_s = (0, None, None, 's')
-    myzero_p = (0, None, None, '%')
-    # self.myreference = ScopedDict({
-    myreference = ScopedDict({
-        '*': {
-            'Elapsed': myzero_s,
-            '_Elapsed': myzero_s,
-            # timers
-            'domain_distribute': myzero_s,
-            'mpi_synchronizeHalos': myzero_s,
-            'BuildTree': myzero_s,
-            'FindNeighbors': myzero_s,
-            'Density': myzero_s,
-            'EquationOfState': myzero_s,
-            'IAD': myzero_s,
-            'MomentumEnergyIAD': myzero_s,
-            'Timestep': myzero_s,
-            'UpdateQuantities': myzero_s,
-            'EnergyConservation': myzero_s,
-            'SmoothingLength': myzero_s,
-            # top%
-            '%MomentumEnergyIAD': myzero_p,
-            '%mpi_synchronizeHalos': myzero_p,
-            '%FindNeighbors': myzero_p,
-            '%IAD': myzero_p,
-        }
-    })
-    return myreference
-    # return self.myreference
 # }}}
 
 
