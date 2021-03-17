@@ -95,7 +95,8 @@ class setup_pe(rfm.RegressionMixin):
     # }}}
 
     # {{{ set_system_attributes
-    @rfm.run_before('run')
+    # @rfm.run_before('run')
+    @rfm.run_after('compile')
     def set_system_attributes(self):
         cs = self.current_system.name  # cs=dom
         cpf = self.current_partition.fullname  # cpf=dom:gpu
@@ -218,7 +219,8 @@ class setup_pe(rfm.RegressionMixin):
             #  'OMP_PROC_BIND': 'spread',
         }
 
-    @rfm.run_before('run')
+    @rfm.run_after('compile')
+    # @rfm.run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=verbose']
     # }}}
