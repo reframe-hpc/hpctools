@@ -54,6 +54,7 @@ class setup_pe(rfm.RegressionMixin):
     # }}}
 
     # {{{ set_prgenv_flags
+    # @rfm.run_after('setup')
     @rfm.run_before('compile')
     def set_prgenv_flags(self):
         self.build_system = 'Make'
@@ -74,6 +75,13 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeIntel'] = self.prgenv_flags['PrgEnv-intel']
         self.prgenv_flags['cpeAMD'] = self.prgenv_flags['PrgEnv-aocc']
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
+        if self.debug_flags:
+            for kk in self.prgenv_flags.keys():
+                tmp_l = [ww.replace("O3", "O0")
+                         for ww in self.prgenv_flags[kk]]
+                tmp_l = [ww.replace("fast", "O0") for ww in tmp_l]
+                self.prgenv_flags[kk] = tmp_l.copy()
+
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
         # If self.executable is not set, ReFrame will set it to self.name:
@@ -242,9 +250,9 @@ class setup_code(rfm.RegressionMixin):
         self.prerun_cmds += ['module rm xalt', 'module list']
         self.affinity_rpt = 'affinity.rpt'
         self.postrun_cmds += [
-            f'echo "# exes:|{self.executable}|{self.target_executable}|"',
+            f'# exes:|{self.executable}|{self.target_executable}|',
             # TODO: do this in python
-            f'grep cpu-bind= {self.stderr} |'
+            f'grep ^cpu-bind= {self.stderr} |'
             'awk \'{print $5,$9}\' |sort -nk1 |'
             'awk \'{print "echo "$2" |hwloc-calc -H core |grep Core: |'
             'sed \'s-Core:--g\'"}\' |sh '
