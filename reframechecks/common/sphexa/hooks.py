@@ -75,7 +75,7 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeIntel'] = self.prgenv_flags['PrgEnv-intel']
         self.prgenv_flags['cpeAMD'] = self.prgenv_flags['PrgEnv-aocc']
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
-        if self.debug_flags:
+        if hasattr(self, 'debug_flags') and self.debug_flags:
             for kk in self.prgenv_flags.keys():
                 tmp_l = [ww.replace("O3", "O0")
                          for ww in self.prgenv_flags[kk]]
