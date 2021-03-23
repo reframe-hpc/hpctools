@@ -409,50 +409,26 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         '''
         # }}}
         rpt = os.path.join(self.stagedir, self.csv_rpt)
-        # self.num_tasks
-        # USER:
-        #  Level,Samp%,Samp,Group/Thread
-        #  0,100.0%,118.0,Total
-        #  1,81.4%,96.0,USER
-        #  2,83.1%,98.0,USER/thread.7
-        #  2,81.4%,96.0,USER/thread.0
-        #
-        #  1,24.1%,77.0,USER
-        #  2,25.4%,81.0,USER/pe.0
-        #  3,25.4%,81.0,USER/pe.0/thread.0
-        #  3,21.0%,67.0,USER/pe.0/thread.22
-        # TODO: fix regex for craypat version 20.x
-        # CrayPat/X:  Version 20.10.0 Revision 7ec62de47
-        # CrayPat/X:  Version 21.02.0 Revision ee5549f05
-        regex = r'^CrayPat/X:\s+Version (?P<toolversion>\d+)'
-        version_rpt = os.path.join(self.stagedir, self.version_rpt)
-        res_version = sn.extractsingle(regex, version_rpt, 'toolversion')
-        regex_tool = {
-            '21': {
-                'user': r'^\d+,\S+,(?P<samples>\S+),USER/pe.(?P<pe>\d+)$',
-                'mpi': r'^\d+,\S+,(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$',
-                'etc': r'^\d+,\S+,(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$',
-                },
-            '20': {
-                'user': r'^\d+,\S+,(?P<samples>\S+),USER/pe.(?P<pe>\d+)$',
-                'mpi': r'^\d+,\S+,(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$',
-                'etc': r'^\d+,\S+,(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$',
-                },
-        }
-        regex = regex_tool[sn.evaluate(res_version)]['user']
-        res_user_sm_l = sn.extractall(regex, rpt, 'samples', float)
-        res_user_pe_l = sn.extractall(regex, rpt, 'pe')
+        if self.num_tasks == 1:
+            regex_use = r'^(?P<pe>1),\S+,\s?(?P<samples>\S+),USER$'
+            regex_mpi = r'^(?P<pe>1),\S+,\s?(?P<samples>\S+),MPI$'
+            regex_etc = r'^(?P<pe>1),\S+,\s?(?P<samples>\S+),ETC$'
+        else:
+            regex_use = r'^2,\S+,\s?(?P<samples>\S+),USER/pe.(?P<pe>\d+)$'
+            regex_mpi = r'^2,\S+,\s?(?P<samples>\S+),MPI/pe.(?P<pe>\d+)$'
+            regex_etc = r'^2,\S+,\s?(?P<samples>\S+),ETC/pe.(?P<pe>\d+)$'
+
+        res_user_sm_l = sn.extractall(regex_use, rpt, 'samples', float)
+        res_user_pe_l = sn.extractall(regex_use, rpt, 'pe', int)
         # MPI:
-        regex = regex_tool[sn.evaluate(res_version)]['mpi']
-        res_mpi_sm_l = sn.extractall(regex, rpt, 'samples', float)
-        res_mpi_pe_l = sn.extractall(regex, rpt, 'pe')
-        # if not res_mpi_sm_l:
-        #     res_mpi_sm_l = [0 for i in res_user_sm_l]
-        #     res_mpi_pe_l = [i for i in res_user_pe_l]
+        res_mpi_sm_l = sn.extractall(regex_mpi, rpt, 'samples', float)
+        res_mpi_pe_l = sn.extractall(regex_mpi, rpt, 'pe', int)
+        if not sn.evaluate(res_mpi_sm_l):
+            res_mpi_sm_l = [0 for i in sn.evaluate(res_user_sm_l)]
+            res_mpi_pe_l = [i for i in sn.evaluate(res_user_pe_l)]
         # ETC:
-        regex = regex_tool[sn.evaluate(res_version)]['etc']
-        res_etc_sm_l = sn.extractall(regex, rpt, 'samples', float)
-        res_etc_pe_l = sn.extractall(regex, rpt, 'pe')
+        res_etc_sm_l = sn.extractall(regex_etc, rpt, 'samples', float)
+        res_etc_pe_l = sn.extractall(regex_etc, rpt, 'pe', int)
         # DICT from LISTs: dict(zip(pe,usr))
         # TOTAL = USER+MPI+ETC
         res_total_sm_l = []
@@ -474,13 +450,6 @@ class PerftoolsBaseTest(rfm.RegressionTest):
                 if sam == slowest:
                     user_slowest_pe = index
 
-        # ko? '_DeferredExpression' object has no attribute 'index'
-        # ko? if slowest in res_user_sm_l:
-        # ko?     pe_slowest = res_user_sm_l.index(slowest)
-        # ko? if slowest in res_mpi_sm_l:
-        # ko?     pe_slowest = res_mpi_sm_l.index(slowest)
-        # ko? if slowest in res_etc_sm_l:
-        # ko?     pe_slowest = res_etc_sm_l.index(slowest)
         if user_slowest_pe == -1:
             user_slowest_pe = 0
         # }}}
@@ -500,6 +469,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # MPI pes
         # {{{ slowest pe (MPI)
         slowest = max(res_mpi_sm_l)
+#         try:
+#             slowest = max(res_mpi_sm_l)
+#         except ValueError:
+#             slowest = 0
+
         mpi_slowest_pe = -1
         index = -1
         if slowest in res_mpi_sm_l:
@@ -513,6 +487,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # }}}
         # {{{ fastest pe (MPI)
         fastest = min(res_mpi_sm_l)
+#         try:
+#             fastest = min(res_mpi_sm_l)
+#         except ValueError:
+#             fastest = 0
+
         mpi_fastest_pe = -1
         index = -1
         for sam in res_mpi_sm_l:
@@ -554,6 +533,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # TOTAL pes
         # {{{ slowest pe (TOTAL)
         slowest = max(res_total_sm_l)
+#         try:
+#             slowest = max(res_total_sm_l)
+#         except ValueError:
+#             slowest = 0
+
         total_slowest_pe = -1
         index = -1
         if slowest in res_total_sm_l:
@@ -567,6 +551,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # }}}
         # {{{ fastest pe (TOTAL)
         fastest = min(res_total_sm_l)
+#         try:
+#             fastest = min(res_total_sm_l)
+#         except ValueError:
+#             fastest = 0
+
         total_fastest_pe = -1
         index = -1
         for sam in res_total_sm_l:
@@ -614,14 +603,34 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         res['mpi_slowest_pe'] = mpi_slowest_pe
         res['etc_slowest_pe'] = etc_slowest_pe
         res['total_slowest_pe'] = total_slowest_pe
-        # sn.print(res_user_sm_l)
-        # sn.print(res_user_pe_l)
-        res['%user_slowest'] = sn.round(100 * res_user_sm_l[user_slowest_pe] /
-                                        res_total_sm_l[user_slowest_pe], 1)
-        res['%mpi_slowest'] = sn.round(100 * res_mpi_sm_l[user_slowest_pe] /
-                                       res_total_sm_l[user_slowest_pe], 1)
-        res['%etc_slowest'] = sn.round(100 * res_etc_sm_l[user_slowest_pe] /
-                                       res_total_sm_l[user_slowest_pe], 1)
+        # --- debug with:
+        # print("> res_user_sm_l", sn.evaluate(res_user_sm_l))
+        # print("> res_user_pe_l", sn.evaluate(res_user_pe_l))
+        # print("> res_mpi_sm_l", sn.evaluate(res_mpi_sm_l))
+        # print("> res_mpi_pe_l", sn.evaluate(res_mpi_pe_l))
+        # print("> res_etc_sm_l", sn.evaluate(res_etc_sm_l))
+        # print("> res_etc_pe_l", sn.evaluate(res_etc_pe_l))
+        try:
+            res['%user_slowest'] = \
+                sn.round(100 * res_user_sm_l[user_slowest_pe] /
+                         res_total_sm_l[user_slowest_pe], 1)
+        except ValueError:
+            res['%user_slowest'] = 0
+
+        try:
+            res['%mpi_slowest'] = \
+                sn.round(100 * res_mpi_sm_l[user_slowest_pe] /
+                         res_total_sm_l[user_slowest_pe], 1)
+        except ValueError:
+            res['%mpi_slowest'] = 0
+
+        try:
+            res['%etc_slowest'] = \
+                sn.round(100 * res_etc_sm_l[user_slowest_pe] /
+                         res_total_sm_l[user_slowest_pe], 1)
+        except ValueError:
+            res['%etc_slowest'] = 0
+
         # fastest pes
         res['user_fastest_pe'] = user_fastest_pe
         res['mpi_fastest_pe'] = mpi_fastest_pe
