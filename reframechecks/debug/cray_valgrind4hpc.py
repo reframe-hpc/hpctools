@@ -100,14 +100,17 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
         # }}}
 
         # {{{ sanity
+        sanity_0 = r'ERROR SUMMARY: \d+ errors from \d+ contexts'
         sanity_1 = r'Conditional jump or move depends on uninitialised value'
         sanity_2 = r'Uninitialised value was created by a \S+ allocation'
         sanity_3 = r'All heap blocks were freed -- no leaks are possible'
         self.sanity_patterns = sn.all([
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
-            sn.assert_found(sanity_1, self.stdout),
-            sn.assert_found(sanity_2, self.stdout),
+            # check the tool output:
+            sn.assert_found(sanity_0, self.stdout),
+            # sn.assert_found(sanity_1, self.stdout),
+            # sn.assert_found(sanity_2, self.stdout),
             # sn.assert_found(sanity_3, self.stdout),
         ])
         # }}}
