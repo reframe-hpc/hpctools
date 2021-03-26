@@ -97,7 +97,7 @@ class setup_pe(rfm.RegressionMixin):
             'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
             # NOTE: self.build_system.cxx is empty
         ]
-        self.postbuild_cmds = [
+        self.postbuild_cmds += [
             f'mv {self.target_executable}.app {self.target_executable}'
         ]
     # }}}
@@ -220,12 +220,17 @@ class setup_pe(rfm.RegressionMixin):
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.exclusive = True
-        self.variables = {
-            'CRAYPE_LINK_TYPE': 'dynamic',
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            #  'OMP_DISPLAY_AFFINITY': 'TRUE',
-            #  'OMP_PROC_BIND': 'spread',
-        }
+        if not hasattr(self, 'variables'):
+            self.variables += {
+                'CRAYPE_LINK_TYPE': 'dynamic',
+                'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                #   'OMP_DISPLAY_AFFINITY': 'TRUE',
+                #   'OMP_PROC_BIND': 'spread',
+            }
+        else:
+            self.variables['CRAYPE_LINK_TYPE'] = 'dynamic'
+            self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
+            # 'echo "# JOBID=$SLURM_JOBID"',
 
     @rfm.run_after('compile')
     # @rfm.run_before('run')
@@ -247,7 +252,12 @@ class setup_code(rfm.RegressionMixin):
         #             self.compute_node * self.np_per_c)
         self.cubeside = int(pow(total_np, 1 / 3))
         self.executable_opts += [f"-n {self.cubeside}", f"-s {self.steps}"]
-        self.prerun_cmds += ['module rm xalt', 'module list']
+        self.prerun_cmds += [
+            'module rm xalt', 'module list',
+            'echo "# JOBID=$SLURM_JOBID"',
+            'srun --version',
+        ]
+        # TODO: if srun: r'srun --version'  # (slurm 20.11.4)
         self.affinity_rpt = 'affinity.rpt'
         self.postrun_cmds += [
             f'# exes:|{self.executable}|{self.target_executable}|',
