@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -7,159 +7,209 @@ import os
 import sys
 import reframe as rfm
 import reframe.utility.sanity as sn
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                '../common')))  # noqa: E402
+import sphexa.hooks as hooks
+# TODO: from reframe.core.backends import getlauncher
 
 
-@rfm.parameterized_test(*[[mpitask, steps]
-                          for mpitask in [24]
-                          for steps in [1]
-                          ])
-class SphExaATPCheck(rfm.RegressionTest):
+# {{{ class SphExa_Atp_Check
+@rfm.simple_test
+class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
     # {{{
     '''
-    This class runs the test code with cray-atp (mpi),
-    2 parameters can be set for simulation:
-
-    :arg mpitask: number of mpi tasks,
-    :arg cubesize: set to 50 as default,
-    :arg steps: number of simulation steps.
+    This class runs the test code with Cray atp
     '''
     # }}}
+    steps = parameter([10])  # will crash after step0
+    compute_node = parameter([2])
+    np_per_c = parameter([1e3])
+    debug_flags = variable(bool, value=True)
 
-    def __init__(self, mpitask, steps):
-        super().__init__()
+    def __init__(self):
         # {{{ pe
         self.descr = 'Tool validation'
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-cray', 'PrgEnv-cray_classic']
-        # self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_systems = ['*']
+        self.valid_prog_environs = [
+            'PrgEnv-gnu', 'cpeGNU'
+            # 'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-cray',
+            # 'PrgEnv-aocc', 'cpeGNU', 'cpeIntel', 'cpeCray', 'cpeAMD',
+        ]
+        self.valid_systems = [
+            'dom:mc', 'dom:gpu', 'daint:mc', 'daint:gpu',
+            'eiger:mc', 'pilatus:mc'
+        ]
+        self.tool = 'atp'
+        self.modules = [self.tool, 'cray-stat']  # cray-cti
         self.maintainers = ['JG']
-        self.tags = {'sph', 'hpctools', 'cpu'}
+        self.tags = {'sph', 'hpctools', 'cpu', 'craype', 'debugging'}
         # }}}
 
         # {{{ compile
-        self.testname = 'sqpatch'
-        self.modules = ['atp', 'stat']
-        self.prgenv_flags = {
-            'PrgEnv-gnu': ['-I.', '-I./include', '-std=c++14', '-g',
-                           '-DUSE_MPI', '-DNDEBUG'],
-            'PrgEnv-intel': ['-I.', '-I./include', '-std=c++14', '-g',
-                             '-DUSE_MPI', '-DNDEBUG'],
-            'PrgEnv-cray': ['-I.', '-I./include', '-std=c++17', '-g',
-                            '-DUSE_MPI', '-DNDEBUG'],
-            'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++14', '-g',
-                           '-DUSE_MPI', '-DNDEBUG'],
-        }
-        self.build_system = 'SingleSource'
-        # self.build_system.cxx = 'CC'
-        self.sourcepath = '%s.cpp' % self.testname
-        self.executable = './%s.exe' % self.testname
-        insert_abort = (r'"/sph::computeMomentumAndEnergyIAD/a if (d.rank > 2)'
-                        r' { MPI::COMM_WORLD.Abort(0); }"')
-        self.ini = '/opt/cray/elogin/eproxy/etc/eproxy.ini'
-        self.cfg = '/opt/cray/elogin/eproxy/default/bin/eproxy_config.py'
-        self.rpt_cfg = 'rpt.eproxy'
-        self.prebuild_cmds = [
-            'module rm xalt',
-            'sed -i %s %s' % (insert_abort, self.sourcepath),
-            # not strictly needed for atp but keeping as reminder:
-            # --- check eproxy.ini (slurm = True):
-            'grep ^slurm %s > %s' % (self.ini, self.rpt_cfg),
-            # --- check eproxy_config.py:
-            # ['debug', 'ps', None, False],
-            'grep "\'ps\'," %s >> %s' % (self.cfg, self.rpt_cfg),
-            # ['eproxy', 'eproxy', None, True],
-            'grep "\'eproxy\'," %s >> %s' % (self.cfg, self.rpt_cfg),
-            # --- check STAT_MOM_NODE (daintgw01|domgw03)
-            'grep login /etc/hosts >> %s' % self.rpt_cfg
+        self.testname = 'sedov'
+        self.sourcepath = f'{self.testname}.cpp'
+        # atp requires full path:
+        self.executable = './mpi+omp'
+        re_slm_1 = 'libAtpSigHandler.so'
+        re_slm_2 = 'libAtpDispatch.so'
+        re_epr_ini1 = '^slurm = True'
+        re_epr_cfg1 = '.debug., .ps., None, False'
+        re_epr_cfg2 = '.eproxy., .eproxy., None, True'
+        re_hosts_1 = 'login'
+        re_ver_1 = 'STAT_VERSION1=$'
+        re_ver_2 = 'STAT_VERSION2=$'
+        re_ver_3 = 'ATP_VERSION1=$'
+        re_ver_4 = 'ATP_VERSION2=$'
+        re_ver_5 = 'ATP_HOME=$'
+        re_which_1 = 'not found'
+        re_stderr_1 = 'forcing job termination'
+        re_stderr_2 = 'Producing core dumps for rank'
+        re_stderr_3 = 'View application merged backtrace tree with: stat-view'
+        re_dot_1 = 'MPI_Allreduce'
+        re_dot_2 = 'sphexa::sph::'
+        re_core_1 = 'core file x86-64'
+        # TODO: grep sphexa::sph atpMergedBT_line.dot -> perf_patterns
+        #   94 [pos="0,0", label="sphexa::sph::neighborsSum(...
+        ldd_rpt = 'ldd.rpt'
+        cfg_rpt = 'cfg.rpt'
+        version_rpt = 'version.rpt'
+        which_rpt = 'which.rpt'
+        slurm_cfg_file = '/etc/opt/slurm/plugstack.conf'
+        cfg_file_path = '/opt/cray/elogin/eproxy'
+        eproxy_ini_cfg_file = f'{cfg_file_path}/etc/eproxy.ini'
+        eproxy_cfg_file = f'{cfg_file_path}/default/bin/eproxy_config.py'
+        hosts_cfg_file = '/etc/hosts'
+        apt_dot_file = 'atpMergedBT_line.dot'
+        # TODO: regex_rk0 = 'core.atp.*.0.0.*'
+        # TODO: shasta
+        self.prebuild_cmds += [
+            # {{{ Needed when reporting a support case:
+            # --- check slurm_cfg (optional /opt/cray/pe/atp/libAtpDispatch.so)
+            f'grep "{re_slm_2}" {slurm_cfg_file} > {cfg_rpt}',
+            # --- check ini_cfg_file (slurm = True)
+            f'grep "{re_epr_ini1}" {eproxy_ini_cfg_file} >> {cfg_rpt}',
+            # --- check eproxy_cfg_file (['debug', 'ps', None, False])
+            f'grep "{re_epr_cfg1}" {eproxy_cfg_file} >> {cfg_rpt}',
+            # --- check eproxy_cfg_file (['eproxy', 'eproxy', None, True])
+            f'grep "{re_epr_cfg2}" {eproxy_cfg_file} >> {cfg_rpt}',
+            # --- check STAT_MOM_NODE in /etc/hosts (daintgw01|domgw03)
+            f'grep "{re_hosts_1}" {hosts_cfg_file} >> {cfg_rpt}',
+            # }}}
+            # --- chech stat version
+            f'echo STAT_VERSION1=$STAT_VERSION > {version_rpt}',
+            f'echo STAT_VERSION2=`STATbin --version` >> {version_rpt}',
+            # --- check atp version and path
+            f'echo ATP_VERSION1=$ATP_VERSION >> {version_rpt}',
+            f'echo ATP_VERSION2='
+            f'`pkg-config --modversion libAtpSigHandler` >> {version_rpt}',
+            f'echo ATP_HOME=$ATP_HOME >> {version_rpt}',
+            f'pkg-config --variable=exec_prefix libAtpSigHandler &>{which_rpt}'
+        ]
+        self.postbuild_cmds += [
+            # TODO: srun --version -> hooks.py
+            # --- check exe (/opt/cray/pe/atp/3.8.1/lib/libAtpSigHandler.so.1)
+            f'ldd {self.executable}* |grep "{re_slm_1}" &> {ldd_rpt}',
         ]
         # }}}
 
         # {{{ run
-        ompthread = 1
-        cubesize = 50
-        self.name = 'sphexa_atp_{}_{:03d}mpi_{:03d}omp_{}n_{}steps'.format(
-            self.testname, mpitask, ompthread, cubesize, steps)
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = 24
-        self.num_tasks_per_core = 2
-        self.use_multithreading = True
-        self.num_cpus_per_task = ompthread
-        self.exclusive = True
         self.time_limit = '10m'
         self.variables = {
-            'CRAYPE_LINK_TYPE': 'dynamic',
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'ATP_ENABLED': '1',
         }
-        self.executable_opts = ['-n %s' % cubesize, '-s %s' % steps, '2>&1']
-        self.version_rpt = 'version.rpt'
-        self.which_rpt = 'which.rpt'
-        self.csv_rpt = 'csv.rpt'
-        self.prerun_cmds = [
-            'module rm xalt',
-            'stat --version > %s' % self.version_rpt,
-            'pkg-config --modversion AtpSigHandler >> %s' % self.version_rpt,
-            'pkg-config --variable=atp_libdir AtpSigHandler &> %s' %
-            self.which_rpt,
-            # atp/3.x:
-            f'pkg-config --modversion libAtpSigHandler >> {self.version_rpt}',
-            'pkg-config --variable=exec_prefix libAtpSigHandler &> %s' %
-            self.which_rpt,
-        ]
-        # use linux date as timer:
-        self.prerun_cmds += ['echo starttime=`date +%s`']
-        self.rpt_rkn = 'rpt.rkn'
-        self.rpt_rk0 = 'rpt.rk0'
-        gdb_command = (r'-e %s '
-                       r'--eval-command="set pagination off" '
-                       r'--eval-command="bt" '
-                       r'--eval-command="quit"' % self.executable)
-        regex_not_rk0 = r'grep -m1 -v "\.0\."'
         self.postrun_cmds = [
-            'echo stoptime=`date +%s`',
-            # --- rank 0: MPI_Allreduce
-            'gdb -c core.atp.*.%s.* %s &> %s' % (0, gdb_command, self.rpt_rk0),
-            # --- rank>2: MPI::Comm::Abort
-            'ln -s `ls -1 core.atp.* |%s` mycore' % regex_not_rk0,
-            'gdb -c mycore %s &> %s' % (gdb_command, self.rpt_rkn),
-            # can't do this because core filename is unknown at runtime:
-            # 'gdb -c core.atp.*.%s.* -e %s' % (self.core, self.executable),
+            'file core.*'
         ]
+# {{{ TODO: gdb_command
+# -        gdb_command = (r'-e %s '
+# -                       r'--eval-command="set pagination off" '
+# -                       r'--eval-command="bt" '
+# -                       r'--eval-command="quit"' % self.executable)
+# -        regex_not_rk0 = r'grep -m1 -v atp'
+# -        self.postrun_cmds = [
+# -            'echo stoptime=`date +%s`',
+# -            # --- rank 0: MPI_Allreduce
+# -            f'gdb -c {regex_rk0} {gdb_command} &> {self.rpt_rk0}',
+# -
+# -            # --- rank>2: MPI::Comm::Abort
+# -#            f'ln -s `ls -1 core.* |{regex_not_rk0}` mycore',
+# -#            f'gdb -c mycore {gdb_command} &> {self.rpt_rkn}',
+# -            # can't do this because core filename is unknown at runtime:
+# -            # 'gdb -c core.atp.*.%s.* -e %s' % (self.core, self.executable),
+# -
+# -            '# stat-view atpMergedBT_line.dot'
+# }}}
         # }}}
 
         # {{{ sanity
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'^slurm = True', self.rpt_cfg),
-            sn.assert_found(r'\[.debug., .ps., None, False\],', self.rpt_cfg),
-            sn.assert_found(r'\[.eproxy., .eproxy., None, True', self.rpt_cfg),
-            sn.assert_found(r'login', self.rpt_cfg),
-            # Forcing core dumps of ranks 1743, 0
-            sn.assert_found(r'^Forcing core dumps of ranks \d+', self.stdout),
-            sn.assert_found(r'with: stat-view atpMergedBT\.dot', self.stdout),
-            sn.assert_found(r'MPI_Allreduce', self.rpt_rk0),
-            sn.assert_found(r'MPI_Abort', self.rpt_rkn),
+            # check the job output:
+            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
+            # check the tool output:
+            sn.assert_found(re_slm_1, ldd_rpt),
+            sn.assert_found(re_slm_2, cfg_rpt),
+            sn.assert_found(re_epr_ini1, cfg_rpt),
+            sn.assert_found(re_epr_cfg1, cfg_rpt),
+            sn.assert_found(re_epr_cfg2, cfg_rpt),
+            sn.assert_found(re_hosts_1, cfg_rpt),
+            #
+            sn.assert_not_found(re_ver_1, version_rpt),
+            sn.assert_not_found(re_ver_2, version_rpt),
+            sn.assert_not_found(re_ver_3, version_rpt),
+            sn.assert_not_found(re_ver_4, version_rpt),
+            sn.assert_not_found(re_ver_5, version_rpt),
+            sn.assert_not_found(re_which_1, which_rpt),
+            #
+            sn.assert_found(re_stderr_1, self.stderr),
+            sn.assert_found(re_stderr_2, self.stderr),
+            sn.assert_found(re_stderr_3, self.stderr),
+            #
+            sn.assert_found(re_dot_1, apt_dot_file),
+            sn.assert_found(re_dot_2, apt_dot_file),
+            sn.assert_found(re_core_1, self.stdout),
         ])
         # }}}
 
+        # {{{ performance
+        # see common/sphexa/hooks.py
+        # }}}
+
     # {{{ hooks
+    # {{{ set_crash
     @rfm.run_before('compile')
-    def set_compiler_flags(self):
-        self.build_system.cxxflags = \
-            self.prgenv_flags[self.current_environ.name]
-
-    @rfm.run_before('sanity')
-    def get_core_filename(self):
-        '''
-        Retrieving core filenames for postprocessing with gdb:
-
-        .. code-block:: none
-
-           Forcing core dumps of ranks 21, 0
-           core.atp.1010894.0.8826
-           core.atp.1010894.21.8847
-        '''
-        self.core = sn.extractsingle(
-            r'^Forcing core dumps of ranks (?P<corefile>\d+),', self.stdout,
-            'corefile', str)
+    def set_crash(self):
+        # line81: MPI_Allreduce(...)
+        insert_abort = (
+            r'"/MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_LONG_LONG_INT, '
+            r'MPI_SUM, MPI_COMM_WORLD);/a   '
+            r'int mpirank; MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);'
+            # r'std::cout << \"#cscs: \" << mpirank << std::endl;'
+            r'if (mpirank == 1) { MPI_Abort(MPI_COMM_WORLD, 0); }"'
+        )
+        source_file = 'include/sph/findNeighborsSfc.hpp'
+        self.prebuild_cmds += [
+            # --- make the code crash:
+            f'sed -i {insert_abort} {source_file}',
+        ]
     # }}}
+
+    # {{{ get_core_filename
+# todo    @rfm.run_before('sanity')
+# todo    def get_core_filename(self):
+# todo        '''
+# todo        Retrieving core filenames for postprocessing with gdb:
+# todo        .. code-block:: none
+# todo           Forcing core dumps of ranks 21, 0
+# todo           core.atp.1010894.0.8826
+# todo           core.atp.1010894.21.8847
+# todo        '''
+# todo        # Each core file is named core.atp.apid.rank on dom ok but eiger:
+# todo        #   core.atp.717.0.0.155799
+# todo        #   core.atp.717.0.1.155800
+# todo        #            jid.?.rk.pid?
+# todo        self.core = sn.extractsingle(
+# todo            # Producing core dumps for ranks 1
+# todo            r'^Forcing core dumps of ranks (?P<corefile>\d+),',
+# todo            self.stdout, 'corefile', str)
+    # }}}
+    # }}}
+# }}}
