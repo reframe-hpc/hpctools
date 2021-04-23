@@ -94,6 +94,9 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
             # --- check STAT_MOM_NODE in /etc/hosts (daintgw01|domgw03)
             f'grep "{re_hosts_1}" {hosts_cfg_file} >> {cfg_rpt}',
             # }}}
+            # TODO: open cray case
+            f'export PKG_CONFIG_PATH=$ATP_INSTALL_DIR/lib/pkgconfig:'
+            f'$PKG_CONFIG_PATH',
             # --- chech stat version
             f'echo STAT_VERSION1=$STAT_VERSION > {version_rpt}',
             f'echo STAT_VERSION2=`STATbin --version` >> {version_rpt}',
@@ -117,6 +120,7 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
             'ATP_ENABLED': '1',
         }
         self.postrun_cmds = [
+            f'ldd {self.executable}* |grep atp',
             'file core.*'
         ]
 # {{{ TODO: gdb_command
