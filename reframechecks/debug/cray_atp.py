@@ -21,7 +21,7 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
     This class runs the test code with Cray atp
     '''
     # }}}
-    steps = parameter([10])  # will crash after step0
+    steps = parameter([2])  # will crash rank1 at step0
     compute_node = parameter([2])
     np_per_c = parameter([1e3])
     debug_flags = variable(bool, value=True)
@@ -49,6 +49,7 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
         self.sourcepath = f'{self.testname}.cpp'
         # atp requires full path:
         self.executable = './mpi+omp'
+        cs = self.current_system.name
         re_slm_1 = 'libAtpSigHandler.so'
         re_slm_2 = 'libAtpDispatch.so'
         re_epr_ini1 = '^slurm = True'
@@ -61,11 +62,11 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
         re_ver_4 = 'ATP_VERSION2=$'
         re_ver_5 = 'ATP_HOME=$'
         re_which_1 = 'not found'
-        re_stderr_1 = 'forcing job termination'
+        re_stderr_1 = 'forcing job termination|Force Terminated job'
         re_stderr_2 = 'Producing core dumps for rank'
         re_stderr_3 = 'View application merged backtrace tree with: stat-view'
-        re_dot_1 = 'MPI_Allreduce'
-        re_dot_2 = 'sphexa::sph::'
+        re_dot_1 = 'MPI_Allreduce|MPID_Abort|PMPI_Abort'
+        re_dot_2 = 'sphexa::sph::|cstone::'
         re_core_1 = 'core file x86-64'
         # TODO: grep sphexa::sph atpMergedBT_line.dot -> perf_patterns
         #   94 [pos="0,0", label="sphexa::sph::neighborsSum(...
@@ -81,25 +82,36 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
         apt_dot_file = 'atpMergedBT_line.dot'
         # TODO: regex_rk0 = 'core.atp.*.0.0.*'
         # TODO: shasta
+        # {{{ Needed when reporting a support case:
+        if not cs in {'pilatus', 'eiger'}:
+            self.prebuild_cmds += [
+                # --- check slurm_cfg
+                #     (optional /opt/cray/pe/atp/libAtpDispatch.so)
+                f'grep "{re_slm_2}" {slurm_cfg_file} > {cfg_rpt}',
+                # --- check ini_cfg_file (slurm = True)
+                f'grep "{re_epr_ini1}" {eproxy_ini_cfg_file} >> {cfg_rpt}',
+                # --- check eproxy_cfg_file (['debug', 'ps', None, False])
+                f'grep "{re_epr_cfg1}" {eproxy_cfg_file} >> {cfg_rpt}',
+                # --- check eproxy_cfg_file (['eproxy', 'eproxy', None, True])
+                f'grep "{re_epr_cfg2}" {eproxy_cfg_file} >> {cfg_rpt}',
+                # --- check STAT_MOM_NODE in /etc/hosts (daintgw01|domgw03)
+                f'grep "{re_hosts_1}" {hosts_cfg_file} >> {cfg_rpt}',
+                # --- chech stat version
+                f'echo STAT_VERSION1=$STAT_VERSION > {version_rpt}',
+                f'echo STAT_VERSION2=`STATbin --version` >> {version_rpt}',
+            ]
+        else:
+            self.prebuild_cmds += [
+                # --- chech stat version
+                f'echo STAT_VERSION1=$STAT_LEVEL > {version_rpt}',
+                f'echo STAT_VERSION2=`STATbin --version` >> {version_rpt}',
+            ]
+        # }}}
+
         self.prebuild_cmds += [
-            # {{{ Needed when reporting a support case:
-            # --- check slurm_cfg (optional /opt/cray/pe/atp/libAtpDispatch.so)
-            f'grep "{re_slm_2}" {slurm_cfg_file} > {cfg_rpt}',
-            # --- check ini_cfg_file (slurm = True)
-            f'grep "{re_epr_ini1}" {eproxy_ini_cfg_file} >> {cfg_rpt}',
-            # --- check eproxy_cfg_file (['debug', 'ps', None, False])
-            f'grep "{re_epr_cfg1}" {eproxy_cfg_file} >> {cfg_rpt}',
-            # --- check eproxy_cfg_file (['eproxy', 'eproxy', None, True])
-            f'grep "{re_epr_cfg2}" {eproxy_cfg_file} >> {cfg_rpt}',
-            # --- check STAT_MOM_NODE in /etc/hosts (daintgw01|domgw03)
-            f'grep "{re_hosts_1}" {hosts_cfg_file} >> {cfg_rpt}',
-            # }}}
             # TODO: open cray case
             f'export PKG_CONFIG_PATH=$ATP_INSTALL_DIR/lib/pkgconfig:'
             f'$PKG_CONFIG_PATH',
-            # --- chech stat version
-            f'echo STAT_VERSION1=$STAT_VERSION > {version_rpt}',
-            f'echo STAT_VERSION2=`STATbin --version` >> {version_rpt}',
             # --- check atp version and path
             f'echo ATP_VERSION1=$ATP_VERSION >> {version_rpt}',
             f'echo ATP_VERSION2='
@@ -113,7 +125,6 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
             f'ldd {self.executable}* |grep "{re_slm_1}" &> {ldd_rpt}',
         ]
         # }}}
-
         # {{{ run
         self.time_limit = '10m'
         self.variables = {
@@ -145,32 +156,56 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
         # }}}
 
         # {{{ sanity
-        self.sanity_patterns = sn.all([
-            # check the job output:
-            sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
-            # check the tool output:
-            sn.assert_found(re_slm_1, ldd_rpt),
-            sn.assert_found(re_slm_2, cfg_rpt),
-            sn.assert_found(re_epr_ini1, cfg_rpt),
-            sn.assert_found(re_epr_cfg1, cfg_rpt),
-            sn.assert_found(re_epr_cfg2, cfg_rpt),
-            sn.assert_found(re_hosts_1, cfg_rpt),
-            #
-            sn.assert_not_found(re_ver_1, version_rpt),
-            sn.assert_not_found(re_ver_2, version_rpt),
-            sn.assert_not_found(re_ver_3, version_rpt),
-            sn.assert_not_found(re_ver_4, version_rpt),
-            sn.assert_not_found(re_ver_5, version_rpt),
-            sn.assert_not_found(re_which_1, which_rpt),
-            #
-            sn.assert_found(re_stderr_1, self.stderr),
-            sn.assert_found(re_stderr_2, self.stderr),
-            sn.assert_found(re_stderr_3, self.stderr),
-            #
-            sn.assert_found(re_dot_1, apt_dot_file),
-            sn.assert_found(re_dot_2, apt_dot_file),
-            sn.assert_found(re_core_1, self.stdout),
-        ])
+        # TODO: self.sanity_patterns += ... ?
+        if cs in {'pilatus', 'eiger'}:
+            self.sanity_patterns = sn.all([
+                # check the job output:
+                sn.assert_found(r'UpdateSmoothingLength: \S+s', self.stdout),
+                # check the tool output:
+                sn.assert_found(re_slm_1, ldd_rpt),
+                #
+                sn.assert_not_found(re_ver_1, version_rpt),
+                sn.assert_not_found(re_ver_2, version_rpt),
+                sn.assert_not_found(re_ver_3, version_rpt),
+                sn.assert_not_found(re_ver_4, version_rpt),
+                sn.assert_not_found(re_ver_5, version_rpt),
+                sn.assert_not_found(re_which_1, which_rpt),
+                #
+                sn.assert_found(re_stderr_1, self.stderr),
+                sn.assert_found(re_stderr_2, self.stderr),
+                sn.assert_found(re_stderr_3, self.stderr),
+                #
+                sn.assert_found(re_dot_1, apt_dot_file),
+                # sn.assert_found(re_dot_2, apt_dot_file),
+                sn.assert_found(re_core_1, self.stdout),
+            ])
+        else:
+            self.sanity_patterns = sn.all([
+                # check the job output:
+                sn.assert_found(r'UpdateSmoothingLength: \S+s', self.stdout),
+                # check the tool output:
+                sn.assert_found(re_slm_1, ldd_rpt),
+                sn.assert_found(re_slm_2, cfg_rpt),
+                sn.assert_found(re_epr_ini1, cfg_rpt),
+                sn.assert_found(re_epr_cfg1, cfg_rpt),
+                sn.assert_found(re_epr_cfg2, cfg_rpt),
+                sn.assert_found(re_hosts_1, cfg_rpt),
+                #
+                sn.assert_not_found(re_ver_1, version_rpt),
+                sn.assert_not_found(re_ver_2, version_rpt),
+                sn.assert_not_found(re_ver_3, version_rpt),
+                sn.assert_not_found(re_ver_4, version_rpt),
+                sn.assert_not_found(re_ver_5, version_rpt),
+                sn.assert_not_found(re_which_1, which_rpt),
+                #
+                sn.assert_found(re_stderr_1, self.stderr),
+                sn.assert_found(re_stderr_2, self.stderr),
+                sn.assert_found(re_stderr_3, self.stderr),
+                #
+                sn.assert_found(re_dot_1, apt_dot_file),
+                # sn.assert_found(re_dot_2, apt_dot_file),
+                sn.assert_found(re_core_1, self.stdout),
+            ])
         # }}}
 
         # {{{ performance
@@ -182,14 +217,15 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
     @rfm.run_before('compile')
     def set_crash(self):
         # line81: MPI_Allreduce(...)
+        source_file = 'include/sph/totalEnergy.hpp'
         insert_abort = (
-            r'"/MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_LONG_LONG_INT, '
-            r'MPI_SUM, MPI_COMM_WORLD);/a   '
+            r'"/MPI_Allreduce(MPI_IN_PLACE, &einttmp, 1, MPI_DOUBLE, MPI_SUM, '
+            r'MPI_COMM_WORLD);/a'
             r'int mpirank; MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);'
             # r'std::cout << \"#cscs: \" << mpirank << std::endl;'
-            r'if (mpirank == 1) { MPI_Abort(MPI_COMM_WORLD, 0); }"'
+            r'if (mpirank == 1 && d.iteration == 0) '
+            r'{ MPI_Abort(MPI_COMM_WORLD, 0); }"'
         )
-        source_file = 'include/sph/findNeighborsSfc.hpp'
         self.prebuild_cmds += [
             # --- make the code crash:
             f'sed -i {insert_abort} {source_file}',

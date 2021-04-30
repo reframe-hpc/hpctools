@@ -75,6 +75,11 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeIntel'] = self.prgenv_flags['PrgEnv-intel']
         self.prgenv_flags['cpeAMD'] = self.prgenv_flags['PrgEnv-aocc']
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
+        if hasattr(self, 'scorep_flags') and self.scorep_flags:
+            mpicxx = 'scorep --mpp=mpi --nocompiler CC'
+        else:
+            mpicxx = 'CC'
+
         if hasattr(self, 'debug_flags') and self.debug_flags:
             for kk in self.prgenv_flags.keys():
                 tmp_l = [ww.replace("O3", "O0")
@@ -93,7 +98,7 @@ class setup_pe(rfm.RegressionMixin):
             self.target_executable = 'mpi+omp'
 
         self.build_system.options = [
-            self.target_executable, f'MPICXX=CC',
+            self.target_executable, f'MPICXX="{mpicxx}"',
             'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
             # NOTE: self.build_system.cxx is empty
         ]
@@ -216,20 +221,23 @@ class setup_pe(rfm.RegressionMixin):
 #             self.num_cores_per_numa_node = 12
 # }}}
 
-        self.num_cpus_per_task = self.num_cores // self.num_tasks_per_node
         self.num_tasks_per_core = 1
-        self.use_multithreading = False
+        self.omp_threads = self.num_cores // self.num_tasks_per_node
+        # self.num_cpus_per_task = self.num_cores // self.num_tasks_per_node
+        # self.use_multithreading = False
         self.exclusive = True
         if not hasattr(self, 'variables'):
             self.variables += {
                 'CRAYPE_LINK_TYPE': 'dynamic',
-                'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                'OMP_NUM_THREADS': str(self.omp_threads),
+                # 'OMP_NUM_THREADS': str(self.num_cpus_per_task),
                 #   'OMP_DISPLAY_AFFINITY': 'TRUE',
                 #   'OMP_PROC_BIND': 'spread',
             }
         else:
             self.variables['CRAYPE_LINK_TYPE'] = 'dynamic'
-            self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
+            self.variables['OMP_NUM_THREADS'] = str(self.omp_threads)
+            # self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
             # 'echo "# JOBID=$SLURM_JOBID"',
 
     @rfm.run_after('compile')
@@ -246,7 +254,7 @@ class setup_code(rfm.RegressionMixin):
     def set_cubeside(self):
         self.modules += ['hwloc']
         total_np = (self.compute_node * self.num_tasks_per_node *
-                    self.num_cpus_per_task * self.np_per_c)
+                    self.omp_threads * self.np_per_c)
         # TODO: larger
         # total_np = (self.num_tasks_per_node * self.num_cpus_per_task *
         #             self.compute_node * self.np_per_c)
