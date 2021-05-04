@@ -11,9 +11,24 @@ import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
 
 
-# {{{ sanity_function: scorep_version
+# {{{ sanity_function: scorep_version / scorep_assert_version
 @sn.sanity_function
 def scorep_version(obj):
+    '''Checks tool's version:
+
+    .. code-block::
+
+      > scorep --version
+      Score-P 7.0
+      returns: version string
+    '''
+    regex = r'^Score-P\s(?P<toolsversion>\d.\d)'
+    version = sn.extractsingle(regex, obj.version_rpt, 'toolsversion')
+    return version
+
+
+@sn.sanity_function
+def scorep_assert_version(obj):
     '''Checks tool's version:
 
     .. code-block::
@@ -38,6 +53,19 @@ def scorep_version(obj):
 
 
 # {{{ --- scorep-info:
+def scorep_assert_eq(obj, title, regex):
+    tool_version = scorep_version(obj)
+    if tool_version == '6.0':
+        nm_ref = 3
+    else:
+        nm_ref = 1
+
+    nm = sn.count(sn.extractall(regex, obj.info_rpt, 'yn'))
+    failure_msg = f'{title} failed: (nm={nm}) != (nm_ref={nm_ref})'
+    TorF = sn.assert_eq(nm, nm_ref, msg=failure_msg)
+    return TorF
+
+
 @sn.sanity_function
 def scorep_info_papi_support(obj):
     '''Checks tool's configuration (papi support)
@@ -48,8 +76,7 @@ def scorep_info_papi_support(obj):
       PAPI support: yes
     '''
     regex = r'^\s+PAPI support:\s+(?P<yn>yes)'
-    TorF = sn.assert_eq(3, sn.count(sn.extractall(regex, obj.info_rpt, 'yn')))
-    return TorF
+    return scorep_assert_eq(obj, 'scorep_info_papi_support', regex)
 
 
 @sn.sanity_function
@@ -62,8 +89,7 @@ def scorep_info_perf_support(obj):
       metric perf support: yes
     '''
     regex = r'^\s+metric perf support:\s+(?P<yn>yes)'
-    TorF = sn.assert_eq(3, sn.count(sn.extractall(regex, obj.info_rpt, 'yn')))
-    return TorF
+    return scorep_assert_eq(obj, 'scorep_info_perf_support', regex)
 
 
 @sn.sanity_function
@@ -76,8 +102,7 @@ def scorep_info_unwinding_support(obj):
       Unwinding support: yes
     '''
     regex = r'^\s+Unwinding support:\s+(?P<yn>\w+)'
-    TorF = sn.assert_eq(3, sn.count(sn.extractall(regex, obj.info_rpt, 'yn')))
-    return TorF
+    return scorep_assert_eq(obj, 'scorep_info_unwinding_support', regex)
 
 
 @sn.sanity_function
@@ -90,8 +115,7 @@ def scorep_info_cuda_support(obj):
       CUDA support:  yes
     '''
     regex = r'^\s+CUDA support:\s+(?P<yn>\w+)'
-    TorF = sn.assert_eq(3, sn.count(sn.extractall(regex, obj.info_rpt, 'yn')))
-    return TorF
+    return scorep_assert_eq(obj, 'scorep_info_cuda_support', regex)
 # }}}
 
 
@@ -116,8 +140,8 @@ def scorep_elapsed(obj):
     '''
     regex = r'^\s+ALL\s+.* (?P<seconds>\d+\.\d+)\s+100.0'
     result = sn.extractsingle(regex, obj.rpt, 'seconds', float)
-    # print("obj.num_tasks=", obj.num_tasks)
-    return sn.round(result / obj.num_tasks, 4)
+    n_procs = obj.compute_node * obj.num_tasks_per_node * obj.omp_threads
+    return sn.round(result / n_procs, 4)
 
 
 @sn.sanity_function
@@ -149,6 +173,34 @@ def scorep_usr_pct(obj):
 
 
 @sn.sanity_function
+def scorep_com_pct(obj):
+    '''Reports COM % measured by the tool
+
+    .. code-block::
+
+         type max_buf[B]   visits    hits time[s] time[%] time/visit[us] region
+         COM      4,680 1,019,424     891  303.17    12.0         297.39  COM
+                                                     ****
+    '''
+    regex = r'^\s+COM(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+COM'
+    return sn.extractsingle(regex, obj.rpt, 'pct', float)
+
+
+@sn.sanity_function
+def scorep_omp_pct(obj):
+    '''Reports OMP % measured by the tool
+
+    .. code-block::
+
+         type max_buf[B]   visits    hits time[s] time[%] time/visit[us] region
+         OMP 40,739,286 3,017,524 111,304 2203.92    85.4         730.37  OMP
+                                                     ****
+    '''
+    regex = r'^\s+OMP(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+OMP'
+    return sn.extractsingle(regex, obj.rpt, 'pct', float)
+
+
+@sn.sanity_function
 def scorep_top1_name(obj):
     '''Reports demangled name of top1 function name, for instance:
 
@@ -170,8 +222,8 @@ def scorep_top1_name(obj):
 
 
 @sn.sanity_function
-def scorep_top1_pct(obj):
-    '''Reports % of elapsed time for top1 function
+def scorep_top1_tracebuffersize(obj):
+    '''Reports max_buf[B] for top1 function
 
     .. code-block::
 
@@ -179,11 +231,37 @@ def scorep_top1_pct(obj):
          ...
          USR    317,100   283,366 283,366   94.43    29.1         333.24 ...
       _ZN6sphexa3sph31computeMomentumAndEnergyIADImplIdNS_13ParticlesData ...
-      IdEEEEvRKNS_4TaskERT0_
+
+         USR    430,500    81,902  81,902   38.00     1.5         463.99  ...
+      gomp_team_barrier_wait_end
     '''
-    regex = r'^\s{9}(USR|COM).*\s+(?P<pct>\S+)\s+\S+\s+(?P<fn>_\w+)'
+    # regex = r'^\s{9}(USR|COM).*\s+(?P<pct>\S+)\s+\S+\s+(?P<fn>_\w+)'
+    # regex = r'SCOREP\n\n\s+\S+\s+(?P<buf_B>\S+).*(?P<fn> \S+)\n'
+    regex = r'^\n\s{9}\S+\s+(?P<buf_B>\S+).*(?P<fn> \S+)\n'
     rpt = os.path.join(obj.stagedir, obj.rpt)
-    result = sn.extractsingle(regex, rpt, 'pct', float)
+    try:
+        result = sn.extractsingle(
+            regex, rpt, 'buf_B',
+            conv=lambda x: int(x.replace(',', '').split('.')[0]))
+    except Exception as e:
+        printer.error(f'scorep_top1_tracebuffersize failed: {e}')
+        result = 0
+
+    return result
+
+
+@sn.sanity_function
+def scorep_top1_tracebuffersize_name(obj):
+    '''Reports function name for top1 (max_buf[B]) function
+    '''
+    regex = r'^\n\s{9}\S+\s+(?P<buf_B>\S+).*(?P<fn> \S+)\n'
+    rpt = os.path.join(obj.stagedir, obj.rpt)
+    try:
+        result = sn.extractsingle(regex, rpt, 'fn')
+    except Exception as e:
+        printer.error(f'scorep_top1_tracebuffersize_name failed: {e}')
+        result = ''
+
     return result
 
 
@@ -206,9 +284,27 @@ def scorep_exclusivepct_energy(obj):
         _ZN6sphexa3sph15computeTimestepIdNS0_21TimestepPress2ndOrderIdNS_13 ...
         ParticlesDataIdEEEES4_EEvRKSt6vectorINS_4TaskESaIS7_EERT1_
       201.685 (9.62%)     |   |   + MPI_Allreduce
+
+
+       type max_buf[B]    visits    hits time[s] time[%] time/visit[us]  region
+       OMP  1,925,120    81,920       0   63.84     2.5         779.29
+        !$omp parallel @momentumAndEnergyIAD.hpp:87 ***
+       OMP    920,500    81,920  48,000  125.41     5.0        1530.93
+        !$omp for @momentumAndEnergyIAD.hpp:87      ***
+       OMP    675,860    81,920       1   30.95     1.2         377.85
+        !$omp implicit barrier @momentumAndEnergyIAD.hpp:93
+                                                    ***
     '''
-    regex = r'^\d+.\d+ \((?P<pct>\d+.\d+).*computeMomentumAndEnergy'
-    return sn.extractsingle(regex, obj.rpt_exclusive, 'pct', float)
+    # regex = r'^\s+\S+(\s+\S+){4}\s+(?P<pct>\S+).*@momentumAndEnergyIAD'
+    regex = r'^\d+.\d+\s+\((?P<pct>\d+.\d+).*momentumAndEnergyIAD'
+    try:
+        result = sn.round(sn.sum(sn.extractall(
+            regex, obj.rpt_exclusive, 'pct', float)), 2)
+    except Exception as e:
+        printer.error(f'scorep_exclusivepct_energy failed: {e}')
+        result = 0
+
+    return result
 
 
 @sn.sanity_function
@@ -231,16 +327,24 @@ def scorep_inclusivepct_energy(obj):
         ParticlesDataIdEEEES4_EEvRKSt6vectorINS_4TaskESaIS7_EERT1_
       201.685 (9.62%)     |   |   + MPI_Allreduce
     '''
-    regex = r'^\d+.\d+ \((?P<pct>\d+.\d+).*computeMomentumAndEnergy'
-    return sn.extractsingle(regex, obj.rpt_inclusive, 'pct', float)
+    # regex = r'^\d+.\d+ \((?P<pct>\d+.\d+).*computeMomentumAndEnergy'
+    # return sn.extractsingle(regex, obj.rpt_inclusive, 'pct', float)
+    regex = r'^\d+.\d+\s+\((?P<pct>\d+.\d+).*momentumAndEnergyIAD'
+    try:
+        result = sn.round(sn.sum(sn.extractall(
+            regex, obj.rpt_inclusive, 'pct', float)), 2)
+    except Exception as e:
+        printer.error(f'scorep_inclusivepct_energy failed: {e}')
+        result = 0
+
+    return result
 # }}}
 
 
 # {{{ --- tracing:
 @sn.sanity_function
 def program_begin_count(obj):
-    '''Reports the number of ``PROGRAM_BEGIN`` in the otf2 file
-    (trace validation)
+    '''Reports the number of ``PROGRAM_BEGIN`` in the otf2 trace file
     '''
     pg_begin_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_BEGIN)\s+',
                                          obj.rpt))
@@ -249,8 +353,7 @@ def program_begin_count(obj):
 
 @sn.sanity_function
 def program_end_count(obj):
-    '''Reports the number of ``PROGRAM_END`` in the otf2 file
-    (trace validation)
+    '''Reports the number of ``PROGRAM_END`` in the otf2 trace file
     '''
     pg_end_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_END)\s+', obj.rpt))
     return pg_end_count
