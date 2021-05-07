@@ -139,7 +139,7 @@ def scorep_elapsed(obj):
       IdEEEEvRKNS_4TaskERT0_
     '''
     regex = r'^\s+ALL\s+.* (?P<seconds>\d+\.\d+)\s+100.0'
-    result = sn.extractsingle(regex, obj.rpt, 'seconds', float)
+    result = sn.extractsingle(regex, obj.rpt_score, 'seconds', float)
     n_procs = obj.compute_node * obj.num_tasks_per_node * obj.omp_threads
     return sn.round(result / n_procs, 4)
 
@@ -155,7 +155,7 @@ def scorep_mpi_pct(obj):
                                                      ****
     '''
     regex = r'^\s+MPI(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+MPI'
-    return sn.extractsingle(regex, obj.rpt, 'pct', float)
+    return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
 @sn.sanity_function
@@ -169,7 +169,7 @@ def scorep_usr_pct(obj):
                                                      ****
     '''
     regex = r'^\s+USR(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+USR'
-    return sn.extractsingle(regex, obj.rpt, 'pct', float)
+    return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
 @sn.sanity_function
@@ -183,7 +183,7 @@ def scorep_com_pct(obj):
                                                      ****
     '''
     regex = r'^\s+COM(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+COM'
-    return sn.extractsingle(regex, obj.rpt, 'pct', float)
+    return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
 @sn.sanity_function
@@ -197,7 +197,7 @@ def scorep_omp_pct(obj):
                                                      ****
     '''
     regex = r'^\s+OMP(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+OMP'
-    return sn.extractsingle(regex, obj.rpt, 'pct', float)
+    return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
 @sn.sanity_function
@@ -215,7 +215,7 @@ def scorep_top1_name(obj):
             (sphexa::Task const&, sphexa::ParticlesData<double>&)
     '''
     regex = r'^\s{9}(USR|COM).*\s+(?P<pct>\S+)\s+\S+\s+(?P<fn>_\w+)'
-    rpt = os.path.join(obj.stagedir, obj.rpt)
+    rpt = os.path.join(obj.stagedir, obj.rpt_score)
     result = cxxfilt.demangle(sn.evaluate(sn.extractsingle(regex, rpt, 'fn')))
     # print("fn=", result)
     return ('% (' + result.split('<')[0] + ')')
@@ -238,7 +238,7 @@ def scorep_top1_tracebuffersize(obj):
     # regex = r'^\s{9}(USR|COM).*\s+(?P<pct>\S+)\s+\S+\s+(?P<fn>_\w+)'
     # regex = r'SCOREP\n\n\s+\S+\s+(?P<buf_B>\S+).*(?P<fn> \S+)\n'
     regex = r'^\n\s{9}\S+\s+(?P<buf_B>\S+).*(?P<fn> \S+)\n'
-    rpt = os.path.join(obj.stagedir, obj.rpt)
+    rpt = os.path.join(obj.stagedir, obj.rpt_score)
     try:
         result = sn.extractsingle(
             regex, rpt, 'buf_B',
@@ -255,7 +255,7 @@ def scorep_top1_tracebuffersize_name(obj):
     '''Reports function name for top1 (max_buf[B]) function
     '''
     regex = r'^\n\s{9}\S+\s+(?P<buf_B>\S+).*(?P<fn> \S+)\n'
-    rpt = os.path.join(obj.stagedir, obj.rpt)
+    rpt = os.path.join(obj.stagedir, obj.rpt_score)
     try:
         result = sn.extractsingle(regex, rpt, 'fn')
     except Exception as e:
@@ -347,7 +347,7 @@ def program_begin_count(obj):
     '''Reports the number of ``PROGRAM_BEGIN`` in the otf2 trace file
     '''
     pg_begin_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_BEGIN)\s+',
-                                         obj.rpt))
+                                         obj.rpt_otf2))
     return pg_begin_count
 
 
@@ -355,7 +355,8 @@ def program_begin_count(obj):
 def program_end_count(obj):
     '''Reports the number of ``PROGRAM_END`` in the otf2 trace file
     '''
-    pg_end_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_END)\s+', obj.rpt))
+    pg_end_count = sn.count(sn.findall(r'^(?P<wl>PROGRAM_END)\s+',
+                                       obj.rpt_otf2))
     return pg_end_count
 
 
@@ -365,7 +366,7 @@ def ru_maxrss_rk0(obj):
     '''
     maxrss_rk0 = sn.max(sn.extractall(
         r'^METRIC\s+0\s+.*ru_maxrss\" <2>; UINT64; (?P<rss>\d+)\)',
-        obj.rpt, 'rss', int))
+        obj.rpt_otf2, 'rss', int))
     return maxrss_rk0
 
 
@@ -375,10 +376,10 @@ def ipc_rk0(obj):
     '''
     regex1 = (r'^METRIC\s+0\s+.*Values: \(\"PAPI_TOT_INS\" <0>; UINT64;'
               r'\s+(?P<ins>\d+)\)')
-    tot_ins_rk0 = sn.extractall(regex1, obj.rpt, 'ins', float)
+    tot_ins_rk0 = sn.extractall(regex1, obj.rpt_otf2, 'ins', float)
     regex2 = (r'^METRIC\s+0\s+.*Values:.*\(\"PAPI_TOT_CYC\" <1>; UINT64;'
               r'\s+(?P<cyc>\d+)\)')
-    tot_cyc_rk0 = sn.extractall(regex2, obj.rpt, 'cyc', float)
+    tot_cyc_rk0 = sn.extractall(regex2, obj.rpt_otf2, 'cyc', float)
     ipc = [a/b for a, b in zip(tot_ins_rk0, tot_cyc_rk0)]
     return sn.round(max(ipc), 6)
 # }}}

@@ -64,8 +64,6 @@ class SphExa_Scorep_Profiling_Check(rfm.RegressionTest, hooks.setup_pe,
     def __init__(self):
         # {{{ pe
         self.descr = 'Tool validation'
-        # self.valid_prog_environs = ['PrgEnv-gnu']
-        # self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['*']
         self.valid_systems = ['*']
         self.modules = ['Score-P']
@@ -109,8 +107,11 @@ class SphExa_Scorep_Profiling_Check(rfm.RegressionTest, hooks.setup_pe,
             # 'PATH': f'{tool_path}:{cube_path}:$PATH',
         }
         self.rpt = 'rpt'
-        self.rpt_inclusive = '%s.inclusive' % self.rpt
-        self.rpt_exclusive = '%s.exclusive' % self.rpt
+        self.rpt_score = 'scorep-score.rpt'
+        self.rpt_inclusive = 'cube_calltree_inclusive.rpt'
+        self.rpt_exclusive = 'cube_calltree_exclusive.rpt'
+        self.rpt_otf2 = 'otf2-print.rpt'
+        #
         cubetree = 'cube_calltree -m time -p -t 1'
         # -m metricname -- print out values for the metric <metricname>
         # -i            -- calculate inclusive values instead of exclusive
@@ -118,13 +119,17 @@ class SphExa_Scorep_Profiling_Check(rfm.RegressionTest, hooks.setup_pe,
         #                  than <treshold>%
         # -p            -- diplay percent value
         self.postrun_cmds += [
+            f'# -------------------------------------------------------------',
             # working around memory crash in scorep-score:
-            '(scorep-score -r scorep-*/profile.cubex ;rm -f core*) > %s' \
-            % self.rpt,
-            '(%s    scorep-*/profile.cubex ;rm -f core*) >> %s' \
-            % (cubetree, self.rpt_exclusive),
-            '(%s -i scorep-*/profile.cubex ;rm -f core*) >> %s' \
-            % (cubetree, self.rpt_inclusive),
+            f'(scorep-score -r scorep-*/profile.cubex ;rm -f core*) >'
+            f'{self.rpt_score}',
+            # exclusive time (+ workaround memory crash):
+            f'({cubetree} scorep-*/profile.cubex ;rm -f core*) &>'
+            f' {self.rpt_exclusive}',
+            # inclusive time (+ workaround memory crash):
+            f'({cubetree} -i scorep-*/profile.cubex ;rm -f core*) &>'
+            f' {self.rpt_inclusive}',
+            f'# -------------------------------------------------------------',
         ]
         # }}}
 
@@ -139,7 +144,7 @@ class SphExa_Scorep_Profiling_Check(rfm.RegressionTest, hooks.setup_pe,
             sn.assert_true(sphsscorep.scorep_info_unwinding_support(self)),
             # check the summary report:
             sn.assert_found(r'Estimated aggregate size of event trace',
-                            self.rpt)
+                            self.rpt_score)
         ])
         # }}}
 
@@ -249,14 +254,12 @@ class SphExa_Scorep_Tracing_Check(rfm.RegressionTest, hooks.setup_pe,
             'SCOREP_METRIC_PAPI': 'PAPI_TOT_INS,PAPI_TOT_CYC',
             'SCOREP_METRIC_RUSAGE': 'ru_maxrss',
         }
-        self.rpt = 'rpt'
+        # self.rpt = 'rpt'
+        self.rpt_otf2 = 'otf2-print.rpt'
         self.postrun_cmds += [
-            # can't test directly from vampir gui:
-            'otf2-print scorep-*/traces.otf2 > %s' % self.rpt
+            # can't test directly vampir gui hence dumping tracefile content:
+            f'otf2-print scorep-*/traces.otf2 > {self.rpt_otf2}',
         ]
-        # }}}
-
-        # {{{ sanity
         # }}}
 
     # {{{ hooks

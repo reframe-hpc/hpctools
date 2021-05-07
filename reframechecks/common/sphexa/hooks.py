@@ -76,7 +76,8 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeAMD'] = self.prgenv_flags['PrgEnv-aocc']
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
         if hasattr(self, 'scorep_flags') and self.scorep_flags:
-            mpicxx = 'scorep --mpp=mpi --nocompiler CC'
+            mpicxx = ('scorep --mpp=mpi --nocompiler CC '
+                      '-I$CRAY_MPICH_DIR/include')
         else:
             mpicxx = 'CC'
 
