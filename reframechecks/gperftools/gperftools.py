@@ -51,7 +51,6 @@ class SphExa_Gperftools_Check(rfm.RegressionTest, hooks.setup_pe,
         # }}}
 
         # {{{ run
-        self.sourcesdir = 'scripts'
         self.rpt_file = 'gperftools.rpt'
         self.rpt_file_txt = f'{self.rpt_file}.txt'
         self.rpt_file_pdf = f'{self.rpt_file}.pdf'

@@ -2,3 +2,4 @@ cxxfilt
 jsonschema
 numpy
 pip
+termgraph

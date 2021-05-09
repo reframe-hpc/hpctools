@@ -1,1 +1,0 @@
-../../SPH-EXA_mini-app.git/src/sqpatch/SqPatchDataGenerator.hpp

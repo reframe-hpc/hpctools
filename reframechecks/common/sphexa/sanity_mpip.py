@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -139,3 +139,67 @@ class MpipBaseTest(rfm.RegressionTest):
         # final reference:
         self.reference = ref
 # }}}
+
+
+@sn.sanity_function
+def mpip_perf_patterns(obj, reg):
+    '''More perf_patterns for the tool
+
+    .. code-block::
+
+      -----------------------------------
+      @--- MPI Time (seconds) -----------
+      -----------------------------------
+      Task    AppTime    MPITime     MPI%
+         0        8.6      0.121     1.40 <-- min
+         1        8.6      0.157     1.82
+         2        8.6       5.92    68.84 <-- max
+         *       25.8        6.2    24.02 <---
+
+      => NonMPI= AppTime - MPITime
+
+    Typical performance reporting:
+
+    .. code-block::
+
+      * mpip_avg_app_time: 8.6 s  (= 25.8/3mpi)
+      * mpip_avg_mpi_time: 2.07 s (=  6.2/3mpi)
+      * %mpip_avg_mpi_time: 24.02 %
+      * %max/%min
+      * %mpip_avg_non_mpi_time: 75.98 %
+    '''
+    # rpt = os.path.join(obj.stagedir, obj.rpt_file_txt)
+    rpt = sn.extractsingle(
+            r'^mpiP: Storing mpiP output in \[(?P<rpt>.*)\]',
+            obj.stdout, 'rpt', str
+    )
+    regex_star = r'^\s+\*\s+(?P<appt>\S+)\s+(?P<mpit>\S+)\s+(?P<pct>\S+)$'
+    regex_minmax = (r'^\s+(?P<mpirk>\S+)\s+(?P<appt>\S+)\s+(?P<mpit>\S+)\s+'
+                    r'(?P<pct>\S+)$')
+    if reg == 1:
+        # mpip_avg_mpi_time
+        result = sn.round(
+            sn.extractsingle(regex_star, rpt, 'mpit', float) / obj.num_tasks, 2
+        )
+    elif reg == 2:
+        # mpip_avg_app_time
+        result = sn.round(
+            sn.extractsingle(regex_star, rpt, 'appt', float) / obj.num_tasks, 2
+        )
+    elif reg == 3:
+        # %mpip_avg_mpi_time
+        result = sn.extractsingle(regex_star, rpt, 'pct', float)
+    elif reg == 4:
+        # %nonmpi
+        mpi_pct = sn.extractsingle(regex_star, rpt, 'pct', float)
+        result = sn.round(100 - mpi_pct, 2)
+    elif reg == 5:
+        # %mpip_avg_mpi_time_max
+        result = sn.max(sn.extractall(regex_minmax, rpt, 'pct', float))
+    elif reg == 6:
+        # %mpip_avg_mpi_time_min
+        result = sn.min(sn.extractall(regex_minmax, rpt, 'pct', float))
+    else:
+        raise ValueError('unknown region id in mpip_perf_patterns')
+
+    return result

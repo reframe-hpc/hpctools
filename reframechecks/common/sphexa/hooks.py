@@ -97,6 +97,13 @@ class setup_pe(rfm.RegressionMixin):
             self.build_system.cxxflags += ['`pkg-config --libs libprofiler`']
         # }}}
 
+        # {{{ mpip
+        if hasattr(self, 'mpip_flags') and self.mpip_flags:
+            self.build_system.cxxflags += \
+                ['-L$EBROOTMPIP/lib', '-Wl,--whole-archive -lmpiP',
+                 '-Wl,--no-whole-archive -lunwind', '-lbfd -liberty -ldl -lz']
+        # }}}
+
         self.build_system.cxxflags += \
             self.prgenv_flags[self.current_environ.name]
         # If self.executable is not set, ReFrame will set it to self.name:
