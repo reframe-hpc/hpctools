@@ -75,20 +75,29 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeIntel'] = self.prgenv_flags['PrgEnv-intel']
         self.prgenv_flags['cpeAMD'] = self.prgenv_flags['PrgEnv-aocc']
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
+        # {{{ scorep/scalasca
         if hasattr(self, 'scorep_flags') and self.scorep_flags:
             mpicxx = ('scorep --mpp=mpi --nocompiler CC '
                       '-I$CRAY_MPICH_DIR/include')
         else:
             mpicxx = 'CC'
+        # }}}
 
+        # {{{ debug
         if hasattr(self, 'debug_flags') and self.debug_flags:
             for kk in self.prgenv_flags.keys():
                 tmp_l = [ww.replace("O3", "O0")
                          for ww in self.prgenv_flags[kk]]
                 tmp_l = [ww.replace("fast", "O0") for ww in tmp_l]
                 self.prgenv_flags[kk] = tmp_l.copy()
+        # }}}
 
-        self.build_system.cxxflags = \
+        # {{{ gperftools
+        if hasattr(self, 'gperftools_flags') and self.gperftools_flags:
+            self.build_system.cxxflags += ['`pkg-config --libs libprofiler`']
+        # }}}
+
+        self.build_system.cxxflags += \
             self.prgenv_flags[self.current_environ.name]
         # If self.executable is not set, ReFrame will set it to self.name:
         # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html
