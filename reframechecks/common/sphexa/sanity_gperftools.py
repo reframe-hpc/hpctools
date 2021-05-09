@@ -10,8 +10,8 @@ from reframe.core.fields import ScopedDict
 
 
 @sn.sanity_function
-def gp_perf_patterns(obj):
-    '''Reports top % from the tool
+def gp_perf_patterns(obj, reg):
+    '''Reports top1 function from the tool
 
     .. code-block::
 
@@ -22,26 +22,40 @@ def gp_perf_patterns(obj):
       530ms 13.28% 13.28%      530ms 13.28%  sphexa::.../lookupTables.hpp:123
             ^^^^^                                        ^^^^^^^^^^^^^^^^ ^^^
     '''
-    regex = (r'^\s+flat\s+flat%\s+sum%\s+cum\s+cum%\n\s+\d+ms\s+(?P<pctg>\S+)'
+    rpt = os.path.join(obj.stagedir, obj.rpt_file_txt)
+    regex = (r'^\s+flat\s+flat%\s+sum%\s+cum\s+cum%\n\s+\d+ms\s+(?P<pct>\S+)'
              r'%.*/(?P<filename>\S+):(?P<linen>\S+)')
-    result = sn.extractsingle(regex, obj.rpt_file_txt, 'pctg', float)
-    res_d = {
-        'gperftools_top_function1': result,
-    }
-    return res_d
+    if reg == 1:
+        result = sn.extractsingle(regex, rpt, 'pct', float)
+    elif reg == 2:
+        result = sn.extractsingle(regex, rpt, 'filename')
+    elif reg == 3:
+        result = sn.extractsingle(regex, rpt, 'linen', int)
+    elif reg == 4:
+        res1 = sn.extractsingle(regex, rpt, 'filename')
+        res2 = sn.extractsingle(regex, rpt, 'linen', int)
+        result = f'({res1}:{res2})'
+    else:
+        raise ValueError('unknown region id in gp_perf_patterns')
+
+    # res_d = {
+    #     'gperftools_top_function1': result,
+    # }
+    # return res_d
+    return result
 
 
-@sn.sanity_function
-def gp_tool_reference(obj):
-    '''Dictionary of default ``reference`` for the tool
-    '''
-    ref = ScopedDict()
-    # first, copy the existing self.reference (if any):
-    if obj.reference:
-        for kk in obj.reference:
-            ref[kk] = obj.reference['*:%s' % kk]
-
-    # then add more:
-    myzero_p = (0, None, None, '%')
-    ref['*:gperftools_top_function1'] = myzero_p
-    return ref
+# @sn.sanity_function
+# def gp_tool_reference(obj):
+#     '''Dictionary of default ``reference`` for the tool
+#     '''
+#     ref = ScopedDict()
+#     # first, copy the existing self.reference (if any):
+#     if obj.reference:
+#         for kk in obj.reference:
+#             ref[kk] = obj.reference['*:%s' % kk]
+#
+#     # then add more:
+#     myzero_p = (0, None, None, '%')
+#     ref['*:gperftools_top_function1'] = myzero_p
+#     return ref
