@@ -10,52 +10,29 @@ from reframe.core.fields import ScopedDict
 
 
 # {{{ sanity_function: extrae
-# @property
-
-@sn.sanity_function
-def extrae_version(obj):
-    '''Checks tool's version. As there is no ``--version`` flag available,
-    we read the version from extrae_version.h and compare it to our reference
-
-    .. code-block::
-
-      > cat $EBROOTEXTRAE/include/extrae_version.h
-      #define EXTRAE_MAJOR 3
-      #define EXTRAE_MINOR 7
-      #define EXTRAE_MICRO 1
-      returns: True or False
-    '''
-    reference_tool_version = {
-        'daint': '371',
-        'dom': '381',
-    }
-    ref_file = obj.version_file
-    regex = (r'#define EXTRAE_MAJOR (?P<v1>\d)\n'
-             r'#define EXTRAE_MINOR (?P<v2>\d)\n'
-             r'#define EXTRAE_MICRO (?P<v3>\d)')
-    v1 = sn.extractsingle(regex, ref_file, 'v1')
-    v2 = sn.extractsingle(regex, ref_file, 'v2')
-    v3 = sn.extractsingle(regex, ref_file, 'v3')
-    version = v1 + v2 + v3
-    TorF = sn.assert_eq(
-        version, reference_tool_version[obj.current_system.name])
-    return TorF
-
-
+# {{{ create_sh
 @sn.sanity_function
 def create_sh(obj):
     '''Create a wrapper script to insert Extrae libs (with ``LD_PRELOAD``) into
     the executable at runtime
     '''
-    multistr = ("#!/bin/bash\n"
-                "export EXTRAE_HOME=$EBROOTEXTRAE\n"
-                "source $EXTRAE_HOME/etc/extrae.sh\n"
-                "export EXTRAE_CONFIG_FILE=./extrae.xml\n"
-                "export LD_PRELOAD=$EXTRAE_HOME/lib/libmpitrace.so\n"
-                "%s \"$@\"" % obj.target_executable)
+    # PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_BR_INS,PAPI_BR_MSP
+    exe = os.path.join(obj.stagedir, obj.executable)
+    multistr = (
+        "#!/bin/bash\n"
+        "# clone of $EBROOTEXTRAE/share/example/MPI+OMP/ld-preload/trace.sh\n"
+        "export EXTRAE_HOME=$EBROOTEXTRAE\n"
+        "source $EXTRAE_HOME/etc/extrae.sh\n"
+        "EXTRAE_CONFIG_FILE=$EXTRAE_HOME/share/example/MPI+OMP/extrae.xml\n"
+        "export EXTRAE_CONFIG_FILE\n"
+        "export LD_PRELOAD=$EXTRAE_HOME/lib/libompitrace.so\n"
+        f"{exe} \"$@\""
+    )
     return multistr
+# }}}
 
 
+# {{{ self.perf_patterns
 @sn.sanity_function
 def rpt_mpistats(obj):
     '''Reports statistics (histogram of MPI communications) from the comms.dat
@@ -122,37 +99,37 @@ def rpt_mpistats(obj):
     # res_d = {}
     # res_d['tenB_n'] = tenB_n
     # res_d['tenB_b'] = tenB_b
+    # set the self.reference for the tool:
+    res = sn.evaluate(tool_reference_scoped_d(obj))
     return res_d
+# }}}
 
 
+# {{{ self.reference
 @sn.sanity_function
-def tool_reference_scoped_d(self):
+def tool_reference_scoped_d(obj):
     '''Sets a set of tool perf_reference to be shared between the tests.
     '''
     myzero = (0, None, None, '')
     myzero_p = (0, None, None, '%')
-    myreference = ScopedDict({
-        '*': {
-            'num_comms_0-10B': myzero,
-            'num_comms_10B-100B': myzero,
-            'num_comms_100B-1KB': myzero,
-            'num_comms_1KB-10KB': myzero,
-            'num_comms_10KB-100KB': myzero,
-            'num_comms_100KB-1MB': myzero,
-            'num_comms_1MB-10MB': myzero,
-            'num_comms_10MB': myzero,
-            #
-            '%_of_bytes_sent_0-10B': myzero_p,
-            '%_of_bytes_sent_10B-100B': myzero_p,
-            '%_of_bytes_sent_100B-1KB': myzero_p,
-            '%_of_bytes_sent_1KB-10KB': myzero_p,
-            '%_of_bytes_sent_10KB-100KB': myzero_p,
-            '%_of_bytes_sent_100KB-1MB': myzero_p,
-            '%_of_bytes_sent_1MB-10MB': myzero_p,
-            '%_of_bytes_sent_10MB': myzero_p,
-        }
-    })
-    return myreference
+    obj.reference['*:num_comms_0-10B'] = myzero
+    obj.reference['num_comms_10B-100B'] = myzero
+    obj.reference['num_comms_100B-1KB'] = myzero
+    obj.reference['num_comms_1KB-10KB'] = myzero
+    obj.reference['num_comms_10KB-100KB'] = myzero
+    obj.reference['num_comms_100KB-1MB'] = myzero
+    obj.reference['num_comms_1MB-10MB'] = myzero
+    obj.reference['num_comms_10MB'] = myzero
+    #
+    obj.reference['%_of_bytes_sent_0-10B'] = myzero_p
+    obj.reference['%_of_bytes_sent_10B-100B'] = myzero_p
+    obj.reference['%_of_bytes_sent_100B-1KB'] = myzero_p
+    obj.reference['%_of_bytes_sent_1KB-10KB'] = myzero_p
+    obj.reference['%_of_bytes_sent_10KB-100KB'] = myzero_p
+    obj.reference['%_of_bytes_sent_100KB-1MB'] = myzero_p
+    obj.reference['%_of_bytes_sent_1MB-10MB'] = myzero_p
+    obj.reference['%_of_bytes_sent_10MB'] = myzero_p
+# }}}
 
 
 # {{{
@@ -193,5 +170,37 @@ def tool_reference_scoped_d(self):
 #             }
 #         })
 #     return myreference
+# }}}
+
+
+# {{{ extrae_version
+@sn.sanity_function
+def extrae_version(obj):
+    '''Checks tool's version. As there is no ``--version`` flag available,
+    we read the version from extrae_version.h and compare it to our reference
+
+    .. code-block::
+
+      > cat $EBROOTEXTRAE/include/extrae_version.h
+      #define EXTRAE_MAJOR 3
+      #define EXTRAE_MINOR 7
+      #define EXTRAE_MICRO 1
+      returns: True or False
+    '''
+    reference_tool_version = {
+        'daint': '371',
+        'dom': '381',
+    }
+    ref_file = obj.version_file
+    regex = (r'#define EXTRAE_MAJOR (?P<v1>\d)\n'
+             r'#define EXTRAE_MINOR (?P<v2>\d)\n'
+             r'#define EXTRAE_MICRO (?P<v3>\d)')
+    v1 = sn.extractsingle(regex, ref_file, 'v1')
+    v2 = sn.extractsingle(regex, ref_file, 'v2')
+    v3 = sn.extractsingle(regex, ref_file, 'v3')
+    version = v1 + v2 + v3
+    TorF = sn.assert_eq(
+        version, reference_tool_version[obj.current_system.name])
+    return TorF
 # }}}
 # }}}

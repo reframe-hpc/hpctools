@@ -71,7 +71,7 @@ class SphExa_mpiP_Check(rfm.RegressionTest, hooks.setup_pe,
             # check the job output:
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
             # check the tool report:
-            # sn.assert_found('PDF document', self.rpt_file_doc),
+            sn.assert_found('^mpiP: Storing mpiP output in ', self.stdout),
         ])
         # }}}
 
