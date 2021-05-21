@@ -1,3 +1,4 @@
+import hostlist
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -75,12 +76,12 @@ class setup_pe(rfm.RegressionMixin):
         self.prgenv_flags['cpeIntel'] = self.prgenv_flags['PrgEnv-intel']
         self.prgenv_flags['cpeAMD'] = self.prgenv_flags['PrgEnv-aocc']
         self.prgenv_flags['cpeCray'] = self.prgenv_flags['PrgEnv-cray']
+        mpicxx = self._current_environ.cxx
         # {{{ scorep/scalasca
         if hasattr(self, 'scorep_flags') and self.scorep_flags:
-            mpicxx = ('scorep --mpp=mpi --nocompiler CC '
+            mpicxx = ('scorep --mpp=mpi --nocompiler '
+                      f'{self._current_environ.cxx} '
                       '-I$CRAY_MPICH_DIR/include')
-        else:
-            mpicxx = 'CC'
         # }}}
 
         # {{{ debug
@@ -114,11 +115,18 @@ class setup_pe(rfm.RegressionMixin):
         if not hasattr(self, 'target_executable'):
             self.target_executable = 'mpi+omp'
 
-        self.build_system.options = [
-            self.target_executable, f'MPICXX="{mpicxx}"',
-            'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
-            # NOTE: self.build_system.cxx is empty
-        ]
+        if mpicxx:
+            self.build_system.options = [
+                self.target_executable, f'MPICXX="{mpicxx}"',
+                'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
+                # NOTE: self.build_system.cxx is empty
+            ]
+        else:
+            self.build_system.options = [
+                self.target_executable,
+                'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
+            ]
+
         self.postbuild_cmds += [
             f'mv {self.target_executable}.app {self.target_executable}'
         ]
@@ -133,6 +141,13 @@ class setup_pe(rfm.RegressionMixin):
         cp = self.current_partition
         if cp.processor.arch is None:
             processor = {
+                'puthi:mc': {
+                    # cascadelake
+                    'arch': 'Gold6230', 'num_cpus': 40, 'num_cpus_per_core': 2,
+                    'num_cpus_per_socket': 20, 'num_sockets': 2,
+                    'num_cores': 20, 'num_cores_per_socket': 10,
+                    'num_numa_nodes': 2, 'num_cores_per_numa_node': 10,
+                },
                 'eiger:mc': {
                     'arch': 'zen2', 'num_cpus': 256, 'num_cpus_per_core': 2,
                     'num_cpus_per_socket': 128, 'num_sockets': 2,
@@ -248,19 +263,121 @@ class setup_pe(rfm.RegressionMixin):
                 'CRAYPE_LINK_TYPE': 'dynamic',
                 'OMP_NUM_THREADS': str(self.omp_threads),
                 # 'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-                #   'OMP_DISPLAY_AFFINITY': 'TRUE',
-                #   'OMP_PROC_BIND': 'spread',
+                # 'OMP_PROC_BIND': 'spread',
             }
         else:
             self.variables['CRAYPE_LINK_TYPE'] = 'dynamic'
             self.variables['OMP_NUM_THREADS'] = str(self.omp_threads)
             # self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
-            # 'echo "# JOBID=$SLURM_JOBID"',
+
+        if self.num_tasks <= 12:
+            # Imitating slurm '--cpu-bind=verbose' with OMP_AFFINITY_FORMAT:
+            # "cpu-bind=MASK - r01c01, task  1  1 [66597]: mask 0x2 set"
+            omp_affinity_format = (
+                r'"omp-bind=MASK - %H, task %n %n [%P]: mask xxx set '
+                r'thread_affinity=%A %Nthds %a"'
+            )
+            self.variables['OMP_AFFINITY_FORMAT'] = omp_affinity_format
+            self.variables['OMP_DISPLAY_AFFINITY'] = 'true'
+            # {{{ NOTE: Associating the OMP_AFFINITY_FORMAT hexadecimal with
+            # affinity is wrong:
+            #  it is the thread ID in the system so the handle that Linux gives
+            #  to the OpenMP runtime as the thread ID for the POSIX thread that
+            #  is registered in the kernel
+            #
+            # https://www.openmp.org/spec-html/5.0/openmpse62.html
+            # t   team_num    The value returned by omp_get_team_num().
+            # T   num_teams   The value returned by omp_get_num_teams().
+            # L   nesting_level   The value returned by omp_get_level().
+            # n*  thread_num  The value returned by omp_get_thread_num().
+            # N*  num_threads The value returned by omp_get_num_threads().
+            # a   ancestor_tnum   The value returned by
+            #       omp_get_ancestor_thread_num(level),
+            #       where level is omp_get_level() minus 1.
+            # H*  host
+            #     The name for the host machine on which the OpenMP
+            #     program is running.
+            # P*  process_id
+            #     The process identifier used by the implementation.
+            # i*  native_thread_id
+            #     The native thread identifier used by the implementation.
+            # A*  thread_affinity The list of numerical identifiers on which a
+            #     thread may execute
+            #
+            # https://docs.nersc.gov/jobs/affinity/
+            # self.variables['KMP_AFFINITY'] = 'verbose'  # intel
+            # self.variables['CRAY_OMP_CHECK_AFFINITY'] = 'TRUE'  # cce
+            # cpu-bind=MASK - r01c01, task  1  1 [66597]: mask 0x2 set
+            # }}}
+            self.affinity_rpt = 'affinity.rpt'
+            self.postrun_cmds += [
+                f'# exes:|{self.executable}|{self.target_executable}|',
+                '# --- report affinity from OMP_DISPLAY_AFFINITY:',
+                # f'grep "task 0 0" {self.stdout} &> {self.affinity_rpt}',
+                # rpt file is needed because stderr is a _DeferredExpression:
+                f'grep --no-filename bind=MASK {self.stdout} {self.stderr} '
+                f'&> {self.affinity_rpt}',
+                # TODO: do this in python (using bits_from_string - slurm only)
+                # --- also possible with hwloc-calc (module required):
+                # f'grep ^cpu-bind= {self.stderr} |'
+                # 'awk \'{print $5,$9}\' |sort -nk1 |'
+                # 'awk \'{print "echo "$2" |hwloc-calc -H core |grep Core: |'
+                # 'sed \'s-Core:--g\'"}\' |sh '
+                # f'&> {self.affinity_rpt}',
+                # f'cat {self.affinity_rpt}'
+            ]
 
     @rfm.run_after('compile')
     # @rfm.run_before('run')
     def set_cpu_binding(self):
+        # cpu-bind=MASK - r01c01, task  1  1 [66597]: mask 0x2 set
         self.job.launcher.options = ['--cpu-bind=verbose']
+    # }}}
+
+    # {{{ bits_from_string_hpctools: (affinity_hostlist)
+    @sn.sanity_function
+    def bits_from_string_hpctools(self, mask):
+        ret = []
+        mask_int = int(mask, 0)
+        index = 0
+        while mask_int:
+            if mask_int & 1:
+                # ret.append(index)
+                ret.append(str(index))
+
+            index += 1
+            mask_int >>= 1
+
+        # return ret
+        return hostlist.collect_hostlist(ret)
+    # }}}
+
+    # {{{ sanity_function: affinity_hostlist
+    @rfm.run_before('performance')
+    def affinity_hostlist(self):
+        '''Reports affinity as a hostlist
+
+        .. code-block::
+
+          * slurm_mask_rk: 0 [0-63,128-191] (rank 0)
+          * openmp_mask_rk: -1 ['64-127,192-255', '0-63,128-191'] (all ranks)
+        '''
+
+        rptf = os.path.join(self.stagedir, self.affinity_rpt)
+        # --- slurm output:
+        # cpu-bind=MASK - nid001194, task  0  0 [221956]: mask 0xf set
+        regex_slurm = r'^cpu-bind=MASK.*task\s+0\s+0.*mask (?P<aff>\S+) set'
+        self.slm_hexmask = sn.extractsingle(
+            regex_slurm, rptf, 'aff',
+            conv=lambda x: self.bits_from_string_hpctools(x)
+        )
+        # --- openmp output:
+        # omp-bind=MASK - nid001194, task 0 0 [221957]: mask xxx set ...
+        # ... thread_affinity=64-127,192-255 18thds 0
+        regex_omp = (r'^omp-bind=MASK.*task\s+0\s+0.*'
+                     r'thread_affinity=(?P<aff>\S+| \d+-\d+ \d+-\d+) ')
+        self.omp_hexmask = sn.extractall(regex_omp, rptf, 'aff')
+        #                            ^^^
     # }}}
 
 
@@ -269,7 +386,7 @@ class setup_code(rfm.RegressionMixin):
     # @rfm.run_after('setup')
     @rfm.run_before('run')
     def set_cubeside(self):
-        self.modules += ['hwloc']
+        # self.modules += ['hwloc']
         total_np = (self.compute_node * self.num_tasks_per_node *
                     self.omp_threads * self.np_per_c)
         # TODO: larger
@@ -282,18 +399,6 @@ class setup_code(rfm.RegressionMixin):
             'echo "# JOBID=$SLURM_JOBID"',
             'srun --version',
         ]
-        # TODO: if srun: r'srun --version'  # (slurm 20.11.4)
-        self.affinity_rpt = 'affinity.rpt'
-        self.postrun_cmds += [
-            f'# exes:|{self.executable}|{self.target_executable}|',
-            # TODO: do this in python
-            f'grep ^cpu-bind= {self.stderr} |'
-            'awk \'{print $5,$9}\' |sort -nk1 |'
-            'awk \'{print "echo "$2" |hwloc-calc -H core |grep Core: |'
-            'sed \'s-Core:--g\'"}\' |sh '
-            f'&> {self.affinity_rpt}',
-            f'cat {self.affinity_rpt}'
-        ]
     # }}}
 
     # {{{ set_timers
@@ -304,7 +409,8 @@ class setup_code(rfm.RegressionMixin):
     # }}}
 
     # {{{ set_perf_patterns:
-    @rfm.run_after('sanity')
+    # @rfm.run_after('sanity')
+    @rfm.run_before('performance')
     def set_perf_patterns(self):
         # if not skip_perf_report:
         self.perf_patterns = {
@@ -333,11 +439,17 @@ class setup_code(rfm.RegressionMixin):
             '%FindNeighbors':        sphs.pctg_FindNeighbors(self),
             '%IAD':                  sphs.pctg_IAD(self),
         })
+        if self.num_tasks <= 12:
+            self.perf_patterns.update({
+                'slurm_mask_rk': sn.extractsingle_s(r'\d', '0', conv=int),  # 0
+                'openmp_mask_rk': sn.extractsingle_s(r'\S+', '-1', conv=int),
+            })
 
     # }}}
 
     # {{{ set_reference:
-    @rfm.run_after('sanity')
+    # @rfm.run_after('sanity')
+    @rfm.run_before('performance')
     def set_reference(self):
         # if not skip_perf_report:
         myzero_s = (0, None, None, 's')
@@ -366,4 +478,12 @@ class setup_code(rfm.RegressionMixin):
                 '%IAD': myzero_p,
             }
         }
+        if self.num_tasks <= 12:
+            self.reference['*:slurm_mask_rk'] = (0, None, None,
+                                                 self.slm_hexmask)
+            self.reference['*:openmp_mask_rk'] = (
+                # use "set" to get a unique list
+                0, None, None, list(set(self.omp_hexmask))
+            )
+
     # }}}
