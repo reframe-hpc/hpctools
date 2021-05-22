@@ -1,5 +1,5 @@
 cxxfilt
-hostlist
+python-hostlist>=1.21
 jsonschema
 numpy
 pip
