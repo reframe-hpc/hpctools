@@ -17,9 +17,8 @@ import sphexa.sanity_perftools as sphsperft
 
 # {{{ class SphExa_PatRun
 @rfm.simple_test
-# class SphExa_PatRun_Check(rfm.RegressionTest, hooks.setup_pe,
-class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
-                          hooks.setup_code):
+class SphExa_PatRun_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code,
+                          sphsperft.perftools_hooks):
     # {{{
     '''This class runs the test code with CrayPAT (Cray Performance Measurement
     and Analysis toolset):
@@ -30,7 +29,7 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
         * ``pat_help``
     '''
     # }}}
-    steps = parameter([4])
+    steps = parameter([3])
     compute_node = parameter([1])
     # compute_node = parameter([2**i for i in range(8)])  # 1:128 cn
     np_per_c = parameter([1e4])
@@ -48,7 +47,7 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
             'eiger:mc', 'pilatus:mc'
         ]
         self.tool = 'pat_run'
-        self.modules = ['perftools-preload']
+        self.modules = ['perftools-base', 'perftools-preload']
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu', 'craype', 'performance'}
         # }}}
@@ -58,8 +57,10 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
         self.time_limit = '10m'
         self.executable = self.tool
         self.target_executable = './mpi+omp'
-        # }}}
-
+        # self.variables = {
+        #     # libdwarf.so missing for xf_ap2:
+        #     'LD_LIBRARY_PATH': '/opt/cray/pe/lib64:$LD_LIBRARY_PATH',
+        # }
         # -r: generates a report upon successful execution
         # TODO: read rpt-files/RUNTIME.rpt
         self.executable_opts = ['-r', self.target_executable]
@@ -82,6 +83,7 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
             f'pat_report {csv_options} %s+*s/index.ap2 &> %s' %
             (self.target_executable, self.csv_rpt)
         ]
+        # }}}
 
         # {{{ sanity
         self.sanity_patterns = sn.all([
@@ -89,20 +91,8 @@ class SphExa_PatRun_Check(sphsperft.PerftoolsBaseTest, hooks.setup_pe,
             sn.assert_found(r'Total time for iteration\(0\)', self.stdout),
         ])
         # }}}
-#         # {{{ sanity
-#         self.sanity_patterns_l = [
-#             sn.assert_found(r'Total time for iteration\(0\)', self.stdout)
-#         ]
-#         # will also silently call patrun_version (in sanity_perftools.py)
-#         self.sanity_patterns = sn.all(self.sanity_patterns_l)
-#         # }}}
 
         # {{{ performance
         # see common/sphexa/hooks.py and common/sphexa/sanity_perftools.py
         # }}}
-
-    # {{{ hooks
-    # @rfm.run_before('performance')
-    # def set_(self):
-    # }}}
 # }}}

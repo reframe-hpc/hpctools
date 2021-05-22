@@ -270,7 +270,7 @@ class setup_pe(rfm.RegressionMixin):
             self.variables['OMP_NUM_THREADS'] = str(self.omp_threads)
             # self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
 
-        if self.num_tasks <= 12:
+        if self.num_tasks <= 2:
             # Imitating slurm '--cpu-bind=verbose' with OMP_AFFINITY_FORMAT:
             # "cpu-bind=MASK - r01c01, task  1  1 [66597]: mask 0x2 set"
             omp_affinity_format = (
@@ -362,22 +362,26 @@ class setup_pe(rfm.RegressionMixin):
           * slurm_mask_rk: 0 [0-63,128-191] (rank 0)
           * openmp_mask_rk: -1 ['64-127,192-255', '0-63,128-191'] (all ranks)
         '''
+        if self._job._scheduler.registered_name == 'slurm':
+            rptf = os.path.join(self.stagedir, self.affinity_rpt)
+            # --- slurm output:
+            # cpu-bind=MASK - nid001194, task  0  0 [221956]: mask 0xf set
+            regex_slurm = r'^cpu-bind=MASK.*task\s+0\s+0.*mask (?P<aff>\S+) se'
+            self.slm_hexmask = sn.extractsingle(
+                regex_slurm, rptf, 'aff',
+                conv=lambda x: self.bits_from_string_hpctools(x)
+            )
+            # --- openmp output:
+            # omp-bind=MASK - nid001194, task 0 0 [221957]: mask xxx set ...
+            # ... thread_affinity=64-127,192-255 18thds 0
+            regex_omp = (r'^omp-bind=MASK.*task\s+0\s+0.*'
+                         r'thread_affinity=(?P<aff>\S+| \d+-\d+ \d+-\d+) ')
+            self.omp_hexmask = sn.extractall(regex_omp, rptf, 'aff')
+            #                            ^^^
+        else:
+            self.slm_hexmask = ''
+            self.omp_hexmask = ''
 
-        rptf = os.path.join(self.stagedir, self.affinity_rpt)
-        # --- slurm output:
-        # cpu-bind=MASK - nid001194, task  0  0 [221956]: mask 0xf set
-        regex_slurm = r'^cpu-bind=MASK.*task\s+0\s+0.*mask (?P<aff>\S+) set'
-        self.slm_hexmask = sn.extractsingle(
-            regex_slurm, rptf, 'aff',
-            conv=lambda x: self.bits_from_string_hpctools(x)
-        )
-        # --- openmp output:
-        # omp-bind=MASK - nid001194, task 0 0 [221957]: mask xxx set ...
-        # ... thread_affinity=64-127,192-255 18thds 0
-        regex_omp = (r'^omp-bind=MASK.*task\s+0\s+0.*'
-                     r'thread_affinity=(?P<aff>\S+| \d+-\d+ \d+-\d+) ')
-        self.omp_hexmask = sn.extractall(regex_omp, rptf, 'aff')
-        #                            ^^^
     # }}}
 
 
@@ -439,7 +443,8 @@ class setup_code(rfm.RegressionMixin):
             '%FindNeighbors':        sphs.pctg_FindNeighbors(self),
             '%IAD':                  sphs.pctg_IAD(self),
         })
-        if self.num_tasks <= 12:
+        if self.num_tasks <= 2 and \
+           self._job._scheduler.registered_name == 'slurm':
             self.perf_patterns.update({
                 'slurm_mask_rk': sn.extractsingle_s(r'\d', '0', conv=int),  # 0
                 'openmp_mask_rk': sn.extractsingle_s(r'\S+', '-1', conv=int),
@@ -448,7 +453,6 @@ class setup_code(rfm.RegressionMixin):
     # }}}
 
     # {{{ set_reference:
-    # @rfm.run_after('sanity')
     @rfm.run_before('performance')
     def set_reference(self):
         # if not skip_perf_report:
@@ -478,12 +482,11 @@ class setup_code(rfm.RegressionMixin):
                 '%IAD': myzero_p,
             }
         }
-        if self.num_tasks <= 12:
-            self.reference['*:slurm_mask_rk'] = (0, None, None,
-                                                 self.slm_hexmask)
-            self.reference['*:openmp_mask_rk'] = (
-                # use "set" to get a unique list
-                0, None, None, list(set(self.omp_hexmask))
-            )
+        # needed only when self.perf_patterns is set ("if" not needed here)
+        self.reference['*:slurm_mask_rk'] = (0, None, None, self.slm_hexmask)
+        self.reference['*:openmp_mask_rk'] = (
+            # use "set" to get a unique list
+            0, None, None, list(set(self.omp_hexmask))
+        )
 
     # }}}
