@@ -11,12 +11,9 @@ from reframe.core.fields import ScopedDict
 import sphexa.sanity as sphs
 
 
-class PerftoolsBaseTest(rfm.RegressionTest):
-    def __init__(self):
-        x = 0
-
-# {{{ sanity patterns
-# {{{ patrun_version
+class perftools_hooks(rfm.RegressionMixin):
+    # {{{ sanity patterns
+    # {{{ patrun_version
     @rfm.run_before('sanity')
     def patrun_version(self):
         '''Checks tool's version:
@@ -37,11 +34,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         res_version = sn.extractsingle(regex, self.version_rpt, 'toolversion')
         # self.sanity_patterns_l.append(sn.assert_eq(res_version, ref_version,
         # msg='sanityV failed "{0}"'))
-# }}}
-# }}}
+    # }}}
+    # }}}
 
-# {{{ regex functions
-# {{{ patrun: number of compute nodes
+    # {{{ regex functions
+    # {{{ patrun: number of compute nodes
     @rfm.run_before('performance')
     def patrun_num_of_compute_nodes(self):
         '''Extract the number of compute nodes to compute averages
@@ -59,9 +56,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         '''
         regex = r'^(?P<cn>\d+.xf)$'
         self.num_cn = sn.count(sn.extractall(regex, self.stdout, 'cn'))
-# }}}
+    # }}}
 
-# {{{ perftools-lite: Memory
+    # {{{ perftools-lite: Memory
     @rfm.run_before('performance')
     def perftools_lite_memory(self):
         '''
@@ -78,9 +75,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         self.ptl_high_mem_c = sn.extractsingle(
             regex, self.stdout, 'mem_c',
             conv=lambda x: int(x.replace(',', '').split('.')[0]))
-# }}}
+    # }}}
 
-# {{{ patrun: table Wall Clock Time, Memory
+    # {{{ patrun: table Wall Clock Time, Memory
     @rfm.run_before('performance')
     def patrun_walltime_and_memory(self):
         '''This table shows total wall clock time for the ranks with the
@@ -142,9 +139,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             if not isinstance(vv, str):
                 res[kk] = sn.round(vv, 4)
         self.patrun_perf_d = res
-# }}}
+    # }}}
 
-# {{{ patrun: table Memory Bandwidth by Numanode
+    # {{{ patrun: table Memory Bandwidth by Numanode
     @rfm.run_before('performance')
     def patrun_memory_bw(self):
         '''This table shows memory traffic to local and remote memory for numa
@@ -209,9 +206,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             self.patrun_perf_d = {**self.patrun_perf_d, **res}
         else:
             self.patrun_perf_d = res
-# }}}
+    # }}}
 
-# {{{ patrun: table HW Performance Counter
+    # {{{ patrun: table HW Performance Counter
     @rfm.run_before('performance')
     def patrun_hwpc(self):
         '''This table shows HW performance counter data for the whole program,
@@ -261,9 +258,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         #     self.patrun_perf_d = {**self.patrun_perf_d, **res}
         # else:
         #     self.patrun_perf_d = res
-# }}}
+    # }}}
 
-# {{{ patrun: table energy and power usage
+    # {{{ patrun: table energy and power usage
     @rfm.run_before('performance')
     def patrun_energy_power(self):
         '''This table shows HW performance counter data for the whole program,
@@ -305,9 +302,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             self.patrun_perf_d = {**self.patrun_perf_d, **res}
         else:
             self.patrun_perf_d = res
-# }}}
+    # }}}
 
-# {{{ patrun: table Profile by Function
+    # {{{ patrun: table Profile by Function
     @rfm.run_before('performance')
     def patrun_samples(self):
         '''Elapsed time (in samples) reported by the tool:
@@ -328,9 +325,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         regex = (r'^Table 1:  Profile by Function\n(.*\n){4}\s+100.0%\s+\|\s+'
                  r'(?P<sam>\S+)\s+')
         self.patrun_sample = sn.extractsingle(regex, self.stdout, 'sam', float)
-# }}}
+    # }}}
 
-# {{{ patrun: hotspot1
+    # {{{ patrun: hotspot1
     @rfm.run_after('sanity')
     def patrun_hotspot1(self):
         regex = (r'^Table \d+:  Profile by Group, Function, and Line.*\n'
@@ -351,9 +348,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # self.patrun_hotspot1_name = \
         #     sn.extractsingle(regex, self.rpt, 'fname')
 # }}}
-# }}}
+    # }}}
 
-# {{{ patrun: hotspot1 MPI
+    # {{{ patrun: hotspot1 MPI
     @rfm.run_after('sanity')
     def patrun_hotspot1_mpi(self):
         '''
@@ -392,11 +389,11 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         #     self.patrun_perf_d = {**self.patrun_perf_d, **res}
         # else:
         #     self.patrun_perf_d = res
-# }}}
+    # }}}
 
 # TODO: rpt from sqpatch.exe+5046-0s/rpt-files/RUNTIME.rpt
 
-# {{{ patrun: imbalance
+    # {{{ patrun: imbalance
     @rfm.run_after('sanity')
     def patrun_imbalance(self):
         # {{{
@@ -658,7 +655,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             res['%etc_fastest'] = 0
         # }}}
         self.patrun_stats_d = res
-# }}}
+    # }}}
 
 # {{{ rpt_path_stdout
 #     @rfm.run_before('sanity')
@@ -674,9 +671,9 @@ class PerftoolsBaseTest(rfm.RegressionTest):
 #         self.rpt_path = sn.extractsingle(regex, self.stdout, 'rpt_path')
 # }}}
 
-# }}}
+    # }}}
 
-# {{{ performance patterns
+    # {{{ performance patterns
     # --- 1
 #     @rfm.run_before('performance')
 #     def set_basic_perf_patterns(self):
@@ -761,15 +758,15 @@ class PerftoolsBaseTest(rfm.RegressionTest):
             self.perf_patterns = perf_pattern
 
 # }}}
-# }}}
+    # }}}
 
-# {{{ performance reference
+    # {{{ performance reference
     # --- 1
 #     @rfm.run_before('performance')
 #     def set_basic_reference(self):
 #         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
 
-# {{{ --- 2
+    # {{{ --- 2
     @rfm.run_before('performance')
     def set_tool_reference(self):
         ref = ScopedDict()
@@ -905,7 +902,7 @@ class PerftoolsBaseTest(rfm.RegressionTest):
         # final reference:
         self.reference = ref
 # }}}
-# }}}
+    # }}}
 
 # {{{ TODO: perftools-lite
 # }}}
