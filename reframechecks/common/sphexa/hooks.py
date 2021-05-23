@@ -362,7 +362,8 @@ class setup_pe(rfm.RegressionMixin):
           * slurm_mask_rk: 0 [0-63,128-191] (rank 0)
           * openmp_mask_rk: -1 ['64-127,192-255', '0-63,128-191'] (all ranks)
         '''
-        if self._job._scheduler.registered_name == 'slurm':
+        # if self._job._scheduler.registered_name == 'slurm':
+        if self.current_partition.launcher_type.registered_name == 'srun':
             rptf = os.path.join(self.stagedir, self.affinity_rpt)
             # --- slurm output:
             # cpu-bind=MASK - nid001194, task  0  0 [221956]: mask 0xf set
@@ -444,7 +445,7 @@ class setup_code(rfm.RegressionMixin):
             '%IAD':                  sphs.pctg_IAD(self),
         })
         if self.num_tasks <= 2 and \
-           self._job._scheduler.registered_name == 'slurm':
+           self.current_partition.launcher_type.registered_name == 'srun':
             self.perf_patterns.update({
                 'slurm_mask_rk': sn.extractsingle_s(r'\d', '0', conv=int),  # 0
                 'openmp_mask_rk': sn.extractsingle_s(r'\S+', '-1', conv=int),
