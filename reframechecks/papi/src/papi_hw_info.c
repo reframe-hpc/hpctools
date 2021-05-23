@@ -1,5 +1,7 @@
 /****************************************************************************
  * papi.git/src/examples/PAPI_hw_info.c (modified by jgphpc)
+ * see https://bitbucket.org/icl/papi/src/master/LICENSE.txt
+ *
  * This is a simple low level example for getting information on the system *
  * hardware. This function PAPI_get_hardware_info(), returns a pointer to a *
  * structure of type PAPI_hw_info_t, which contains number of CPUs, nodes,  *
