@@ -9,6 +9,8 @@ import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
 
 
+# TODO: class papi_hooks(rfm.RegressionMixin):
+# {{{ papi_wrap
 @sn.sanity_function
 def pw_perf_patterns(obj):
     '''Reports hardware counter values from the tool
@@ -49,3 +51,4 @@ def pw_tool_reference(obj):
     ref['*:papiwrap_hwc_avg'] = myzero
     ref['*:papiwrap_hwc_max'] = myzero
     return ref
+# }}}

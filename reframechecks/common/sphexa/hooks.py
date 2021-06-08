@@ -42,6 +42,9 @@ class setup_pe(rfm.RegressionMixin):
         sed_ifdef = (r'"s-#include \"cuda/sph.cuh\"-#ifdef USE_CUDA\n'
                      r'#include \"cuda/sph.cuh\"\n#endif-"')
         self.prebuild_cmds += [
+            'module load cray-mpich',
+            'module load cray-libsci',
+            # ---------------------------
             'module rm xalt',
             'module list',
             'rm -fr .git*',
@@ -400,6 +403,10 @@ class setup_code(rfm.RegressionMixin):
         self.cubeside = int(pow(total_np, 1 / 3))
         self.executable_opts += [f"-n {self.cubeside}", f"-s {self.steps}"]
         self.prerun_cmds += [
+            'module load cray-mpich',
+            'module load cray-libsci',
+            f'ldd {self.target_executable}',
+            # ---------------------------
             'module rm xalt', 'module list',
             'echo "# JOBID=$SLURM_JOBID"',
             'srun --version',
