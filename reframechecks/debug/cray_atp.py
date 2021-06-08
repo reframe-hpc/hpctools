@@ -62,7 +62,7 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
         re_ver_4 = 'ATP_VERSION2=$'
         re_ver_5 = 'ATP_HOME=$'
         re_which_1 = 'not found'
-        re_stderr_1 = 'forcing job termination|Force Terminated job'
+        re_stderr_1 = 'forcing job termination|Force Terminated (job|Step)'
         re_stderr_2 = 'Producing core dumps for rank'
         re_stderr_3 = 'View application merged backtrace tree with: stat-view'
         re_dot_1 = 'MPI_Allreduce|MPID_Abort|PMPI_Abort'
@@ -81,9 +81,8 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
         hosts_cfg_file = '/etc/hosts'
         apt_dot_file = 'atpMergedBT_line.dot'
         # TODO: regex_rk0 = 'core.atp.*.0.0.*'
-        # TODO: shasta
         # {{{ Needed when reporting a support case:
-        if not cs in {'pilatus', 'eiger'}:
+        if cs not in {'pilatus', 'eiger'}:
             self.prebuild_cmds += [
                 # --- check slurm_cfg
                 #     (optional /opt/cray/pe/atp/libAtpDispatch.so)
@@ -120,19 +119,17 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
             f'pkg-config --variable=exec_prefix libAtpSigHandler &>{which_rpt}'
         ]
         self.postbuild_cmds += [
-            # TODO: srun --version -> hooks.py
             # --- check exe (/opt/cray/pe/atp/3.8.1/lib/libAtpSigHandler.so.1)
             f'ldd {self.executable}* |grep "{re_slm_1}" &> {ldd_rpt}',
         ]
         # }}}
+
         # {{{ run
         self.time_limit = '10m'
-        self.variables = {
-            'ATP_ENABLED': '1',
-        }
-        self.postrun_cmds = [
+        self.variables['ATP_ENABLED'] = '1'
+        self.postrun_cmds += [
             f'ldd {self.executable}* |grep atp',
-            'file core.*'
+            'file core*'
         ]
 # {{{ TODO: gdb_command
 # -        gdb_command = (r'-e %s '
