@@ -27,6 +27,7 @@ class SphExa_Gdb4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
     tool_compute_node = parameter([2])
     # tool_compute_node = parameter([1, 2, 4, 8, 16, 32, 64, 128])
     np_per_c = parameter([1e4])
+    debug_flags = variable(bool, value=True)
 
     def __init__(self):
         # {{{ pe
@@ -65,7 +66,7 @@ class SphExa_Gdb4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
         self.gdb_rpt = './gdb4hpc.rpt'
         self.executable_opts = [f'-b {self.gdb_in} #']
         self.prerun_cmds = [
-            f'srun --version >> {self.version_rpt}',
+            # f'srun --version >> {self.version_rpt}',
             f'{self.tool} --version >> {self.version_rpt}',
             f'which {self.tool} &> {self.which_rpt}',
             'echo starttime=`date +%s`',  # this is needed because:
