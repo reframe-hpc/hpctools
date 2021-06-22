@@ -15,7 +15,7 @@ class DDT_Base_Test(rfm.RegressionTest):
         x = 0
 
     # {{{ set_sanity
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         rpt = os.path.join(self.stagedir, self.htm_rpt)
         # {{{ sanity1
@@ -44,7 +44,7 @@ class DDT_Base_Test(rfm.RegressionTest):
     # }}}
 
     # {{{ set_txt_rpt
-    @rfm.run_before('run')
+    @run_before('run')
     def set_txt_rpt(self):
         self.postrun_cmds += [
             f'# The html report can be converted to text with: '
@@ -54,7 +54,7 @@ class DDT_Base_Test(rfm.RegressionTest):
     # }}}
 
 # {{{ performance patterns
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_tool_perf_patterns(self):
         '''
         More perf_patterns for the tool
@@ -70,7 +70,7 @@ class DDT_Base_Test(rfm.RegressionTest):
 # }}}
 
 # {{{ performance reference
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_tool_reference(self):
         ref = ScopedDict()
         # first, copy the existing self.reference (if any):
