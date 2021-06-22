@@ -485,8 +485,7 @@ class setup_code(rfm.RegressionMixin):
     # {{{ set_perf_patterns:
     @run_before('performance')
     def set_perf_patterns(self):
-        # if not skip_perf_report:
-        self.perf_patterns = {
+        perf_patterns = {
             'Elapsed': sphs.seconds_elaps(self),
             '_Elapsed': sphs.elapsed_time_from_date(self),
             #
@@ -505,6 +504,12 @@ class setup_code(rfm.RegressionMixin):
             # 'domain_distribute'
             # 'BuildTree'
         }
+        # if not skip_perf_report:
+        if self.perf_patterns:
+            self.perf_patterns.update(perf_patterns)
+        else:
+            self.perf_patterns = perf_patterns
+
         # top%
         self.perf_patterns.update({
             '%MomentumEnergyIAD':    sphs.pctg_MomentumEnergyIAD(self),
@@ -527,30 +532,27 @@ class setup_code(rfm.RegressionMixin):
         # if not skip_perf_report:
         myzero_s = (0, None, None, 's')
         myzero_p = (0, None, None, '%')
-        self.reference = {
-            '*': {
-                'Elapsed': (0, None, None, 's'),
-                '_Elapsed': (0, None, None, 's'),
-                # timers
-                'domain_sync': myzero_s,
-                'updateTasks': myzero_s,
-                'FindNeighbors': myzero_s,
-                'Density': myzero_s,
-                'EquationOfState': myzero_s,
-                'mpi_synchronizeHalos': myzero_s,
-                'IAD': myzero_s,
-                'MomentumEnergyIAD': myzero_s,
-                'Timestep': myzero_s,
-                'UpdateQuantities': myzero_s,
-                'EnergyConservation': myzero_s,
-                'UpdateSmoothingLength': myzero_s,
-                # top%
-                '%MomentumEnergyIAD': myzero_p,
-                '%mpi_synchronizeHalos': myzero_p,
-                '%FindNeighbors': myzero_p,
-                '%IAD': myzero_p,
-            }
-        }
+        # elapsed
+        self.reference['*:Elapsed'] = myzero_s
+        self.reference['*:_Elapsed'] = myzero_s
+        # timers
+        self.reference['*:domain_sync'] = myzero_s
+        self.reference['*:updateTasks'] = myzero_s
+        self.reference['*:FindNeighbors'] = myzero_s
+        self.reference['*:Density'] = myzero_s
+        self.reference['*:EquationOfState'] = myzero_s
+        self.reference['*:mpi_synchronizeHalos'] = myzero_s
+        self.reference['*:IAD'] = myzero_s
+        self.reference['*:MomentumEnergyIAD'] = myzero_s
+        self.reference['*:Timestep'] = myzero_s
+        self.reference['*:UpdateQuantities'] = myzero_s
+        self.reference['*:EnergyConservation'] = myzero_s
+        self.reference['*:UpdateSmoothingLength'] = myzero_s
+        # top%
+        self.reference['*:%MomentumEnergyIAD'] = myzero_p
+        self.reference['*:%mpi_synchronizeHalos'] = myzero_p
+        self.reference['*:%FindNeighbors'] = myzero_p
+        self.reference['*:%IAD'] = myzero_p
         # needed only when self.perf_patterns is set ("if" not needed here)
         self.reference['*:slurm_mask_rk'] = (0, None, None, self.slm_hexmask)
         self.reference['*:openmp_mask_rk'] = (
