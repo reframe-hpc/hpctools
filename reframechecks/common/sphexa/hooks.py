@@ -8,12 +8,13 @@ import sphexa.sanity as sphs
 
 class setup_pe(rfm.RegressionMixin):
     # {{{ set_src
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_src(self):
         # self.sourcesdir = None
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'SPH-EXA_mini-app.git')
         src_files_list = [
+            # comment out for copying the dir instead of symlinks
             'bigfiles',
             'CMakeLists.txt',
             'docs',
@@ -30,36 +31,64 @@ class setup_pe(rfm.RegressionMixin):
             'rn.sh',
             'scripts',
             # 'src',
+            # src is always copied by reframe
             'test',
             'tools'
         ]
         self.readonly_files = src_files_list
         src_files_remove = src_files_list.copy()
+        # use symlinks instead of copy:
         src_files_remove.remove('Makefile')
         src_files_remove.remove('domain')
         # src_files_remove.remove('include')
         # src_files_remove.remove('src')
-        sed_ifdef = (r'"s-#include \"cuda/sph.cuh\"-#ifdef USE_CUDA\n'
-                     r'#include \"cuda/sph.cuh\"\n#endif-"')
+        # sed_ifdef = (r'"s-#include \"cuda/sph.cuh\"-#ifdef USE_CUDA\n'
+        #              r'#include \"cuda/sph.cuh\"\n#endif-"')
+        if self.current_environ.name != 'PrgEnv-nvidia':
+            self.prebuild_cmds += [
+                'module load cray-mpich',
+                'module load cray-libsci',
+            ]
+
         self.prebuild_cmds += [
-            'module load cray-mpich',
-            'module load cray-libsci',
-            # ---------------------------
             'module rm xalt',
             'module list',
             'rm -fr .git*',
             f'rm -f {" ".join(src_files_remove)}',
             '#',
-            f'sed -i {sed_ifdef} include/sph/findNeighbors.hpp',
-            f'sed -i {sed_ifdef} include/sph/density.hpp',
-            f'sed -i {sed_ifdef} include/sph/IAD.hpp',
-            f'sed -i {sed_ifdef} include/sph/momentumAndEnergyIAD.hpp',
+            # f'sed -i {sed_ifdef} include/sph/findNeighbors.hpp',
+            # f'sed -i {sed_ifdef} include/sph/density.hpp',
+            # f'sed -i {sed_ifdef} include/sph/IAD.hpp',
+            # f'sed -i {sed_ifdef} include/sph/momentumAndEnergyIAD.hpp',
         ]
     # }}}
 
+    # {{{ get_gpu_specs
+    @run_before('compile')
+    def get_gpu_specs(self):
+        self.gpu_specs = {
+            'P100': {
+                'capability': 'sm_60', 'sms': 'SMS=60',
+                'multiprocessors': 56,
+                'maximum_number_of_threads_per_multiprocessor': 2048,
+                'maximum_number_of_threads_per_block': 1024,
+                'warp_size': 32,
+            },
+            'V100': {
+                'capability': 'sm_70', 'sms': 'SMS=70',
+                'multiprocessors': 80,
+                'maximum_number_of_threads_per_multiprocessor': 2048,
+                'maximum_number_of_threads_per_block': 1024,
+                'warp_size': 32,
+            },
+            'nogpu': {
+                'sms': '',
+            },
+        }
+    # }}}
+
     # {{{ set_prgenv_flags
-    # @rfm.run_after('setup')
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_prgenv_flags(self):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile'
@@ -72,6 +101,9 @@ class setup_pe(rfm.RegressionMixin):
                             '-DUSE_MPI', '-DNDEBUG', '-fopenmp'],
             'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG', '-mp'],
+            'PrgEnv-nvidia': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
+                              '-DUSE_MPI', '-DNDEBUG', '-mp',
+                              '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL=1'],  # -w
             'PrgEnv-aocc': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
                             '-DUSE_MPI', '-DNDEBUG', '-fopenmp'],
         }
@@ -118,17 +150,36 @@ class setup_pe(rfm.RegressionMixin):
         if not hasattr(self, 'target_executable'):
             self.target_executable = 'mpi+omp'
 
+        # {{{ gpu_compute_capability
+        self.gpu_compute_capability = {
+            'dom:gpu': 'SMS=60',  # P100
+            'dom:mc': 'SMS=',
+            'daint:gpu': 'SMS=60',  # P100
+            'daint:mc': 'SMS=',
+            'eiger:mc': 'SMS=',
+            'pilatus:mc': 'SMS=',
+            'puthi:mc': 'SMS=',
+        }
+        partname = self.current_partition.fullname
+        gpu_compute_capability = self.gpu_compute_capability[partname]
+        # }}}
         if mpicxx:
             self.build_system.options = [
                 self.target_executable, f'MPICXX="{mpicxx}"',
                 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
+                "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -g'",
+                gpu_compute_capability,
                 # NOTE: self.build_system.cxx is empty
             ]
         else:
             self.build_system.options = [
                 self.target_executable,
                 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
+                "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -g'",
+                gpu_compute_capability,
             ]
+            # NOTE: why:
+            # --expt-relaxed-constexpr -rdc=true -Wno-deprecated-gpu-targets
 
         self.postbuild_cmds += [
             f'mv {self.target_executable}.app {self.target_executable}'
@@ -137,7 +188,7 @@ class setup_pe(rfm.RegressionMixin):
 
     # {{{ set_system_attributes
     # @rfm.run_before('run')
-    @rfm.run_after('compile')
+    @run_after('compile')
     def set_system_attributes(self):
         cs = self.current_system.name  # cs=dom
         cpf = self.current_partition.fullname  # cpf=dom:gpu
@@ -150,12 +201,14 @@ class setup_pe(rfm.RegressionMixin):
                     'num_cpus_per_socket': 20, 'num_sockets': 2,
                     'num_cores': 20, 'num_cores_per_socket': 10,
                     'num_numa_nodes': 2, 'num_cores_per_numa_node': 10,
+                    'gpu': 'nogpu',
                 },
                 'eiger:mc': {
                     'arch': 'zen2', 'num_cpus': 256, 'num_cpus_per_core': 2,
                     'num_cpus_per_socket': 128, 'num_sockets': 2,
                     'num_cores': 128, 'num_cores_per_socket': 64,
                     'num_numa_nodes': 8, 'num_cores_per_numa_node': 16,
+                    'gpu': 'nogpu',
                 },
                 'daint:mc': {
                     'arch': 'broadwell', 'num_cpus': 72,
@@ -163,12 +216,14 @@ class setup_pe(rfm.RegressionMixin):
                     'num_cpus_per_socket': 36, 'num_sockets': 2,
                     'num_cores': 36, 'num_cores_per_socket': 18,
                     'num_numa_nodes': 2, 'num_cores_per_numa_node': 18,
+                    'gpu': 'nogpu',
                 },
                 'daint:gpu': {
                     'arch': 'haswell', 'num_cpus': 24, 'num_cpus_per_core': 2,
                     'num_cpus_per_socket': 24, 'num_sockets': 1,
                     'num_cores': 12, 'num_cores_per_socket': 12,
                     'num_numa_nodes': 1, 'num_cores_per_numa_node': 12,
+                    'gpu': 'P100',
                 },
             }
             processor['pilatus:mc'] = processor['eiger:mc'].copy()
@@ -277,7 +332,9 @@ class setup_pe(rfm.RegressionMixin):
             # Imitating slurm '--cpu-bind=verbose' with OMP_AFFINITY_FORMAT:
             # "cpu-bind=MASK - r01c01, task  1  1 [66597]: mask 0x2 set"
             omp_affinity_format = (
-                r'"omp-bind=MASK - %H, task %n %n [%P]: mask xxx set '
+                # [%P] fails with some compilers -> removing it
+                # https://www.openmp.org/spec-html/5.0/openmpse62.html
+                r'"omp-bind=MASK - %H, task %n %n [xxx]: mask xxx set '
                 r'thread_affinity=%A %Nthds %a"'
             )
             self.variables['OMP_AFFINITY_FORMAT'] = omp_affinity_format
@@ -330,8 +387,7 @@ class setup_pe(rfm.RegressionMixin):
                 # f'cat {self.affinity_rpt}'
             ]
 
-    @rfm.run_after('compile')
-    # @rfm.run_before('run')
+    @run_after('compile')
     def set_cpu_binding(self):
         # cpu-bind=MASK - r01c01, task  1  1 [66597]: mask 0x2 set
         self.job.launcher.options = ['--cpu-bind=verbose']
@@ -356,7 +412,7 @@ class setup_pe(rfm.RegressionMixin):
     # }}}
 
     # {{{ sanity_function: affinity_hostlist
-    @rfm.run_before('performance')
+    @run_before('performance')
     def affinity_hostlist(self):
         '''Reports affinity as a hostlist
 
@@ -365,8 +421,10 @@ class setup_pe(rfm.RegressionMixin):
           * slurm_mask_rk: 0 [0-63,128-191] (rank 0)
           * openmp_mask_rk: -1 ['64-127,192-255', '0-63,128-191'] (all ranks)
         '''
-        if self.current_partition.launcher_type.registered_name == 'srun' and \
-        not hasattr(self, 'debug_flags'):
+        if (
+            self.current_partition.launcher_type.registered_name == "srun"
+            and not hasattr(self, "debug_flags")
+        ):
             rptf = os.path.join(self.stagedir, self.affinity_rpt)
             # --- slurm output:
             # cpu-bind=MASK - nid001194, task  0  0 [221956]: mask 0xf set
@@ -391,8 +449,8 @@ class setup_pe(rfm.RegressionMixin):
 
 class setup_code(rfm.RegressionMixin):
     # {{{ set_cubeside
-    # @rfm.run_after('setup')
-    @rfm.run_before('run')
+    # @run_after('setup')
+    @run_before('run')
     def set_cubeside(self):
         # self.modules += ['hwloc']
         total_np = (self.compute_node * self.num_tasks_per_node *
@@ -402,9 +460,13 @@ class setup_code(rfm.RegressionMixin):
         #             self.compute_node * self.np_per_c)
         self.cubeside = int(pow(total_np, 1 / 3))
         self.executable_opts += [f"-n {self.cubeside}", f"-s {self.steps}"]
+        if self.current_environ.name != 'PrgEnv-nvidia':
+            self.prerun_cmds += [
+                'module load cray-mpich',
+                'module load cray-libsci',
+            ]
+
         self.prerun_cmds += [
-            'module load cray-mpich',
-            'module load cray-libsci',
             f'ldd {self.target_executable}',
             # ---------------------------
             'module rm xalt', 'module list',
@@ -414,15 +476,14 @@ class setup_code(rfm.RegressionMixin):
     # }}}
 
     # {{{ set_timers
-    @rfm.run_before('run')
+    @run_before('run')
     def set_timers(self):
         self.prerun_cmds += ['echo starttime=`date +%s`']
         self.postrun_cmds += ['echo stoptime=`date +%s`']
     # }}}
 
     # {{{ set_perf_patterns:
-    # @rfm.run_after('sanity')
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         # if not skip_perf_report:
         self.perf_patterns = {
@@ -461,7 +522,7 @@ class setup_code(rfm.RegressionMixin):
     # }}}
 
     # {{{ set_reference:
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_reference(self):
         # if not skip_perf_report:
         myzero_s = (0, None, None, 's')

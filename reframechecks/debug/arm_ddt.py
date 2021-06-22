@@ -75,7 +75,7 @@ class SphExa_DDT_Check(sphsddt.DDT_Base_Test, hooks.setup_pe,
 
     # {{{ hooks
     # {{{ set_launcher
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tracepoint_and_launcher(self):
         # break in main at line 51:
         #   auto d = SedovDataGenerator<Real, CodeType>::generate(cubeSide);
