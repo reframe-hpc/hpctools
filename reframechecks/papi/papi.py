@@ -1,4 +1,4 @@
-# Copyrigh 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -73,14 +73,13 @@ class SphExa_Papi_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
             sn.assert_eq(phy_cores, reference_hwinfo[cp]),
         ])
 
-
     def papi_patch_src(self, patchfile):
         # {{{ # f-string expression part cannot include '#' or a backslash
         sed_str = """
 diff -Naur include.ori/utils.hpp include/utils.hpp
---- include.ori/utils.hpp	2021-06-08 14:19:35.414636000 +0200
-+++ include/utils.hpp	2021-06-08 15:27:02.159354000 +0200
-@@ -3,12 +3,75 @@
+--- include.ori/utils.hpp	2021-07-13 10:23:14.000000000 +0200
++++ include/utils.hpp	2021-07-13 10:27:07.000000000 +0200
+@@ -3,6 +3,66 @@
  namespace sphexa
  {
 
@@ -147,15 +146,14 @@ diff -Naur include.ori/utils.hpp include/utils.hpp
  int initAndGetRankId()
  {
      int rank = 0;
- #ifdef USE_MPI
-     MPI_Init(NULL, NULL);
-     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-+    if (rank == 0) {
-+        papiInfo();
-+    }
+@@ -20,6 +80,7 @@
+         printf("# %d MPI-%d.%d process(es) with 1 OpenMP thread/process\\n",
+         mpi_ranks, mpi_version, mpi_subversion);
+ #endif
++    papiInfo();
+     }
  #endif
      return rank;
- }
 """
         # }}}
         try:

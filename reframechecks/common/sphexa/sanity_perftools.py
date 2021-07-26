@@ -14,7 +14,7 @@ import sphexa.sanity as sphs
 class perftools_hooks(rfm.RegressionMixin):
     # {{{ sanity patterns
     # {{{ patrun_version
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def patrun_version(self):
         '''Checks tool's version:
 
@@ -39,7 +39,7 @@ class perftools_hooks(rfm.RegressionMixin):
 
     # {{{ regex functions
     # {{{ patrun: number of compute nodes
-    @rfm.run_before('performance')
+    @run_before('performance')
     def patrun_num_of_compute_nodes(self):
         '''Extract the number of compute nodes to compute averages
 
@@ -59,7 +59,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ perftools-lite: Memory
-    @rfm.run_before('performance')
+    @run_before('performance')
     def perftools_lite_memory(self):
         '''
           # 20.10.0 / AMD
@@ -78,7 +78,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: table Wall Clock Time, Memory
-    @rfm.run_before('performance')
+    @run_before('performance')
     def patrun_walltime_and_memory(self):
         '''This table shows total wall clock time for the ranks with the
         maximum, mean, and minimum time, as well as the average across ranks.
@@ -142,7 +142,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: table Memory Bandwidth by Numanode
-    @rfm.run_before('performance')
+    @run_before('performance')
     def patrun_memory_bw(self):
         '''This table shows memory traffic to local and remote memory for numa
         nodes, taking for each numa node the maximum value across nodes.
@@ -209,7 +209,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: table HW Performance Counter
-    @rfm.run_before('performance')
+    @run_before('performance')
     def patrun_hwpc(self):
         '''This table shows HW performance counter data for the whole program,
         averaged across ranks or threads, as applicable.
@@ -261,7 +261,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: table energy and power usage
-    @rfm.run_before('performance')
+    @run_before('performance')
     def patrun_energy_power(self):
         '''This table shows HW performance counter data for the whole program,
         averaged across ranks or threads, as applicable.
@@ -305,7 +305,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: table Profile by Function
-    @rfm.run_before('performance')
+    @run_before('performance')
     def patrun_samples(self):
         '''Elapsed time (in samples) reported by the tool:
 
@@ -328,7 +328,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: hotspot1
-    @rfm.run_after('sanity')
+    @run_after('sanity')
     def patrun_hotspot1(self):
         regex = (r'^Table \d+:  Profile by Group, Function, and Line.*\n'
                  r'(.*\n){7}\s+.*Total\n(.*\n){3}(\|)+\s+(?P<pct>\S+)%.*\|\s+'
@@ -351,7 +351,7 @@ class perftools_hooks(rfm.RegressionMixin):
     # }}}
 
     # {{{ patrun: hotspot1 MPI
-    @rfm.run_after('sanity')
+    @run_after('sanity')
     def patrun_hotspot1_mpi(self):
         '''
 
@@ -394,7 +394,7 @@ class perftools_hooks(rfm.RegressionMixin):
 # TODO: rpt from sqpatch.exe+5046-0s/rpt-files/RUNTIME.rpt
 
     # {{{ patrun: imbalance
-    @rfm.run_after('sanity')
+    @run_after('sanity')
     def patrun_imbalance(self):
         # {{{
         '''Load imbalance from csv report
@@ -682,7 +682,7 @@ class perftools_hooks(rfm.RegressionMixin):
 #         self.perf_patterns = sn.evaluate(sphs.basic_perf_patterns(self))
 
 # {{{ --- 2
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_tool_perf_patterns(self):
         '''More perf_patterns for the tool
 
@@ -762,12 +762,12 @@ class perftools_hooks(rfm.RegressionMixin):
 
     # {{{ performance reference
     # --- 1
-#     @rfm.run_before('performance')
+#     @run_before('performance')
 #     def set_basic_reference(self):
 #         self.reference = sn.evaluate(sphs.basic_reference_scoped_d(self))
 
     # {{{ --- 2
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_tool_reference(self):
         ref = ScopedDict()
         # first, copy the existing self.reference (if any):
