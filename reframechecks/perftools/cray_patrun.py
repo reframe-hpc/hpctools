@@ -1,4 +1,4 @@
-# Copyrigh 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -58,7 +58,7 @@ class SphExa_PatRun_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code,
         self.executable = self.tool
         self.target_executable = './mpi+omp'
         # self.variables = {
-        #     # libdwarf.so missing for xf_ap2:
+        #     # libdwarf.so missing for xf_ap2: Cray CASE #283449
         #     'LD_LIBRARY_PATH': '/opt/cray/pe/lib64:$LD_LIBRARY_PATH',
         # }
         # -r: generates a report upon successful execution
