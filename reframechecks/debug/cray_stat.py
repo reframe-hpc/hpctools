@@ -99,7 +99,7 @@ class SphExa_STAT_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
 
     # {{{ hooks
     # {{{ set_hang
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_hang(self):
         source_file = 'include/sph/totalEnergy.hpp'
         die = '60'
@@ -120,7 +120,7 @@ class SphExa_STAT_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
     # }}}
 
     # {{{ set_tool
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tool(self):
         self.executable_opts += ['& #']
         # FIXME: will default to: '& # -n 50 -s 2'

@@ -211,7 +211,7 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
 
     # {{{ hooks
     # {{{ set_crash
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_crash(self):
         # line81: MPI_Allreduce(...)
         source_file = 'include/sph/totalEnergy.hpp'
@@ -230,7 +230,7 @@ class SphExa_Atp_Check(rfm.RegressionTest, hooks.setup_pe, hooks.setup_code):
     # }}}
 
     # {{{ get_core_filename
-# todo    @rfm.run_before('sanity')
+# todo    @run_before('sanity')
 # todo    def get_core_filename(self):
 # todo        '''
 # todo        Retrieving core filenames for postprocessing with gdb:

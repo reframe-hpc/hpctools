@@ -44,7 +44,7 @@ class setup_pe(rfm.RegressionMixin):
         # src_files_remove.remove('src')
         # sed_ifdef = (r'"s-#include \"cuda/sph.cuh\"-#ifdef USE_CUDA\n'
         #              r'#include \"cuda/sph.cuh\"\n#endif-"')
-        if self.current_environ.name != 'PrgEnv-nvidia':
+        if self.current_environ.name not in ['PrgEnv-nvidia', 'PrgEnv-pgi']:
             self.prebuild_cmds += [
                 'module load cray-mpich',
                 'module load cray-libsci',
@@ -102,7 +102,8 @@ class setup_pe(rfm.RegressionMixin):
             'PrgEnv-pgi': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
                            '-DUSE_MPI', '-DNDEBUG', '-mp'],
             'PrgEnv-nvidia': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
-                              '-DUSE_MPI', '-DNDEBUG', '-mp',
+                              '-DUSE_MPI', '-DNDEBUG', '-mp', '-w',
+                              '-DUSE_GCC_ATOMICS',
                               '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL=1'],  # -w
             'PrgEnv-aocc': ['-I.', '-I./include', '-std=c++17', '-g', '-O3',
                             '-DUSE_MPI', '-DNDEBUG', '-fopenmp'],
@@ -424,6 +425,7 @@ class setup_pe(rfm.RegressionMixin):
         if (
             self.current_partition.launcher_type.registered_name == "srun"
             and not hasattr(self, "debug_flags")
+            and self.num_tasks <= 2
         ):
             rptf = os.path.join(self.stagedir, self.affinity_rpt)
             # --- slurm output:
@@ -453,14 +455,23 @@ class setup_code(rfm.RegressionMixin):
     @run_before('run')
     def set_cubeside(self):
         # self.modules += ['hwloc']
+        # weak scaling:
         total_np = (self.compute_node * self.num_tasks_per_node *
                     self.omp_threads * self.np_per_c)
+        # strong scaling:
+        # total_np = (1 * self.num_tasks_per_node *
+        #             self.omp_threads * self.np_per_c)
+        # = 2 * 64 * 1e4
+        # SphExa_Timers_Check_100_8_10000_0 nLocalParticles 118800
+        # SphExa_Timers_Check_100_4_10000_0 nLocalParticles 216000
+        # SphExa_Timers_Check_100_2_10000_0 nLocalParticles 388800
+        # SphExa_Timers_Check_100_1_10000_0 nLocalParticles 699840
         # TODO: larger
         # total_np = (self.num_tasks_per_node * self.num_cpus_per_task *
         #             self.compute_node * self.np_per_c)
         self.cubeside = int(pow(total_np, 1 / 3))
         self.executable_opts += [f"-n {self.cubeside}", f"-s {self.steps}"]
-        if self.current_environ.name != 'PrgEnv-nvidia':
+        if self.current_environ.name not in ['PrgEnv-nvidia', 'PrgEnv-pgi']:
             self.prerun_cmds += [
                 'module load cray-mpich',
                 'module load cray-libsci',
