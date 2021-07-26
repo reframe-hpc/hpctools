@@ -55,8 +55,11 @@ class SphExa_Scalasca_Profiling_Check(rfm.RegressionTest, hooks.setup_pe,
     # }}}
     steps = parameter([4])
     compute_node = parameter([1])  # standard vampir license up to 256
-    # compute_node = parameter([100, 200, 300, 400, 500])
     np_per_c = parameter([1e4])
+    # weak scaling:
+    # steps = parameter([25])
+    # compute_node = parameter([1, 2, 4, 8, 16, 32])
+    # np_per_c = parameter([2e5])
     cycles = parameter([5000000])
     # module_info = parameter(util.find_modules('Score-P/7'))
     scorep_flags = variable(bool, value=True)
