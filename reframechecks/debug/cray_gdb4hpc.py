@@ -107,7 +107,7 @@ class SphExa_Gdb4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
     #       > --args: '' are ignored, use "" instead
     # }}}
     # {{{ setup_tool
-    @rfm.run_before('run')
+    @run_before('run')
     def setup_tool(self):
         # {{{ TODO: remove this when cpuinfo is merged
         cpf = self.current_partition.fullname  # cpf=dom:gpu
@@ -221,7 +221,7 @@ class SphExa_Gdb4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
     # }}}
 
     # {{{ set_launcher
-    @rfm.run_before('run')
+    @run_before('run')
     def set_launcher(self):
         # The job launcher has to be changed because
         # the tool can be called without srun

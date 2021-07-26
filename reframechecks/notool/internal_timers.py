@@ -1,4 +1,4 @@
-# Copyrigh 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2019-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # HPCTools Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -20,12 +20,22 @@ class SphExa_Timers_Check(rfm.RegressionTest, hooks.setup_pe,
     steps = parameter([0])
     compute_node = parameter([1])
     np_per_c = parameter([1e4])
+    # memory usage:
+    # steps = parameter([1])
+    # compute_node = parameter([1])
+    # np_per_c = parameter([1e4, 2e4, 4e4, 6e4, 8e4,
+    #                       1e5, 2e5, 4e5, 6e5, 8e5, 1e6, 2e6])
+    # weak scaling:
+    # steps = parameter([50])
+    # compute_node = parameter([1, 2, 4, 8, 16, 32])
+    # np_per_c = parameter([3e5])
 
     def __init__(self):
         # {{{ pe
         self.descr = 'Tool validation'
         self.valid_prog_environs = [
             'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-cray',
+            'PrgEnv-nvidia',
             'PrgEnv-aocc', 'cpeAMD', 'cpeCray', 'cpeGNU', 'cpeIntel']
         self.valid_systems = [
             'dom:mc', 'dom:gpu', 'daint:mc', 'daint:gpu',
@@ -37,7 +47,7 @@ class SphExa_Timers_Check(rfm.RegressionTest, hooks.setup_pe,
 
         # {{{ run
         self.testname = 'sedov'
-        self.time_limit = '10m'
+        self.time_limit = '20m'
         # self.executable = 'mpi+omp'
         # }}}
 

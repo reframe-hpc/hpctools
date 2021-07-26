@@ -49,6 +49,7 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
     steps = parameter([0])  # overhead is high -> 0 is recommended
     compute_node = parameter([1])
     np_per_c = parameter([1e2])  # overhead is high -> small is recommended
+    debug_flags = variable(bool, value=True)
 
     def __init__(self):
         # {{{ pe
@@ -138,7 +139,7 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
 
     # {{{ hooks
     # {{{ set_launcher
-    @rfm.run_before('run')
+    @run_before('run')
     def set_launcher(self):
         # The job launcher has to be changed because
         # the tool can be called without srun
@@ -146,7 +147,7 @@ class SphExa_Valgrind4hpc_Check(rfm.RegressionTest, hooks.setup_pe,
     # }}}
 
     # {{{ set_opts
-    @rfm.run_before('run')
+    @run_before('run')
     def set_opts(self):
         self.tool_opts = (
             f' -n{self.num_tasks}'
