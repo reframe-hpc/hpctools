@@ -115,7 +115,8 @@ class setup_pe(rfm.RegressionMixin):
         mpicxx = self._current_environ.cxx
         # {{{ scorep/scalasca
         if hasattr(self, 'scorep_flags') and self.scorep_flags:
-            mpicxx = ('scorep --mpp=mpi --nocompiler '
+            # mpicxx = ('scorep --mpp=mpi --nocompiler '
+            mpicxx = ('scorep --mpp=mpi --user --nocompiler '
                       f'{self._current_environ.cxx} '
                       '-I$CRAY_MPICH_DIR/include')
         # }}}
@@ -160,6 +161,7 @@ class setup_pe(rfm.RegressionMixin):
             'eiger:mc': 'SMS=',
             'pilatus:mc': 'SMS=',
             'puthi:mc': 'SMS=',
+            'archer2:compute': 'SMS=',
         }
         partname = self.current_partition.fullname
         gpu_compute_capability = self.gpu_compute_capability[partname]
@@ -202,6 +204,13 @@ class setup_pe(rfm.RegressionMixin):
                     'num_cpus_per_socket': 20, 'num_sockets': 2,
                     'num_cores': 20, 'num_cores_per_socket': 10,
                     'num_numa_nodes': 2, 'num_cores_per_numa_node': 10,
+                    'gpu': 'nogpu',
+                },
+                'archer2:compute': {
+                    'arch': 'zen2', 'num_cpus': 256, 'num_cpus_per_core': 2,
+                    'num_cpus_per_socket': 128, 'num_sockets': 2,
+                    'num_cores': 128, 'num_cores_per_socket': 64,
+                    'num_numa_nodes': 8, 'num_cores_per_numa_node': 16,
                     'gpu': 'nogpu',
                 },
                 'eiger:mc': {
@@ -395,7 +404,7 @@ class setup_pe(rfm.RegressionMixin):
     # }}}
 
     # {{{ bits_from_string_hpctools: (affinity_hostlist)
-    @sn.sanity_function
+    @deferrable
     def bits_from_string_hpctools(self, mask):
         ret = []
         mask_int = int(mask, 0)

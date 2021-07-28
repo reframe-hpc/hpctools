@@ -8,11 +8,12 @@ import json
 import cxxfilt
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.fields import ScopedDict
 
 
 # {{{ sanity_function: scorep_version / scorep_assert_version
-@sn.sanity_function
+@deferrable
 def scorep_version(obj):
     '''Checks tool's version:
 
@@ -27,7 +28,7 @@ def scorep_version(obj):
     return version
 
 
-@sn.sanity_function
+@deferrable
 def scorep_assert_version(obj):
     '''Checks tool's version:
 
@@ -66,7 +67,7 @@ def scorep_assert_eq(obj, title, regex):
     return TorF
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_papi_support(obj):
     '''Checks tool's configuration (papi support)
 
@@ -79,7 +80,7 @@ def scorep_info_papi_support(obj):
     return scorep_assert_eq(obj, 'scorep_info_papi_support', regex)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_perf_support(obj):
     '''Checks tool's configuration (perf support)
 
@@ -92,7 +93,7 @@ def scorep_info_perf_support(obj):
     return scorep_assert_eq(obj, 'scorep_info_perf_support', regex)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_unwinding_support(obj):
     '''Checks tool's configuration (libunwind support)
 
@@ -105,7 +106,7 @@ def scorep_info_unwinding_support(obj):
     return scorep_assert_eq(obj, 'scorep_info_unwinding_support', regex)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_cuda_support(obj):
     '''Checks tool's configuration (Cuda support)
 
@@ -120,7 +121,7 @@ def scorep_info_cuda_support(obj):
 
 
 # {{{ --- profiling:
-@sn.sanity_function
+@deferrable
 def scorep_elapsed(obj):
     '''Typical performance report from the tool (profile.cubex)
 
@@ -144,7 +145,7 @@ def scorep_elapsed(obj):
     return sn.round(result / n_procs, 4)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_mpi_pct(obj):
     '''Reports MPI % measured by the tool
 
@@ -154,11 +155,12 @@ def scorep_mpi_pct(obj):
          MPI    428,794    59,185 215,094   74.72    23.0  1262.56  MPI
                                                      ****
     '''
-    regex = r'^\s+MPI(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+MPI'
+    # regex = r'^\s+MPI(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+MPI'
+    regex = r'^\s+MPI.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+MPI'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_usr_pct(obj):
     '''Reports USR % measured by the tool
 
@@ -168,11 +170,12 @@ def scorep_usr_pct(obj):
          USR    724,140 1,125,393 667,740  226.14    69.6   200.94  USR
                                                      ****
     '''
-    regex = r'^\s+USR(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+USR'
+    # regex = r'^\s+USR(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+USR'
+    regex = r'^\s+USR.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+USR'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_com_pct(obj):
     '''Reports COM % measured by the tool
 
@@ -182,11 +185,12 @@ def scorep_com_pct(obj):
          COM      4,680 1,019,424     891  303.17    12.0         297.39  COM
                                                      ****
     '''
-    regex = r'^\s+COM(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+COM'
+    # regex = r'^\s+COM(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+COM'
+    regex = r'^\s+COM.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+COM'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_omp_pct(obj):
     '''Reports OMP % measured by the tool
 
@@ -196,11 +200,12 @@ def scorep_omp_pct(obj):
          OMP 40,739,286 3,017,524 111,304 2203.92    85.4         730.37  OMP
                                                      ****
     '''
-    regex = r'^\s+OMP(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+OMP'
+    # regex = r'^\s+OMP(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+OMP'
+    regex = r'^\s+OMP.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+OMP'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_top1_name(obj):
     '''Reports demangled name of top1 function name, for instance:
 
@@ -221,7 +226,7 @@ def scorep_top1_name(obj):
     return ('% (' + result.split('<')[0] + ')')
 
 
-@sn.sanity_function
+@deferrable
 def scorep_top1_tracebuffersize(obj):
     '''Reports max_buf[B] for top1 function
 
@@ -250,7 +255,7 @@ def scorep_top1_tracebuffersize(obj):
     return result
 
 
-@sn.sanity_function
+@deferrable
 def scorep_top1_tracebuffersize_name(obj):
     '''Reports function name for top1 (max_buf[B]) function
     '''
@@ -265,7 +270,7 @@ def scorep_top1_tracebuffersize_name(obj):
     return result
 
 
-@sn.sanity_function
+@deferrable
 def scorep_exclusivepct_energy(obj):
     '''Reports % of elapsed time (exclusive) for MomentumAndEnergy function
     (small scale job)
@@ -307,7 +312,7 @@ def scorep_exclusivepct_energy(obj):
     return result
 
 
-@sn.sanity_function
+@deferrable
 def scorep_inclusivepct_energy(obj):
     '''Reports % of elapsed time (inclusive) for MomentumAndEnergy function
     (small scale job)
@@ -342,7 +347,7 @@ def scorep_inclusivepct_energy(obj):
 
 
 # {{{ --- tracing:
-@sn.sanity_function
+@deferrable
 def program_begin_count(obj):
     '''Reports the number of ``PROGRAM_BEGIN`` in the otf2 trace file
     '''
@@ -351,7 +356,7 @@ def program_begin_count(obj):
     return pg_begin_count
 
 
-@sn.sanity_function
+@deferrable
 def program_end_count(obj):
     '''Reports the number of ``PROGRAM_END`` in the otf2 trace file
     '''
@@ -360,7 +365,7 @@ def program_end_count(obj):
     return pg_end_count
 
 
-@sn.sanity_function
+@deferrable
 def ru_maxrss_rk0(obj):
     '''Reports the ``maximum resident set size``
     '''
@@ -370,7 +375,7 @@ def ru_maxrss_rk0(obj):
     return maxrss_rk0
 
 
-@sn.sanity_function
+@deferrable
 def ipc_rk0(obj):
     '''Reports the ``IPC`` (instructions per cycle) for rank 0
     '''
