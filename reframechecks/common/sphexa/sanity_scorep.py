@@ -120,6 +120,97 @@ def scorep_info_cuda_support(obj):
 # }}}
 
 
+# {{{ cube_dump
+@deferrable
+def cube_dump(self, region):
+    '''Reports timings (in seconds) using the timer from the tool
+
+    .. code-block::
+
+      # ...
+    '''
+# cube_stat -m time -% remap.cubex # -p = pretty-print
+# cube::Metric   Routine       Count       Sum    Mean   Variance  Minimum...
+#                    Quartile 25       Median    Quartile 75      Maximum
+# time INCL(mpi+omp+cuda)     24 1096.4 45.6  4054.3 26.8  26.8 28.1 46.2 252.4
+# time   EXCL(mpi+omp+cuda)   24    1.2  0.0     0.0 -0.0  -0.0  0.0  0.0   0.6
+# time   LEAF(MPI_Init)       24    0.0  0.0     0.0  0.0   0.0  0.0  0.0   0.0
+# time   INCL(domain.sync.jg) 24  479.7 19.9    46.6 17.9  17.9 17.9 17.9  42.2
+# -------------------------------------------------------------------------^^^^
+# NOTE: use 'own root percent' in cube-gui
+#
+#  1 # domain.sync.jg(id=5
+#  2 # updateTasks.jg(id=96
+#  3 # FindNeighbors.jg(id=100
+#  4 # Density.jg(id=101
+#  5 # EquationOfState.jg(id=102
+#  6 # mpi.synchronizeHalos.jg(id=106
+#  7 # IAD.jg(id=107
+#  8 # mpi.synchronizeHalos.jg(id=108
+#  9 # MomentumEnergyIAD.jg(id=109
+# 10 # Timestep.jg(id=110
+# 11 # UpdateQuantities.jg(id=118
+# 12 # EnergyConservation.jg(id=122
+# 13 # UpdateSmoothingLength.jg(id=127
+# 14 # !$omp parallel @findNeighborsSfc.hpp:58(id=131
+    if region == 1:
+        regex = r'^time.*\(domain.sync.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^domain.sync.*\(id=(?P<rid>\d+)\)'
+    elif region == 2:
+        regex = r'^time.*\(updateTasks.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^updateTasks.*\(id=(?P<rid>\d+)\)'
+    elif region == 3:
+        regex = r'^time.*\(FindNeighbors.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^FindNeighbors.*\(id=(?P<rid>\d+)\)'
+    elif region == 4:
+        regex = r'^time.*\(Density.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^Density.*\(id=(?P<rid>\d+)\)'
+    elif region == 5:
+        regex = r'^time.*\(EquationOfState.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^EquationOfState.*\(id=(?P<rid>\d+)\)'
+    elif region == 6:
+        regex = r'^time.*\(mpi.synchronizeHalos1.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^mpi.synchronizeHalos1.*\(id=(?P<rid>\d+)\)'
+    elif region == 7:
+        regex = r'^time.*\(IAD.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^IAD.*\(id=(?P<rid>\d+)\)'
+    elif region == 8:
+        regex = r'^time.*\(mpi.synchronizeHalos2.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^mpi.synchronizeHalos2.*\(id=(?P<rid>\d+)\)'
+    elif region == 9:
+        regex = r'^time.*\(MomentumEnergyIAD.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^MomentumEnergyIAD.*\(id=(?P<rid>\d+)\)'
+    elif region == 10:
+        regex = r'^time.*\(Timestep.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^Timestep.*\(id=(?P<rid>\d+)\)'
+    elif region == 11:
+        regex = r'^time.*\(UpdateQuantities.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^UpdateQuantities.*\(id=(?P<rid>\d+)\)'
+    elif region == 12:
+        regex = r'^time.*\(EnergyConservation.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^EnergyConservation.*\(id=(?P<rid>\d+)\)'
+    elif region == 13:
+        regex = r'^time.*\(UpdateSmoothingLength.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^UpdateSmoothingLength.*\(id=(?P<rid>\d+)\)'
+    elif region == 14:
+        regex = r'^time.*\(.*findNeighborsSfc.hpp:\d+\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'findNeighborsSfc.hpp:\d+\(id=(?P<rid>\d+)\)'
+    else:
+        raise ValueError('unknown region in cube_dump sanity_function')
+
+    rpt = os.path.join(self.stagedir, 'remap.cubex.csv')
+    # cube_stat: Max is what we want
+    return sn.round(sn.extractsingle(regex, rpt, 'sec', float), 4)
+    # cube_dump:
+    # regions_filename = os.path.join(self.stagedir, 'remap.cubex.regions')
+    # region_id = sn.extractsingle(regex, regions_filename, 'rid')
+    # regex = rf'^{region_id},\d+,(?P<sec>\S+)'
+    # print(f'#### regex={regex} region={region}')
+    # return sn.round(sn.max(sn.extractall(regex, rpt, 'sec', float)), 4)
+    # return sn.round(sn.sum(sn.extractall(regex, rpt, 'sec', float)), 4)
+# }}}
+
+
 # {{{ --- profiling:
 @deferrable
 def scorep_elapsed(obj):

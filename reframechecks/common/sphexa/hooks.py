@@ -116,11 +116,11 @@ class setup_pe(rfm.RegressionMixin):
         # {{{ scorep/scalasca
         if hasattr(self, 'scorep_flags') and self.scorep_flags:
             # mpicxx = ('scorep --mpp=mpi --nocompiler '
+            # --nocompiler: reduces overhead
             mpicxx = ('scorep --mpp=mpi --user --nocompiler '
                       f'{self._current_environ.cxx} '
                       '-I$CRAY_MPICH_DIR/include')
         # }}}
-
         # {{{ debug
         if hasattr(self, 'debug_flags') and self.debug_flags:
             for kk in self.prgenv_flags.keys():
@@ -129,12 +129,19 @@ class setup_pe(rfm.RegressionMixin):
                 tmp_l = [ww.replace("fast", "O0") for ww in tmp_l]
                 self.prgenv_flags[kk] = tmp_l.copy()
         # }}}
-
         # {{{ gperftools
         if hasattr(self, 'gperftools_flags') and self.gperftools_flags:
             self.build_system.cxxflags += ['`pkg-config --libs libprofiler`']
         # }}}
-
+        # {{{ semiprof
+        if hasattr(self, 'semiprof_flags') and self.semiprof_flags:
+            self.build_system.cxxflags += [
+                f'-DSEMIPROF -I$EBROOTSEMIPROF/include"',
+                # trick to set ldflags:
+                f'LIB="-L$EBROOTSEMIPROF/lib64 -lsemiprof']
+            # TODO: pkg-config
+            # self.build_system.cxxflags += ['`pkg-config --libs libprofiler`']
+        # }}}
         # {{{ mpip
         if hasattr(self, 'mpip_flags') and self.mpip_flags:
             self.build_system.cxxflags += \
@@ -170,7 +177,8 @@ class setup_pe(rfm.RegressionMixin):
             self.build_system.options = [
                 self.target_executable, f'MPICXX="{mpicxx}"',
                 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
-                "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -g'",
+                "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -O2'",
+                # "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -g'",
                 gpu_compute_capability,
                 # NOTE: self.build_system.cxx is empty
             ]
