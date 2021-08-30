@@ -7,10 +7,11 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
+from reframe.core.deferrable import deferrable, _DeferredExpression
 
 
 # {{{ sanity_function: date as timer
-@sn.sanity_function
+@deferrable
 def elapsed_time_from_date(self):
     '''Reports elapsed time in seconds using the linux date command:
 
@@ -34,7 +35,7 @@ def elapsed_time_from_date(self):
 
 
 # {{{ seconds_timers
-@sn.sanity_function
+@deferrable
 def seconds_timers(self, region):
     '''Reports timings (in seconds) using the internal timer from the code
 
@@ -87,7 +88,7 @@ def seconds_timers(self, region):
 
 # {{{ sanity_function: internal timers
 # @property
-@sn.sanity_function
+@deferrable
 def seconds_elaps(self):
     '''Reports elapsed time in seconds using the internal timer from the code
 
@@ -107,35 +108,35 @@ def seconds_elaps(self):
 
 
 # {{{ sanity_function: internal timers %
-@sn.sanity_function
+@deferrable
 def pctg_MomentumEnergyIAD(obj):
     '''reports: * %MomentumEnergyIAD: 30.15 %'''
     return sn.round((100 * seconds_timers(obj, 8) / seconds_elaps(obj)), 2)
     # return sn.round((100 * seconds_energ(obj) / seconds_elaps(obj)), 2)
 
 
-@sn.sanity_function
+@deferrable
 def pctg_Timestep(obj):
     '''reports: * %Timestep: 16.6 %'''
     return sn.round((100 * seconds_timers(obj, 9) / seconds_elaps(obj)), 2)
     # return sn.round((100 * seconds_step(obj) / seconds_elaps(obj)), 2)
 
 
-@sn.sanity_function
+@deferrable
 def pctg_mpi_synchronizeHalos(obj):
     '''reports: * %mpi_synchronizeHalos: 12.62 %'''
     return sn.round((100 * seconds_timers(obj, 6) / seconds_elaps(obj)), 2)
     # return sn.round((100 * seconds_halos(obj) / seconds_elaps(obj)), 2)
 
 
-@sn.sanity_function
+@deferrable
 def pctg_FindNeighbors(obj):
     '''reports: * %FindNeighbors: 9.8 %'''
     return sn.round((100 * seconds_timers(obj, 3) / seconds_elaps(obj)), 2)
     # return sn.round((100 * seconds_neigh(obj) / seconds_elaps(obj)), 2)
 
 
-@sn.sanity_function
+@deferrable
 def pctg_IAD(obj):
     '''reports: * %IAD: 17.36 %'''
     return sn.round((100 * seconds_timers(obj, 7) / seconds_elaps(obj)), 2)

@@ -7,11 +7,12 @@ import os
 import cxxfilt
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.fields import ScopedDict
 
 
 # {{{ --- scorep.score: scalasca_mpi_pct / scalasca_omp_pct
-@sn.sanity_function
+@deferrable
 def scalasca_mpi_pct(obj):
     '''MPI % reported by Scalasca (scorep.score, notice no hits column)
 
@@ -27,7 +28,7 @@ def scalasca_mpi_pct(obj):
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scalasca_omp_pct(obj):
     '''OpenMP % reported by Scalasca (scorep.score, notice no hits column)
 
@@ -45,7 +46,7 @@ def scalasca_omp_pct(obj):
 
 
 # {{{ trace.stat: rpt_trace_stats_mpi
-@sn.sanity_function
+@deferrable
 def rpt_tracestats_mpi(obj):
     '''Reports MPI statistics (mpi_latesender, mpi_latesender_wo,
     mpi_latereceiver, mpi_wait_nxn, mpi_nxn_completion) by reading the stat_rpt
@@ -82,7 +83,7 @@ def rpt_tracestats_mpi(obj):
 
 
 # {{{ trace.stat: rpt_trace_stats_omp
-@sn.sanity_function
+@deferrable
 def rpt_tracestats_omp(obj):
     '''Reports OpenMP statistics by reading the trace.stat file:
     - omp_ibarrier_wait: OMP Wait at Implicit Barrier (sec) in Cube GUI

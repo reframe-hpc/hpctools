@@ -8,11 +8,12 @@ import json
 import cxxfilt
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.fields import ScopedDict
 
 
 # {{{ sanity_function: scorep_version / scorep_assert_version
-@sn.sanity_function
+@deferrable
 def scorep_version(obj):
     '''Checks tool's version:
 
@@ -27,7 +28,7 @@ def scorep_version(obj):
     return version
 
 
-@sn.sanity_function
+@deferrable
 def scorep_assert_version(obj):
     '''Checks tool's version:
 
@@ -66,7 +67,7 @@ def scorep_assert_eq(obj, title, regex):
     return TorF
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_papi_support(obj):
     '''Checks tool's configuration (papi support)
 
@@ -79,7 +80,7 @@ def scorep_info_papi_support(obj):
     return scorep_assert_eq(obj, 'scorep_info_papi_support', regex)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_perf_support(obj):
     '''Checks tool's configuration (perf support)
 
@@ -92,7 +93,7 @@ def scorep_info_perf_support(obj):
     return scorep_assert_eq(obj, 'scorep_info_perf_support', regex)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_unwinding_support(obj):
     '''Checks tool's configuration (libunwind support)
 
@@ -105,7 +106,7 @@ def scorep_info_unwinding_support(obj):
     return scorep_assert_eq(obj, 'scorep_info_unwinding_support', regex)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_info_cuda_support(obj):
     '''Checks tool's configuration (Cuda support)
 
@@ -119,8 +120,99 @@ def scorep_info_cuda_support(obj):
 # }}}
 
 
+# {{{ cube_dump
+@deferrable
+def cube_dump(self, region):
+    '''Reports timings (in seconds) using the timer from the tool
+
+    .. code-block::
+
+      # ...
+    '''
+# cube_stat -m time -% remap.cubex # -p = pretty-print
+# cube::Metric   Routine       Count       Sum    Mean   Variance  Minimum...
+#                    Quartile 25       Median    Quartile 75      Maximum
+# time INCL(mpi+omp+cuda)     24 1096.4 45.6  4054.3 26.8  26.8 28.1 46.2 252.4
+# time   EXCL(mpi+omp+cuda)   24    1.2  0.0     0.0 -0.0  -0.0  0.0  0.0   0.6
+# time   LEAF(MPI_Init)       24    0.0  0.0     0.0  0.0   0.0  0.0  0.0   0.0
+# time   INCL(domain.sync.jg) 24  479.7 19.9    46.6 17.9  17.9 17.9 17.9  42.2
+# -------------------------------------------------------------------------^^^^
+# NOTE: use 'own root percent' in cube-gui
+#
+#  1 # domain.sync.jg(id=5
+#  2 # updateTasks.jg(id=96
+#  3 # FindNeighbors.jg(id=100
+#  4 # Density.jg(id=101
+#  5 # EquationOfState.jg(id=102
+#  6 # mpi.synchronizeHalos.jg(id=106
+#  7 # IAD.jg(id=107
+#  8 # mpi.synchronizeHalos.jg(id=108
+#  9 # MomentumEnergyIAD.jg(id=109
+# 10 # Timestep.jg(id=110
+# 11 # UpdateQuantities.jg(id=118
+# 12 # EnergyConservation.jg(id=122
+# 13 # UpdateSmoothingLength.jg(id=127
+# 14 # !$omp parallel @findNeighborsSfc.hpp:58(id=131
+    if region == 1:
+        regex = r'^time.*\(domain.sync.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^domain.sync.*\(id=(?P<rid>\d+)\)'
+    elif region == 2:
+        regex = r'^time.*\(updateTasks.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^updateTasks.*\(id=(?P<rid>\d+)\)'
+    elif region == 3:
+        regex = r'^time.*\(FindNeighbors.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^FindNeighbors.*\(id=(?P<rid>\d+)\)'
+    elif region == 4:
+        regex = r'^time.*\(Density.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^Density.*\(id=(?P<rid>\d+)\)'
+    elif region == 5:
+        regex = r'^time.*\(EquationOfState.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^EquationOfState.*\(id=(?P<rid>\d+)\)'
+    elif region == 6:
+        regex = r'^time.*\(mpi.synchronizeHalos1.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^mpi.synchronizeHalos1.*\(id=(?P<rid>\d+)\)'
+    elif region == 7:
+        regex = r'^time.*\(IAD.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^IAD.*\(id=(?P<rid>\d+)\)'
+    elif region == 8:
+        regex = r'^time.*\(mpi.synchronizeHalos2.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^mpi.synchronizeHalos2.*\(id=(?P<rid>\d+)\)'
+    elif region == 9:
+        regex = r'^time.*\(MomentumEnergyIAD.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^MomentumEnergyIAD.*\(id=(?P<rid>\d+)\)'
+    elif region == 10:
+        regex = r'^time.*\(Timestep.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^Timestep.*\(id=(?P<rid>\d+)\)'
+    elif region == 11:
+        regex = r'^time.*\(UpdateQuantities.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^UpdateQuantities.*\(id=(?P<rid>\d+)\)'
+    elif region == 12:
+        regex = r'^time.*\(EnergyConservation.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^EnergyConservation.*\(id=(?P<rid>\d+)\)'
+    elif region == 13:
+        regex = r'^time.*\(UpdateSmoothingLength.jg\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'^UpdateSmoothingLength.*\(id=(?P<rid>\d+)\)'
+    elif region == 14:
+        regex = r'^time.*\(.*findNeighborsSfc.hpp:\d+\),(\S+,){8}(?P<sec>\S+)'
+        # regex = r'findNeighborsSfc.hpp:\d+\(id=(?P<rid>\d+)\)'
+    else:
+        raise ValueError('unknown region in cube_dump sanity_function')
+
+    rpt = os.path.join(self.stagedir, 'remap.cubex.csv')
+    # cube_stat: Max is what we want
+    return sn.round(sn.extractsingle(regex, rpt, 'sec', float), 4)
+    # cube_dump:
+    # regions_filename = os.path.join(self.stagedir, 'remap.cubex.regions')
+    # region_id = sn.extractsingle(regex, regions_filename, 'rid')
+    # regex = rf'^{region_id},\d+,(?P<sec>\S+)'
+    # print(f'#### regex={regex} region={region}')
+    # return sn.round(sn.max(sn.extractall(regex, rpt, 'sec', float)), 4)
+    # return sn.round(sn.sum(sn.extractall(regex, rpt, 'sec', float)), 4)
+# }}}
+
+
 # {{{ --- profiling:
-@sn.sanity_function
+@deferrable
 def scorep_elapsed(obj):
     '''Typical performance report from the tool (profile.cubex)
 
@@ -144,7 +236,7 @@ def scorep_elapsed(obj):
     return sn.round(result / n_procs, 4)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_mpi_pct(obj):
     '''Reports MPI % measured by the tool
 
@@ -154,11 +246,12 @@ def scorep_mpi_pct(obj):
          MPI    428,794    59,185 215,094   74.72    23.0  1262.56  MPI
                                                      ****
     '''
-    regex = r'^\s+MPI(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+MPI'
+    # regex = r'^\s+MPI(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+MPI'
+    regex = r'^\s+MPI.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+MPI'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_usr_pct(obj):
     '''Reports USR % measured by the tool
 
@@ -168,11 +261,12 @@ def scorep_usr_pct(obj):
          USR    724,140 1,125,393 667,740  226.14    69.6   200.94  USR
                                                      ****
     '''
-    regex = r'^\s+USR(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+USR'
+    # regex = r'^\s+USR(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+USR'
+    regex = r'^\s+USR.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+USR'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_com_pct(obj):
     '''Reports COM % measured by the tool
 
@@ -182,11 +276,12 @@ def scorep_com_pct(obj):
          COM      4,680 1,019,424     891  303.17    12.0         297.39  COM
                                                      ****
     '''
-    regex = r'^\s+COM(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+COM'
+    # regex = r'^\s+COM(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+COM'
+    regex = r'^\s+COM.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+COM'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_omp_pct(obj):
     '''Reports OMP % measured by the tool
 
@@ -196,11 +291,12 @@ def scorep_omp_pct(obj):
          OMP 40,739,286 3,017,524 111,304 2203.92    85.4         730.37  OMP
                                                      ****
     '''
-    regex = r'^\s+OMP(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+OMP'
+    # regex = r'^\s+OMP(\s+\S+){4}\s+(?P<pct>\d+\D\d+)\s+\d+(\D\d+)?\s+OMP'
+    regex = r'^\s+OMP.*\s(?P<pct>\d+\D\d+).*\d+\D\d+\s+OMP'
     return sn.extractsingle(regex, obj.rpt_score, 'pct', float)
 
 
-@sn.sanity_function
+@deferrable
 def scorep_top1_name(obj):
     '''Reports demangled name of top1 function name, for instance:
 
@@ -221,7 +317,7 @@ def scorep_top1_name(obj):
     return ('% (' + result.split('<')[0] + ')')
 
 
-@sn.sanity_function
+@deferrable
 def scorep_top1_tracebuffersize(obj):
     '''Reports max_buf[B] for top1 function
 
@@ -250,7 +346,7 @@ def scorep_top1_tracebuffersize(obj):
     return result
 
 
-@sn.sanity_function
+@deferrable
 def scorep_top1_tracebuffersize_name(obj):
     '''Reports function name for top1 (max_buf[B]) function
     '''
@@ -265,7 +361,7 @@ def scorep_top1_tracebuffersize_name(obj):
     return result
 
 
-@sn.sanity_function
+@deferrable
 def scorep_exclusivepct_energy(obj):
     '''Reports % of elapsed time (exclusive) for MomentumAndEnergy function
     (small scale job)
@@ -307,7 +403,7 @@ def scorep_exclusivepct_energy(obj):
     return result
 
 
-@sn.sanity_function
+@deferrable
 def scorep_inclusivepct_energy(obj):
     '''Reports % of elapsed time (inclusive) for MomentumAndEnergy function
     (small scale job)
@@ -342,7 +438,7 @@ def scorep_inclusivepct_energy(obj):
 
 
 # {{{ --- tracing:
-@sn.sanity_function
+@deferrable
 def program_begin_count(obj):
     '''Reports the number of ``PROGRAM_BEGIN`` in the otf2 trace file
     '''
@@ -351,7 +447,7 @@ def program_begin_count(obj):
     return pg_begin_count
 
 
-@sn.sanity_function
+@deferrable
 def program_end_count(obj):
     '''Reports the number of ``PROGRAM_END`` in the otf2 trace file
     '''
@@ -360,7 +456,7 @@ def program_end_count(obj):
     return pg_end_count
 
 
-@sn.sanity_function
+@deferrable
 def ru_maxrss_rk0(obj):
     '''Reports the ``maximum resident set size``
     '''
@@ -370,7 +466,7 @@ def ru_maxrss_rk0(obj):
     return maxrss_rk0
 
 
-@sn.sanity_function
+@deferrable
 def ipc_rk0(obj):
     '''Reports the ``IPC`` (instructions per cycle) for rank 0
     '''

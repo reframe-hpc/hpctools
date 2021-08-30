@@ -115,11 +115,12 @@ class setup_pe(rfm.RegressionMixin):
         mpicxx = self._current_environ.cxx
         # {{{ scorep/scalasca
         if hasattr(self, 'scorep_flags') and self.scorep_flags:
-            mpicxx = ('scorep --mpp=mpi --nocompiler '
+            # mpicxx = ('scorep --mpp=mpi --nocompiler '
+            # --nocompiler: reduces overhead
+            mpicxx = ('scorep --mpp=mpi --user --nocompiler '
                       f'{self._current_environ.cxx} '
                       '-I$CRAY_MPICH_DIR/include')
         # }}}
-
         # {{{ debug
         if hasattr(self, 'debug_flags') and self.debug_flags:
             for kk in self.prgenv_flags.keys():
@@ -128,12 +129,19 @@ class setup_pe(rfm.RegressionMixin):
                 tmp_l = [ww.replace("fast", "O0") for ww in tmp_l]
                 self.prgenv_flags[kk] = tmp_l.copy()
         # }}}
-
         # {{{ gperftools
         if hasattr(self, 'gperftools_flags') and self.gperftools_flags:
             self.build_system.cxxflags += ['`pkg-config --libs libprofiler`']
         # }}}
-
+        # {{{ semiprof
+        if hasattr(self, 'semiprof_flags') and self.semiprof_flags:
+            self.build_system.cxxflags += [
+                f'-DSEMIPROF -I$EBROOTSEMIPROF/include"',
+                # trick to set ldflags:
+                f'LIB="-L$EBROOTSEMIPROF/lib64 -lsemiprof']
+            # TODO: pkg-config
+            # self.build_system.cxxflags += ['`pkg-config --libs libprofiler`']
+        # }}}
         # {{{ mpip
         if hasattr(self, 'mpip_flags') and self.mpip_flags:
             self.build_system.cxxflags += \
@@ -160,6 +168,7 @@ class setup_pe(rfm.RegressionMixin):
             'eiger:mc': 'SMS=',
             'pilatus:mc': 'SMS=',
             'puthi:mc': 'SMS=',
+            'archer2:compute': 'SMS=',
         }
         partname = self.current_partition.fullname
         gpu_compute_capability = self.gpu_compute_capability[partname]
@@ -168,7 +177,8 @@ class setup_pe(rfm.RegressionMixin):
             self.build_system.options = [
                 self.target_executable, f'MPICXX="{mpicxx}"',
                 'SRCDIR=.', 'BUILDDIR=.', 'BINDIR=.',
-                "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -g'",
+                "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -O2'",
+                # "NVCCFLAGS='-std=c++17 $(GENCODE_FLAGS) -g'",
                 gpu_compute_capability,
                 # NOTE: self.build_system.cxx is empty
             ]
@@ -202,6 +212,13 @@ class setup_pe(rfm.RegressionMixin):
                     'num_cpus_per_socket': 20, 'num_sockets': 2,
                     'num_cores': 20, 'num_cores_per_socket': 10,
                     'num_numa_nodes': 2, 'num_cores_per_numa_node': 10,
+                    'gpu': 'nogpu',
+                },
+                'archer2:compute': {
+                    'arch': 'zen2', 'num_cpus': 256, 'num_cpus_per_core': 2,
+                    'num_cpus_per_socket': 128, 'num_sockets': 2,
+                    'num_cores': 128, 'num_cores_per_socket': 64,
+                    'num_numa_nodes': 8, 'num_cores_per_numa_node': 16,
                     'gpu': 'nogpu',
                 },
                 'eiger:mc': {
@@ -395,7 +412,7 @@ class setup_pe(rfm.RegressionMixin):
     # }}}
 
     # {{{ bits_from_string_hpctools: (affinity_hostlist)
-    @sn.sanity_function
+    @deferrable
     def bits_from_string_hpctools(self, mask):
         ret = []
         mask_int = int(mask, 0)

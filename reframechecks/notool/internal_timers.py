@@ -17,18 +17,18 @@ import sphexa.hooks as hooks
 @rfm.simple_test
 class SphExa_Timers_Check(rfm.RegressionTest, hooks.setup_pe,
                           hooks.setup_code):
-    steps = parameter([0])
-    compute_node = parameter([1])
-    np_per_c = parameter([1e4])
+    # steps = parameter([0])
+    # compute_node = parameter([1])
+    # np_per_c = parameter([1e4])
     # memory usage:
     # steps = parameter([1])
     # compute_node = parameter([1])
     # np_per_c = parameter([1e4, 2e4, 4e4, 6e4, 8e4,
     #                       1e5, 2e5, 4e5, 6e5, 8e5, 1e6, 2e6])
     # weak scaling:
-    # steps = parameter([50])
-    # compute_node = parameter([1, 2, 4, 8, 16, 32])
-    # np_per_c = parameter([3e5])
+    steps = parameter([25])
+    compute_node = parameter([1, 2, 4, 8, 16, 32])
+    np_per_c = parameter([2e5])
 
     def __init__(self):
         # {{{ pe
@@ -39,7 +39,7 @@ class SphExa_Timers_Check(rfm.RegressionTest, hooks.setup_pe,
             'PrgEnv-aocc', 'cpeAMD', 'cpeCray', 'cpeGNU', 'cpeIntel']
         self.valid_systems = [
             'dom:mc', 'dom:gpu', 'daint:mc', 'daint:gpu',
-            'eiger:mc', 'pilatus:mc'
+            'eiger:mc', 'pilatus:mc', 'archer2:compute',
         ]
         self.maintainers = ['JG']
         self.tags = {'sph', 'hpctools', 'cpu', 'craype'}
