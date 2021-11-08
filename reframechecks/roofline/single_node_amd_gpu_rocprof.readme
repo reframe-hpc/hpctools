@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# ~/R -c single_node_gpu_rocprof.py -n rocprof_roofline -l
+# ~/R -c single_node_gpu_rocprof.py -n rocprof_roofline -r -p PrgEnv-gnu
+
+# HIP_VISIBLE_DEVICES=0 ~/git/HIP.git/samples/1_Utils/hipInfo/hipInfo
+# device#                           0
+# Name:                             Arcturus GL-XL [AMD Instinct MI100]
+
+step=$1
+in=$2
+echo step=$step in=$in
+
+# {{{ build:
+HIPJG=/opt/rocm
+export PATH=$HIPJG/hip/bin:$PATH
+export PATH=$HIPJG/llvm/bin:$PATH
+# $HIPJG/bin/mygpu # gfx908
+# spack load environment-modules
+# source /data/home/jgpiccinal/git/spack.git/opt/spack/linux-sle_hpc15-zen/gcc-7.5.0/environment-modules-5.0.1-bmcer7bmwrtu7z7dqjebn77m3bblf6y2/init/bash
+# module use ~/git/spack.git/share/spack/modules/linux-sle_hpc15-zen
+# module use ~/git/spack.git/share/spack/modules/linux-sle_hpc15-zen2
+# module use /scratch/shared/spack/share/spack/modules/linux-sle_hpc15-zen
+
+# domain/include/cstone/cuda/findneighbors.cu
+# include/sph/cuda/cudaDensity.cu
+# include/sph/cuda/cudaIAD.cu
+# include/sph/cuda/cudaMomentumAndEnergyIAD.cu
+# domain/include/cstone/cuda/gather.cu
+
+if [ "$step" = "1" ] ;then
+hipcc -DUSE_CUDA --offload-arch=gfx908 -fPIC -fgpu-rdc -DNDEBUG -std=c++17 -w \
+-Iinclude -Idomain/include \
+-I$HIPJG/rocthrust/include \
+-I$HIPJG/rocprim/include \
+-c $in
+fi
+
+if [ "$step" = "2" ] ;then
+# module use /scratch/shared/spack/share/spack/modules/linux-sle_hpc15-zen
+# module load openmpi
+# mpicxx --version
+
+OMPI_CXX=clang++ mpicxx --version
+OMPI_CXX=clang++ mpicxx `hipconfig -C` -DUSE_CUDA -DUSE_MPI -fPIC -Idomain/include -Iinclude -DNDEBUG \
+-fopenmp -std=gnu++17 -c src/sedov/sedov.cpp -w \
+-I$HIPJG/hip/include
+fi
+
+# NOTE: done with 'module load openmpi'
+# ls /data/scratch/shared/spack/opt/spack/linux-sle_hpc15-zen/gcc-7.5.0/openmpi-4.1.1-v4rywn7k2dajndpxcxagudjjx2huajwk/lib/pkgconfig
+
+if [ "$step" = "3" ] ;then
+
+hipcc -DNDEBUG -fPIC -shared -dlink \
+cudaDensity.o  cudaIAD.o  cudaMomentumAndEnergyIAD.o  findneighbors.o  gather.o  sedov.o \
+-o device_link.o -fopenmp `pkg-config --libs ompi-cxx` -fgpu-rdc --hip-link
+
+fi
+
+if [ "$step" = "4" ] ;then
+
+OMPI_CXX=clang++ \
+mpicxx `hipconfig -C` -fPIC -Idomain/include -Iinclude -DNDEBUG \
+sedov.o gather.o findneighbors.o cudaDensity.o cudaIAD.o cudaMomentumAndEnergyIAD.o device_link.o \
+-fopenmp -w -o sedov-cuda  -L$HIPJG/hip/lib -lamdhip64
+
+fi
+# }}}
+
+# {{{ run:
+# mpirun -np 1 ./sedov-cuda -s 10 -n 50
+
+# watch -n1 rocm-smi -d 0 --showmeminfo vram
+# watch rocm-smi -d 0 --showmemuse
+
+# HIP_VISIBLE_DEVICES=0 mpirun -np 1 rocprof -i ./rocprof_input_file.txt -o ~/scratch/rocprof.csv ./sedov-cuda -s 1 -n 40
+# HIP_VISIBLE_DEVICES=0 mpirun -np 1 rocprof --basenames on --stats ./sedov-cuda -s 1 -n 40
+
+# spack load rocprofiler-dev@4.3.1 ;HIP_VISIBLE_DEVICES=0 rocprof -i ./pmc12.txt --timestamp on --basenames on ./sedov-cuda -s 0 -n 40
+# HIP_VISIBLE_DEVICES=0 rocprof -i ./pmc1.txt --basenames on --stats ./sedov-cuda -s 0 -n 40
+# HIP_VISIBLE_DEVICES=0 rocprof -i ./pmc2.txt --basenames on --stats ./sedov-cuda -s 0 -n 40
+# }}}
