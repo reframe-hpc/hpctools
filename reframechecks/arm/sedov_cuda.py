@@ -18,6 +18,8 @@ import reframe.utility.sanity as sn
 # ~/TX2 -c sedov_cuda.py -p PrgEnv-arm -n run_sedov_cuda -S mypath=$x -r
 # x=~/DEL/reframe/stage/wombat/A64FX/PrgEnv-arm-A64FX/build_sedov_notool/build/src/sedov
 # ~/A64FX -c sedov_cuda.py -p PrgEnv-arm-A64FX -n run_sedov -S mypath=$x -r
+# x=/scratch/snx3000tds/piccinal/reframe/stage/dom/gpu/PrgEnv-gnu/build_sedov_notool/build/src/sedov
+# ~/R -c sedov_cuda.py -n run -S mypath=$x -p PrgEnv-gnu -r -m cudatoolkit/21.5_11.3 -m gcc/9.3.0
 #{{{ run sedov
 @rfm.simple_test
 class run_sedov_cuda(rfm.RunOnlyRegressionTest):
@@ -29,7 +31,7 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
     use_tool = parameter(['notool'])
     mypath = variable(str, value='.')
     compute_nodes = parameter([1])
-    steps = parameter([0]) # 10
+    steps = parameter([200]) # 10
     # compute_nodes = parameter([0, 1, 2, 4])
     # steps = parameter([13]) # 10
     # compute_nodes = parameter([1, 2, 4, 8, 16])
@@ -118,10 +120,13 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
             total_np = (self.num_tasks * self.num_tasks_per_node *
                         self.num_cpus_per_task * self.np_per_c)
         self.cubeside = int(pow(total_np, 1 / 3))
+        if self.steps == 200:
+            self.cubeside = 50
+
         self.executable_opts = [
             '-n', str(self.cubeside),
             '-s', str(self.steps),
-            '-w', '-1',
+            # '-w', '-1',
         ]
         self.variables = {
             # 'OMP_NUM_THREADS': str(self.num_cpus_per_task),
@@ -137,6 +142,9 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
             # export LD_LIBRARY_PATH=/users/piccinal/easybuild/dom/haswell/software/CubeW/4.6-CrayNvidia-21.09/lib64:$LD_LIBRARY_PATH
         }
         self.job.launcher.options = ['--mpi=pmix', 'numactl', '--interleave=all']
+        if self.current_system.name in {'daint', 'dom'}:
+            self.job.launcher.options = ['numactl', '--interleave=all']
+
 #{{{
         # if self.use_tool = 'Score-P':
 
@@ -181,6 +189,63 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
             sn.assert_found(regex1, self.stdout),
         ])
 
+    #{{{ analytical
+    @run_before('run')
+    def set_compare(self):
+        # print(self.steps, type(self.steps))
+        if self.steps == 200:
+            self.executable_opts += [f'-w', '{self.steps}']
+            self.postrun_cmds += [
+                '# analytical_solution:',
+                'source ~/myvenv_matplotlib/bin/activate',
+                f'ln -s {self.mypath}/../analytical_solutions/sedov_solution/sedov_solution',
+                f'ln -s {self.mypath}/../../../src/analytical_solutions/compare_solutions.py',
+                'python3 ./compare_solutions.py sedov -bf ./sedov_solution '
+                '-n 125000 -sf ./dump_sedov200.txt -cf ./constants.txt -i 200 -np '
+                '--error_rho --error_p --error_vel '
+                # FIXME: add after we move to glass initial model
+                # '--error_u --error_cs '
+            ]
+        else:
+            self.executable_opts += ['-w', '-1']
+
+    # Checking Errors L1 ...
+    # Error L1_rho = 0.15792224703716007
+    # Error L1_u   = 2687361599999999.5
+    # Error L1_p   = 0.19511670163905478
+    # Error L1_vel = 0.12847877073319336
+    # Error L1_cs  = 154556.49990558348
+    # Checked Error L1_rho successfully: 0.15792224703716007 <= 1.0
+    # Checked Error L1_u         failed: 2687361599999999.5 > 1.0
+    # Checked Error L1_p   successfully: 0.19511670163905478 <= 1.0
+    # Checked Error L1_vel successfully: 0.12847877073319336 <= 1.0
+    # Checked Error L1_cs        failed: 154556.49990558348 > 1.0
+    # Writing Errors L1    file [./sedov_errors_L1_0.0673556.dat ]
+    @performance_function('le1', perf_key='L1_rho')
+    def report_rho(self):
+        regex = r'Checked Error L1_rho\s+\S+:\s+(?P<err>\S+)\s+'
+        if self.steps == 200:
+            return sn.round(sn.extractsingle(regex, self.stdout, 'err', float), 6)
+        else:
+            return 0
+
+    @performance_function('le1', perf_key='L1_p')
+    def report_p(self):
+        regex = r'Checked Error L1_p\s+\S+:\s+(?P<err>\S+)\s+'
+        if self.steps == 200:
+            return sn.round(sn.extractsingle(regex, self.stdout, 'err', float), 6)
+        else:
+            return 0
+
+    @performance_function('le1', perf_key='L1_vel')
+    def report_vel(self):
+        regex = r'Checked Error L1_vel\s+\S+:\s+(?P<err>\S+)\s+'
+        if self.steps == 200:
+            return sn.round(sn.extractsingle(regex, self.stdout, 'err', float), 6)
+        else:
+            return 0
+    #}}}
+
     #{{{ performance_function
     @performance_function('s', perf_key='elapsed_date')
     def report_elapsed_date(self):
@@ -197,11 +262,11 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
         sec = sn.extractsingle(regex, self.stdout, 's', float)
         return sn.round(sec, 1)
 
-    @performance_function('n/a', perf_key='compute_nodes')
+    @performance_function('cn', perf_key='compute_nodes')
     def report_cn(self):
         return self.compute_nodes
 
-    @performance_function('n/a', perf_key='cubeside')
+    @performance_function('-n', perf_key='cubeside')
     def report_cubeside(self):
         return self.cubeside
 
@@ -209,7 +274,7 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
     def report_np_per_c(self):
         return self.np_per_c
 
-    @performance_function('n/a', perf_key='steps')
+    @performance_function('-s', perf_key='steps')
     def report_steps(self):
         return self.steps
 
@@ -290,6 +355,7 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
 # ~/Ampere -c sedov_cuda.py -n build_sedov -p PrgEnv-arm$ -r
 # ~/TX2 -c sedov_cuda.py -n build_sedov -p PrgEnv-arm-TX2 -r
 # ~/A64FX -c sedov_cuda.py -n build_sedov -p PrgEnv-arm-A64FX -r
+# ~/R -c sedov_cuda.py -n build -p PrgEnv-gnu -r -m cudatoolkit/21.5_11.3 -m gcc/9.3.0
 #{{{ build
 @rfm.simple_test
 class build_sedov(rfm.CompileOnlyRegressionTest):
@@ -370,11 +436,13 @@ class build_sedov(rfm.CompileOnlyRegressionTest):
             self.executable_name = 'sedov'
         else:
             self.executable_name = 'sedov-cuda'
+
+        #     self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=mpicxx',
         self.build_system.config_opts = [
-            '-DCMAKE_CXX_COMPILER=mpicxx',
+            # '-DCMAKE_CXX_COMPILER=mpicxx',
             '-DCMAKE_CUDA_COMPILER=nvcc',
             '-DBUILD_TESTING=OFF',
-            '-DBUILD_ANALYTICAL=OFF',
+            '-DBUILD_ANALYTICAL=ON',
             '-DSPH_EXA_WITH_HIP=OFF',
             '-DBUILD_RYOANJI=OFF',
             '-DCMAKE_BUILD_TYPE=Release',
@@ -392,6 +460,7 @@ class build_sedov(rfm.CompileOnlyRegressionTest):
 
         self.build_system.make_opts = [
             self.executable_name,
+            'sedov_solution',
             # VERBOSE=1,
         ]
         self.build_system.max_concurrency = 20
