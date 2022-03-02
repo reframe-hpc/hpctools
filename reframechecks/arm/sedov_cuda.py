@@ -386,6 +386,7 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
 
 # x='--module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles'
 # ./R -c sedov_cuda.py -n run_tests -r -S repeat=3 $x -S mypath='../build_with_armpl_notool/build/JG/sbin/performance'
+# dom: ~/R -c sedov_cuda.py -n run_tests -r -m cudatoolkit/21.5_11.3 -m gcc/9.3.0 -S repeat=1 -S mypath='../build_without_armpl_notool/build/JG/sbin/performance'
 #{{{ run_tests
 @rfm.simple_test
 class run_tests(rfm.RunOnlyRegressionTest):
@@ -394,8 +395,10 @@ class run_tests(rfm.RunOnlyRegressionTest):
     mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     repeat = variable(int, value=3)
     compute_nodes = parameter([1])
+    mpi_ranks = parameter([1, 2, 4])
     # compute_nodes = parameter([1])
-    openmp_threads = parameter([1, 2, 4, 6, 8, 12, 16, 24, 48])
+    # openmp_threads = parameter([6])
+    openmp_threads = parameter([1, 2, 4, 8, 12, 24, 32, 40, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
     valid_systems = ['wombat:gpu', 'dom:gpu']
     valid_prog_environs = [
@@ -403,16 +406,39 @@ class run_tests(rfm.RunOnlyRegressionTest):
         'PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-arm-A64FX',
         'PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX',
         'PrgEnv-gnu', 'PrgEnv-gnu-A64FX',
+        'PrgEnv-cray'
     ]
     time_limit = '10m'
     use_multithreading = False
     strict_check = False
 
+    #{{{ skip
+    @run_before('run')
+    def set_skip(self):
+        max_ranks = {
+            #'dom': {'gpu': 12, 'mc': 36},
+            #'daint': {'gpu': 12, 'mc': 36},
+            'wombat': {'neoverse-n1': 1, 'TX2': 2, 'A64FX': 4},
+        }
+        max_threads = {
+            'dom': {'gpu': 12, 'mc': 36},
+            'daint': {'gpu': 12, 'mc': 36},
+            'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
+        }
+        self.skip_if(
+            self.mpi_ranks > max_ranks[self.current_system.name][self.current_partition.name],
+            f'{self.mpi_ranks} > max mpi ranks'
+        )
+        self.skip_if(
+            self.openmp_threads > max_threads[self.current_system.name][self.current_partition.name],
+            f'{self.openmp_threads} > max openmp threads'
+        )
+    #}}}
     #{{{ run
     @run_before('run')
     def set_run(self):
         # sbin/performance
-        self.executable = 'hostname'
+        self.executable = '$HOME/affinity'
 #        self.mypath = '../build_notool/build/JG/sbin/performance'
 #         tests = {
 #             'octree': {'name': f'{self.mypath}/octree_perf', 'ranks': '1'},
@@ -421,9 +447,12 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #             'hilbert': {'name': f'{self.mypath}/hilbert_perf', 'ranks': '1'},
 #         }
         self.prerun_cmds = ['module rm gnu10/10.2.0 binutils/10.2.0']
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = self.openmp_threads
+        self.num_tasks = self.mpi_ranks # 1
+        self.num_tasks_per_node = self.mpi_ranks
+        self.num_cpus_per_task = self.openmp_threads // self.mpi_ranks
+        if self.num_cpus_per_task < 1:
+            self.num_cpus_per_task = 1
+        # print(self.openmp_threads, self.mpi_ranks, self.num_cpus_per_task)
         # self.job.launcher =
         # LauncherWrapper(self.job.launcher, 'time', ['-p'])
         # self.skip_if_no_procinfo()
@@ -434,6 +463,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'OMP_PLACES': 'sockets',
             'OMP_PROC_BIND': 'close',
         }
+        # TODO: if wombat
         self.job.launcher.options = ['--mpi=pmix', 'numactl', '--interleave=all']
         #if self.current_system.name in {'daint', 'dom'}:
         #    self.job.launcher.options = ['numactl', '--interleave=all']
@@ -457,25 +487,27 @@ class run_tests(rfm.RunOnlyRegressionTest):
             "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
             'echo "hilbert_perf_t=$tt"',
         ]
-        if self.current_environ.name not in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
-            self.postrun_cmds += [
-                # scan_perf
-                'echo scan_perf:',
-                't0=`date +%s` ;'
-                f'{mysrun} {self.mypath}/scan_perf ;'
-                'done; t1=`date +%s`',
-                "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
-                'echo "scan_perf_t=$tt"',
-            ]
-        else:
-            self.postrun_cmds += [
-                'echo "FIXME:"',
-                'echo "serial scan test: PASS"',
-                'echo "parallel scan test: PASS"',
-                'echo "parallel inplace scan test: PASS"',
-                'echo "scan_perf_t=0"',
-            ]
-
+#{{{
+#         if self.current_environ.name not in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
+#             self.postrun_cmds += [
+#                 # scan_perf
+#                 'echo scan_perf:',
+#                 't0=`date +%s` ;'
+#                 f'{mysrun} {self.mypath}/scan_perf ;'
+#                 'done; t1=`date +%s`',
+#                 "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
+#                 'echo "scan_perf_t=$tt"',
+#             ]
+#         else:
+#             self.postrun_cmds += [
+#                 'echo "FIXME:"',
+#                 'echo "serial scan test: PASS"',
+#                 'echo "parallel scan test: PASS"',
+#                 'echo "parallel inplace scan test: PASS"',
+#                 'echo "scan_perf_t=0"',
+#             ]
+# 
+#}}}
         self.postrun_cmds += [
             #
             'echo "done"',
@@ -489,27 +521,31 @@ class run_tests(rfm.RunOnlyRegressionTest):
     def assert_sanity(self):
         regex01 = r'octree_perf_t=\d+'
         regex02 = r'hilbert_perf_t=\d+'
-        regex03 = r'scan_perf_t=\d+'
+        # regex03 = r'scan_perf_t=\d+'
         regex1 = r'compute time for \d+ hilbert keys: \S+ s on CPU'
         regex2 = r'compute time for \d+ morton keys: \S+ s on CPU'
-        regex3 = r'(serial scan|parallel scan|parallel inplace scan) test: PASS'
+        # regex3 = r'(serial scan|parallel scan|parallel inplace scan) test: PASS'
         return sn.all([
             sn.assert_found(regex01, self.stdout),
-            sn.assert_found(regex02, self.stdout),
-            sn.assert_found(regex03, self.stdout),
             sn.assert_found(regex1, self.stdout),
+            sn.assert_found(regex02, self.stdout),
             sn.assert_found(regex2, self.stdout),
-            sn.assert_found(regex3, self.stdout),
+            # sn.assert_found(regex03, self.stdout),
+            # sn.assert_found(regex3, self.stdout),
         ])
 
     #{{{ timers
-    @performance_function('-c', perf_key='openmp_threads')
-    def report_steps(self):
-        return self.num_cpus_per_task
-
     @performance_function('cn', perf_key='compute_nodes')
     def report_cn(self):
         return self.compute_nodes
+
+    @performance_function('mpi', perf_key='mpi_ranks')
+    def report_mpi(self):
+        return self.num_tasks
+
+    @performance_function('-c', perf_key='openmp_threads')
+    def report_omp(self):
+        return self.num_cpus_per_task
 
     @performance_function('', perf_key='repeat')
     def report_repeat(self):
@@ -526,12 +562,12 @@ class run_tests(rfm.RunOnlyRegressionTest):
         regex = r'hilbert_perf_t=(\d+)'
         return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
 
-    @performance_function('s', perf_key='scan_perf_t')
-    def report_cput_scan_perf(self):
-        regex = r'scan_perf_t=(\d+)'
-        return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
+#     @performance_function('s', perf_key='scan_perf_t')
+#     def report_cput_scan_perf(self):
+#         regex = r'scan_perf_t=(\d+)'
+#         return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
     #}}}
-    #{{{ hilbert_perf
+    #{{{ hilbert_perf (hilbert, morton)
     # compute time for 32000000 hilbert keys: 13.2216 s on CPU
     # compute time for 32000000 morton keys: 0.11014 s on CPU
     @performance_function('', perf_key='hilbert_perf_keys')
@@ -549,70 +585,100 @@ class run_tests(rfm.RunOnlyRegressionTest):
         regex = r'compute time for \d+ morton keys: (\S+) s on CPU'
         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 5)
     #}}}
-    #{{{ scan_perf
-    # serial benchmark bandwidth: 2035.05 MB/s
-    # parallel benchmark bandwidth: 8181.65 MB/s
-    # parallel inplace benchmark bandwidth: 31884.3 MB/s
-    @performance_function('', perf_key='scan_perf_elements')
-    def report_scan_perf_0(self):
-        regex = r'scanning (\d+) elements'
-        return sn.extractsingle(regex, self.stdout, 1, int)
-
-    @performance_function('MB/s', perf_key='scan_perf_serial')
-    def report_scan_perf_1(self):
-        regex = r'serial benchmark bandwidth: (\S+) MB/s'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
-
-    @performance_function('MB/s', perf_key='scan_perf_parallel')
-    def report_scan_perf_2(self):
-        regex = r'parallel benchmark bandwidth: (\S+) MB/s'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
-
-    @performance_function('MB/s', perf_key='scan_perf_parallel_inplace')
-    def report_scan_perf_3(self):
-        regex = r'parallel inplace benchmark bandwidth: (\S+) MB/s'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
-    #}}}
     #{{{ octree_perf
-    # build time from scratch 0.0824799 nNodes(tree): 441365 count: 2000000
-    # build time with guess 0.0124365 nNodes(tree): 441365 count: 2000000 empty nodes: 16309
-    # binary tree halo discovery: 0.0281515 collidingNodes: 8042
-    # first td-update: 0.0560775
-    # second td-update: 0.0538753
-    # td-octree halo discovery: 0.0177983 collidingNodes: 8042
-    # plummer box: -55.4645 56.2188 -54.7943 53.6066 -56.9695 57.3319
-    # build time from scratch 0.0218713 nNodes(tree): 434211 count: 2000000
-    # build time with guess 0.00127581 nNodes(tree): 434211 count: 2000000 empty nodes: 15510
-    @performance_function('s', perf_key='octree_perf_scratch_max')
+#{{{There are actually three interesting metrics to extract from this test:
+#   - build time from scratch 0.0577186 nNodes(tree): 441365 count: 2000000 cornerstone construction time
+#   - first td-update: 0.0285318 construction of the internal octree
+#   - td-octree halo discovery: 0.0378064 collidingNodes: 8042 octree-based halo-discovery, a tree traversal benchmark
+#   the other metrics are not adding much in addition, for example the 2nd time you
+#   see build time from scratch it s for a slightly different particle distribution
+#   (plummer instead of gaussian)
+# octree_perf:
+#*build time from scratch 0.174687 nNodes(tree): 441365 count: 2000000
+# build time with guess 0.00604045 nNodes(tree): 441365 count: 2000000 empty nodes: 16309
+# binary tree halo discovery: 0.105535 collidingNodes: 8042
+#*first td-update: 0.0232271
+# second td-update: 0.0231308
+#*td-octree halo discovery: 0.0720088 collidingNodes: 8042
+# plummer box: -55.4645 56.2188 -54.7943 53.6066 -56.9695 57.3319
+# build time from scratch 0.161216 nNodes(tree): 434211 count: 2000000
+# build time with guess 0.00580249 nNodes(tree): 434211 count: 2000000 empty nodes: 15510
+#}}}
+    @performance_function('s', perf_key='octree_perf_cstone_construction')
     def report_octree_perf_0(self):
         regex = r'build time from scratch (\S+) nNodes'
-        return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
+        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
 
-    @performance_function('s', perf_key='octree_perf_scratch_min')
+    @performance_function('s', perf_key='octree_perf_internal_octree')
     def report_octree_perf_1(self):
-        regex = r'build time from scratch (\S+) nNodes'
-        return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+        regex = r'first td-update: (\S+)'
+        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
 
-    @performance_function('s', perf_key='octree_perf_guess_max')
+    @performance_function('s', perf_key='octree_perf_tree_traversal')
     def report_octree_perf_2(self):
-        regex = r'build time with guess (\S+) nNodes'
-        return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
+        regex = r'td-octree halo discovery: (\S+) collidingNodes'
+        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
 
-    @performance_function('s', perf_key='octree_perf_guess_min')
-    def report_octree_perf_3(self):
-        regex = r'build time with guess (\S+) nNodes'
-        return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+    #{{{
+#     @performance_function('s', perf_key='octree_perf_scratch_max')
+#     def report_octree_perf_0(self):
+#         regex = r'build time from scratch (\S+) nNodes'
+#         return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
+# 
+#     @performance_function('s', perf_key='octree_perf_scratch_min')
+#     def report_octree_perf_1(self):
+#         regex = r'build time from scratch (\S+) nNodes'
+#         return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+# 
+#     @performance_function('s', perf_key='octree_perf_guess_max')
+#     def report_octree_perf_2(self):
+#         regex = r'build time with guess (\S+) nNodes'
+#         return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
+# 
+#     @performance_function('s', perf_key='octree_perf_guess_min')
+#     def report_octree_perf_3(self):
+#         regex = r'build time with guess (\S+) nNodes'
+#         return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+    #}}}
+    #}}}
+    #{{{ scan_perf
+#     # serial benchmark bandwidth: 2035.05 MB/s
+#     # parallel benchmark bandwidth: 8181.65 MB/s
+#     # parallel inplace benchmark bandwidth: 31884.3 MB/s
+#     @performance_function('', perf_key='scan_perf_elements')
+#     def report_scan_perf_0(self):
+#         regex = r'scanning (\d+) elements'
+#         return sn.extractsingle(regex, self.stdout, 1, int)
+# 
+#     @performance_function('MB/s', perf_key='scan_perf_serial')
+#     def report_scan_perf_1(self):
+#         regex = r'serial benchmark bandwidth: (\S+) MB/s'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+# 
+#     @performance_function('MB/s', perf_key='scan_perf_parallel')
+#     def report_scan_perf_2(self):
+#         regex = r'parallel benchmark bandwidth: (\S+) MB/s'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+# 
+#     @performance_function('MB/s', perf_key='scan_perf_parallel_inplace')
+#     def report_scan_perf_3(self):
+#         regex = r'parallel inplace benchmark bandwidth: (\S+) MB/s'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
     #}}}
     #}}}
 #}}}
 
 
-# ./R -c sedov_cuda.py -n build -r -S repeat=4 --module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles
+# ./R -c sedov_cuda.py -n build -r --module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles # -p PrgEnv-arm-N1 -p PrgEnv-nvidia -p PrgEnv-gnu
+# dom: ~/R -c sedov_cuda.py -n build -r -m cudatoolkit/21.5_11.3 -m gcc/9.3.0
+# mo use /apps/daint/UES/eurohack/software/nvhpc/2021_219-cuda-11.4/modulefiles
+# dom: ~/R -c sedov_cuda.py -n build -r -m nvhpc-nompi/21.5 -p PrgEnv-cray
 #{{{ build
 @rfm.simple_test
 class build(rfm.CompileOnlyRegressionTest):
     # use_armpl = variable(bool, value=False)
-    use_armpl = parameter(['with_armpl', 'without_armpl'])
+    use_armpl = parameter(['without_armpl'])
+    # use_armpl = parameter(['with_armpl', 'without_armpl'])
     # use_tool = parameter([False, True])
     # use_tool = parameter(['Score-P/7.1-CrayNvidia-21.09'])
     # use_tool = parameter(['Score-P'])
@@ -636,6 +702,7 @@ class build(rfm.CompileOnlyRegressionTest):
         'PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-arm-A64FX',
         'PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX',
         'PrgEnv-gnu', 'PrgEnv-gnu-A64FX',
+        'PrgEnv-cray'
     ]
     # modules = ['gcc/10.3.0', 'Score-P/7.1-CrayNvidia-21.09'] # , 'gcc/9.3.0']
     # modules = ['Nsight-Systems/2022.1.1', 'Nsight-Compute/2022.1.0']
@@ -650,6 +717,12 @@ class build(rfm.CompileOnlyRegressionTest):
     def set_compile(self):
         self.build_system = 'CMake'
         compiler_flags = {
+            'gpu':
+                {'PrgEnv-cray': '',
+                 'PrgEnv-gnu': '',
+                 'PrgEnv-intel': '',
+                 'PrgEnv-nvidia': '',
+                },
             # [current_partition.name][current_environ.name]
             'neoverse-n1':
                 {'PrgEnv-arm-N1': '-g -mcpu=neoverse-n1',
@@ -690,26 +763,39 @@ class build(rfm.CompileOnlyRegressionTest):
                 'sed -i "s@-fno-math-errno@@" CMakeLists.txt',
                 'sed -i "s@-Wno-unknown-pragmas@-w@" domain/test/coord_samples/CMakeLists.txt',
                 'sed -i "s@-Wno-unknown-pragmas@-w@" domain/test/integration_mpi/CMakeLists.txt',
-                'sed -i "s@-Wno-unknown-pragmas@-w@" domain/test/unit/CMakeLists.txt',
+                #'sed -i "s@-Wno-unknown-pragmas@-w@" domain/test/unit/CMakeLists.txt',
                 'sed -i "s@-Wno-unknown-pragmas@-w@" ryoanji/test/cpu/CMakeLists.txt',
                 'echo > src/evrard/CMakeLists.txt',
                 # 1 catastrophic error detected in the compilation of
                 # "src/evrard/evrard.cpp".
-                'echo > src/analytical_solutions/CMakeLists.txt',
+                'echo > domain/test/unit/CMakeLists.txt',
+                'echo > ryoanji/test/cpu/CMakeLists.txt',
+                '## echo > src/analytical_solutions/CMakeLists.txt',
                 # sedov_solution/main.cpp", line 134: error: namespace "std"
                 # has no member "setw"
                 # TODO: domain/test/integration_mpi/CMakeLists.txt / 
                 # mpi_wrappers.hpp, line 115: internal error: assertion failed:
                 # missing rescan info (exprutil.cpp, line 4772 in
                 # get_expr_rescan_info)
+                'sed -i "s@addMpiTest(exchange_focus.cpp@#addMpiTest(exchange_focus.cpp@" domain/test/integration_mpi/CMakeLists.txt',
+                'sed -i "s@addMpiTest(exchange_general.cpp@#addMpiTest(exchange_general.cpp@" domain/test/integration_mpi/CMakeLists.txt',
                 # avoid warnings:
                 'echo >> domain/include/cstone/cuda/annotation.hpp',
                 'echo >> domain/include/cstone/traversal/collisions.hpp',
+                'echo >> domain/include/cstone/tree/btree.cuh',
+                'echo >> domain/include/cstone/traversal/peers.hpp',
+                'echo >> domain/test/performance/timing.cuh',
+                'echo >> ryoanji/src/ryoanji/cpu/multipole.hpp',
+                'echo >> domain/include/cstone/cuda/gather.cu',
+            ]
+        elif self.current_environ.name in ['PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-arm-A64FX']:
+            self.prebuild_cmds = [
+                'sed -i "s@inline static constexpr std::array fieldNames@inline static std::array fieldNames@" include/particles_data.hpp',
             ]
 
         self.prebuild_cmds += [
             'module list',
-            'mpicxx --version',
+            'mpicxx --version || true',
             'nvcc --version',
             'rm -fr docs LICENSE Makefile README.* scripts test tools',
             'sed -i "s@project(sphexa CXX C)@project(sphexa CXX)@" CMakeLists.txt',
@@ -723,9 +809,7 @@ class build(rfm.CompileOnlyRegressionTest):
         # if self.current_partition.name in ['TX2']:
         # if self.current_partition.name in ['A64FX']:
         # self.current_environ.name
-# nvidia
-#                'sed -i "s@-fno-math-errno@@" CMakeLists.txt',
-#                # 'unset CPATH'
+#       # 'unset CPATH'
         if self.current_partition.name in ['A64FX']:
             self.build_system.nvcc = ''
 #             if self.current_environ.name in ['PrgEnv-gnu-A64FX']:
@@ -745,15 +829,19 @@ class build(rfm.CompileOnlyRegressionTest):
 
         #     self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=mpicxx',
         self.build_system.config_opts = [
+            #'-DCMAKE_CXX_COMPILER=CC',
+            #"-DCMAKE_CUDA_FLAGS='-ccbin cc'",
             '-DCMAKE_CXX_COMPILER=mpicxx',
             "-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
+            '-DCMAKE_CUDA_COMPILER=`which nvcc`',
             # f'-DCMAKE_CUDA_COMPILER={self.hasnvcc}',
             '-DBUILD_TESTING=ON',
             '-DBUILD_ANALYTICAL=ON',
             '-DSPH_EXA_WITH_HIP=OFF',
-            '-DBUILD_RYOANJI=OFF',
-            '-DCMAKE_BUILD_TYPE=Release',
+            '-DBUILD_RYOANJI=ON',
             '-DCMAKE_INSTALL_PREFIX=$PWD/JG',
+            #'-DCMAKE_BUILD_TYPE=Debug',
+            '-DCMAKE_BUILD_TYPE=Release',
             # '-DCMAKE_CXX_FLAGS_RELEASE="-O3 -fno-math-errno -march=armv8-a -DNDEBUG"',
             # '-DCMAKE_CUDA_FLAGS="-arch=sm_80 -ccbin mpicxx -DNDEBUG -std=c++17"',
             # '-DCMAKE_BUILD_TYPE=Release',
@@ -776,22 +864,25 @@ class build(rfm.CompileOnlyRegressionTest):
         else:
             self.build_system.config_opts += ['-DUSE_PROFILING=OFF']
 
-        self.build_system.max_concurrency = 20
-        if self.current_environ.name in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
-            self.build_system.make_opts = ['octree_perf', 'hilbert_perf', 'scan_perf']
-            self.postbuild_cmds += [
-                'mkdir -p JG/sbin/performance',
-                'cp domain/test/performance/octree_perf JG/sbin/performance',
-                'cp domain/test/performance/hilbert_perf JG/sbin/performance',
-                'cp domain/test/performance/scan_perf JG/sbin/performance',
-            ]
-        else:
-            self.build_system.make_opts = ['install']
-            #'install',
-            #'octree_perf', 'VERBOSE=1',
-            # self.executable_name,
-            # 'sedov',
-            # 'sedov_solution',
+        self.build_system.max_concurrency = 30
+        self.build_system.make_opts = ['install']
+#{{{
+#         if self.current_environ.name in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
+#             self.build_system.make_opts = ['octree_perf', 'hilbert_perf', 'scan_perf']
+#             self.postbuild_cmds += [
+#                 'mkdir -p JG/sbin/performance',
+#                 'cp domain/test/performance/octree_perf JG/sbin/performance',
+#                 'cp domain/test/performance/hilbert_perf JG/sbin/performance',
+#                 'cp domain/test/performance/scan_perf JG/sbin/performance',
+#             ]
+#         else:
+#             self.build_system.make_opts = ['install']
+#             #'install',
+#             #'octree_perf', 'VERBOSE=1',
+#             # self.executable_name,
+#             # 'sedov',
+#             # 'sedov_solution',
+#}}}
 
         self.postbuild_cmds += [
             'ldd domain/test/performance/octree_perf |grep armpl || true',
