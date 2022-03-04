@@ -25,6 +25,11 @@ hdf5_mod = {
         'PrgEnv-gnu': 'hdf5/1.13.0-TX2+GNU',
         'PrgEnv-nvidia': 'hdf5/1.13.0-TX2+NVHPC',
     },
+    'gpu': {
+        #'PrgEnv-arm-TX2': 'hdf5/1.13.0-TX2+ARM',
+        'PrgEnv-gnu': '' # 'hdf5/1.13.0',
+        #'PrgEnv-nvidia': 'hdf5/1.13.0-TX2+NVHPC',
+    },
 }
 # cmake -S SPH-EXA.git -B build -DBUILD_TESTING=OFF -DBUILD_ANALYTICAL=OFF \
 # -DSPH_EXA_WITH_HIP=OFF -DBUILD_RYOANJI=OFF -DCMAKE_BUILD_TYPE=Release \
@@ -418,10 +423,10 @@ class run_tests(rfm.RunOnlyRegressionTest):
     compute_nodes = parameter([1])
     # compute_nodes = parameter([1])
     # openmp_threads = parameter([6])
-    mpi_ranks = parameter([1])
-    openmp_threads = parameter([20])
-    #mpi_ranks = parameter([1, 2, 4])
-    #openmp_threads = parameter([1, 2, 4, 8, 12, 24, 32, 40, 48, 64])
+    # mpi_ranks = parameter([1, 2])
+    # openmp_threads = parameter([64])
+    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 48, 64])
+    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
     valid_systems = ['wombat:gpu', 'dom:gpu']
     valid_prog_environs = [
@@ -442,11 +447,13 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'dom': {'gpu': 1},
             #'daint': {'gpu': 12, 'mc': 36},
             'wombat': {'neoverse-n1': 1, 'TX2': 2, 'A64FX': 4},
+            'lumi': {'gpu': 64},
         }
         max_threads = {
             'dom': {'gpu': 12, 'mc': 36},
             'daint': {'gpu': 12, 'mc': 36},
             'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
+            'lumi': {'gpu': 64},
         }
         self.skip_if(
             self.mpi_ranks > max_ranks[self.current_system.name][self.current_partition.name],
@@ -460,11 +467,13 @@ class run_tests(rfm.RunOnlyRegressionTest):
     #{{{ run
     @run_before('run')
     def set_hdf5(self):
-        self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
+        if hdf5_mod[self.current_partition.name][self.current_environ.name]:
+            self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
+        else:
+            self.prerun_cmds = ['module load hdf5/1.13.0']
 
     @run_before('run')
     def set_run(self):
-        # sbin/performance
         self.executable = '$HOME/affinity'
 #        self.mypath = '../build_notool/build/JG/sbin/performance'
 #         tests = {
@@ -473,7 +482,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #             'scan': {'name': f'{self.mypath}/scan_perf', 'ranks': '1'},
 #             'hilbert': {'name': f'{self.mypath}/hilbert_perf', 'ranks': '1'},
 #         }
-        self.prerun_cmds = [
+        self.prerun_cmds += [
             'module list',
             'mpicxx --version || true',
             'nvcc --version',
@@ -481,26 +490,43 @@ class run_tests(rfm.RunOnlyRegressionTest):
         ]
         self.num_tasks = self.mpi_ranks # 1
         self.num_tasks_per_node = self.mpi_ranks
-        self.num_cpus_per_task = self.openmp_threads // self.mpi_ranks
-        if self.num_cpus_per_task < 1:
-            self.num_cpus_per_task = 1
+        self.num_cpus_per_task = self.openmp_threads
+        #self.num_cpus_per_task = self.openmp_threads // self.mpi_ranks
+        #if self.num_cpus_per_task < 1:
+        #    self.num_cpus_per_task = 1
         # print(self.openmp_threads, self.mpi_ranks, self.num_cpus_per_task)
         # self.job.launcher =
         # LauncherWrapper(self.job.launcher, 'time', ['-p'])
         # self.skip_if_no_procinfo()
         # procinfo = self.current_partition.processor.info
+        max_mpixomp = {
+            'dom': {'gpu': 12, 'mc': 36},
+            'daint': {'gpu': 12, 'mc': 36},
+            'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
+            'lumi': {'gpu': 64},
+        }
+        mpixomp = self.num_tasks_per_node * self.num_cpus_per_task
+        # skip if too many/too few processes:
+        self.skip_if(
+            mpixomp != max_mpixomp[self.current_system.name][self.current_partition.name],
+            f'{mpixomp} != max mpi*openmp'
+        )
         self.variables = {
-            # 'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            # 'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
             'OMP_PLACES': 'sockets',
             'OMP_PROC_BIND': 'close',
         }
         mpi_type = ''
         if self.current_system.name in ['wombat']:
             mpi_type = '--mpi=pmix'
+            self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
+            mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
+        else:
+            self.job.launcher.options = ['numactl', '--interleave=all']
+            mysrun = f'for ii in `seq {self.repeat}` ;do mpirun -np {self.mpi_ranks} --map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS {" ".join(self.job.launcher.options)}'
+            self.postrun_cmds += [f'mpirun -np {self.mpi_ranks} --map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS {self.executable}']
 
-        self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
-        mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
         #if self.current_system.name in {'daint', 'dom'}:
         #    self.job.launcher.options = ['numactl', '--interleave=all']
         #self.prerun_cmds += ['echo starttime=`date +%s`']
@@ -512,26 +538,21 @@ class run_tests(rfm.RunOnlyRegressionTest):
             # 14 variables: c,grad_P_x,grad_P_y,grad_P_z,h,p,rho,u,vx,vy,vz,x,y,z
             # 14 variables * 64e6 particles * 8 b
             # 14*64*1000000*8 = 7'168'000'000
-            steps = 200
-            cubeside = 50
+            cubeside = 100 # 50
+            steps = 30 # 200
+            output_frequency = -1 # steps
             self.postrun_cmds += [
                 # sedov
                 f'echo sedov: analytical_s={steps} analytical_n={cubeside}',
                 't0=`date +%s` ;'
-                f'{mysrun} {self.mypath}/sedov -n {cubeside} -s {steps} -w 0;'
+                f'{mysrun} {self.mypath}/sedov -n {cubeside} -s {steps} -w {output_frequency};'
                 'done; t1=`date +%s`',
                 "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
                 'echo "sedov_t=$tt"',
                 'echo -e "\\n\\n"',
-                'source ~/myvenv_gcc11_py399/bin/activate',
-                f'ln -s {self.mypath}/sedov_solution',
-                f'python3 {self.mypath}/compare_solutions.py -s {steps} dump_sedov.h5part',
-# neoverse-n1/PrgEnv-arm-N1/build_without_armpl_notool/build/JG/bin/sedov
-# neoverse-n1/PrgEnv-gnu/build_without_armpl_notool/build/JG/bin/sedov
-# neoverse-n1/PrgEnv-nvidia/build_without_armpl_notool/build/JG/bin/sedov
-# TX2/PrgEnv-arm-TX2/build_without_armpl_notool/build/JG/bin/sedov
-# TX2/PrgEnv-gnu/build_without_armpl_notool/build/JG/bin/sedov
-# TX2/PrgEnv-nvidia/build_without_armpl_notool/build/JG/bin/sedov
+                #'source ~/myvenv_gcc11_py399/bin/activate',
+                #f'ln -s {self.mypath}/sedov_solution',
+                #f'python3 {self.mypath}/compare_solutions.py -s {steps} dump_sedov.h5part',
             ]
         else:
             self.postrun_cmds += [
@@ -613,13 +634,20 @@ class run_tests(rfm.RunOnlyRegressionTest):
     def report_mpi(self):
         return self.num_tasks
 
-    @performance_function('-c', perf_key='openmp_threads')
+    @performance_function('openmp', perf_key='openmp_threads')
     def report_omp(self):
         return self.num_cpus_per_task
 
     @performance_function('', perf_key='repeat')
     def report_repeat(self):
         return self.repeat
+
+    @performance_function('s', perf_key='elapsed_internal')
+    def report_elapsed_internal(self):
+        # Total execution time of 0 iterations of Sedov: 0.373891s
+        regex = r'Total execution time of \d+ iterations of \S+: (?P<s>\S+)s$'
+        sec = sn.extractsingle(regex, self.stdout, 's', float)
+        return sn.round(sec, 1)
 
     #{{{ avg elapsed time
     @performance_function('s', perf_key='octree_perf_t')
@@ -800,7 +828,7 @@ class build(rfm.CompileOnlyRegressionTest):
     #donotscale np_per_c = parameter([47e5]) # OK <------------- -n572 = 187'149'248/2gpu
     # 47e5 ok  / 48e5 ko
     # ----
-    valid_systems = ['wombat:gpu', 'dom:gpu']
+    valid_systems = ['wombat:gpu', 'dom:gpu', 'lumi:gpu']
     valid_prog_environs = [
         # 'builtin',
         'PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-arm-A64FX',
@@ -820,7 +848,9 @@ class build(rfm.CompileOnlyRegressionTest):
     @run_before('compile')
     def set_compile(self):
         self.build_system = 'CMake'
-        self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
+        if hdf5_mod[self.current_partition.name][self.current_environ.name]:
+            self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
+
         compiler_flags = {
             'gpu':
                 {'PrgEnv-cray': '',
@@ -862,6 +892,7 @@ class build(rfm.CompileOnlyRegressionTest):
         if self.current_environ.name in ['PrgEnv-gnu', 'PrgEnv-gnu-A64FX']:
             self.prebuild_cmds = [
                 'module rm gnu10/10.2.0 binutils/10.2.0',
+                'module load hdf5/1.13.0',
             ]
         elif self.current_environ.name in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
             self.prebuild_cmds = [
