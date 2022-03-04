@@ -8,6 +8,24 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 # from reframe.core.launchers import LauncherWrapper
 
+
+hdf5_mod = {
+    'A64FX': {
+        'PrgEnv-arm-A64FX': 'hdf5/1.13.0-A64FX+ARM',
+        'PrgEnv-gnu-A64FX': 'hdf5/1.13.0-A64FX+GNU',
+        'PrgEnv-nvidia-A64FX': 'hdf5/1.13.0-A64FX+NVHPC',
+    },
+    'neoverse-n1': {
+        'PrgEnv-arm-N1': 'hdf5/1.13.0-N1+ARM',
+        'PrgEnv-gnu': 'hdf5/1.13.0-N1+GNU',
+        'PrgEnv-nvidia': 'hdf5/1.13.0-N1+NVHPC',
+    },
+    'TX2': {
+        'PrgEnv-arm-TX2': 'hdf5/1.13.0-TX2+ARM',
+        'PrgEnv-gnu': 'hdf5/1.13.0-TX2+GNU',
+        'PrgEnv-nvidia': 'hdf5/1.13.0-TX2+NVHPC',
+    },
+}
 # cmake -S SPH-EXA.git -B build -DBUILD_TESTING=OFF -DBUILD_ANALYTICAL=OFF \
 # -DSPH_EXA_WITH_HIP=OFF -DBUILD_RYOANJI=OFF -DCMAKE_BUILD_TYPE=Release \
 # -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_CUDA_COMPILER=nvcc
@@ -386,19 +404,24 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
 
 # x='--module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles'
 # ./R -c sedov_cuda.py -n run_tests -r -S repeat=3 $x -S mypath='../build_with_armpl_notool/build/JG/sbin/performance'
-# dom: ~/R -c sedov_cuda.py -n run_tests -r -m cudatoolkit/21.5_11.3 -m gcc/9.3.0 -S repeat=1 -S mypath='../build_without_armpl_notool/build/JG/sbin/performance'
+# dom:
+# ~/R -c sedov_cuda.py -n run_tests -r -m nvhpc-nompi/21.9 -m gcc/9.3.0 -S repeat=1 -S mypath='../build_without_armpl_notool/build/JG/sbin/performance' -p PrgEnv-gnu
 #{{{ run_tests
 @rfm.simple_test
 class run_tests(rfm.RunOnlyRegressionTest):
     sourcesdir = None
     # use_tool = parameter(['notool'])
-    mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
-    repeat = variable(int, value=3)
+    analytical = parameter(['analytical'])
+    #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
+    mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
+    repeat = variable(int, value=1)
     compute_nodes = parameter([1])
-    mpi_ranks = parameter([1, 2, 4])
     # compute_nodes = parameter([1])
     # openmp_threads = parameter([6])
-    openmp_threads = parameter([1, 2, 4, 8, 12, 24, 32, 40, 48, 64])
+    mpi_ranks = parameter([1])
+    openmp_threads = parameter([20])
+    #mpi_ranks = parameter([1, 2, 4])
+    #openmp_threads = parameter([1, 2, 4, 8, 12, 24, 32, 40, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
     valid_systems = ['wombat:gpu', 'dom:gpu']
     valid_prog_environs = [
@@ -416,7 +439,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def set_skip(self):
         max_ranks = {
-            #'dom': {'gpu': 12, 'mc': 36},
+            'dom': {'gpu': 1},
             #'daint': {'gpu': 12, 'mc': 36},
             'wombat': {'neoverse-n1': 1, 'TX2': 2, 'A64FX': 4},
         }
@@ -436,6 +459,10 @@ class run_tests(rfm.RunOnlyRegressionTest):
     #}}}
     #{{{ run
     @run_before('run')
+    def set_hdf5(self):
+        self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
+
+    @run_before('run')
     def set_run(self):
         # sbin/performance
         self.executable = '$HOME/affinity'
@@ -446,7 +473,12 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #             'scan': {'name': f'{self.mypath}/scan_perf', 'ranks': '1'},
 #             'hilbert': {'name': f'{self.mypath}/hilbert_perf', 'ranks': '1'},
 #         }
-        self.prerun_cmds = ['module rm gnu10/10.2.0 binutils/10.2.0']
+        self.prerun_cmds = [
+            'module list',
+            'mpicxx --version || true',
+            'nvcc --version',
+            'module rm gnu10/10.2.0 binutils/10.2.0'
+        ]
         self.num_tasks = self.mpi_ranks # 1
         self.num_tasks_per_node = self.mpi_ranks
         self.num_cpus_per_task = self.openmp_threads // self.mpi_ranks
@@ -463,30 +495,63 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'OMP_PLACES': 'sockets',
             'OMP_PROC_BIND': 'close',
         }
-        # TODO: if wombat
-        self.job.launcher.options = ['--mpi=pmix', 'numactl', '--interleave=all']
+        mpi_type = ''
+        if self.current_system.name in ['wombat']:
+            mpi_type = '--mpi=pmix'
+
+        self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
+        mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
         #if self.current_system.name in {'daint', 'dom'}:
         #    self.job.launcher.options = ['numactl', '--interleave=all']
         #self.prerun_cmds += ['echo starttime=`date +%s`']
-        mysrun = f'for ii in `seq {self.repeat}` ;do srun --mpi=pmix numactl --interleave=all'
-        self.postrun_cmds += [
-            # octree_perf
-            'echo octree_perf:',
-            't0=`date +%s` ;'
-            f'{mysrun} {self.mypath}/octree_perf ;'
-            'done; t1=`date +%s`',
-            "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
-            'echo "octree_perf_t=$tt"',
-            #'echo peers:',
-            #f'{mysrun} {self.mypath}/peers_perf',
-            # hilbert_perf
-            'echo hilbert_perf:',
-            't0=`date +%s` ;'
-            f'{mysrun} {self.mypath}/hilbert_perf ;'
-            'done; t1=`date +%s`',
-            "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
-            'echo "hilbert_perf_t=$tt"',
-        ]
+        if self.analytical in ['analytical']:
+            # NOTE: -n 400 means:
+            # === Total time for iteration(0) 282.116s = 5min
+            # Total execution time of 0 iterations of Sedov: 344.003s (i/o=62) = 6min
+            # 6.7G dump_sedov.h5part (1 step, 7168008752/1024^3)
+            # 14 variables: c,grad_P_x,grad_P_y,grad_P_z,h,p,rho,u,vx,vy,vz,x,y,z
+            # 14 variables * 64e6 particles * 8 b
+            # 14*64*1000000*8 = 7'168'000'000
+            steps = 200
+            cubeside = 50
+            self.postrun_cmds += [
+                # sedov
+                f'echo sedov: analytical_s={steps} analytical_n={cubeside}',
+                't0=`date +%s` ;'
+                f'{mysrun} {self.mypath}/sedov -n {cubeside} -s {steps} -w 0;'
+                'done; t1=`date +%s`',
+                "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
+                'echo "sedov_t=$tt"',
+                'echo -e "\\n\\n"',
+                'source ~/myvenv_gcc11_py399/bin/activate',
+                f'ln -s {self.mypath}/sedov_solution',
+                f'python3 {self.mypath}/compare_solutions.py -s {steps} dump_sedov.h5part',
+# neoverse-n1/PrgEnv-arm-N1/build_without_armpl_notool/build/JG/bin/sedov
+# neoverse-n1/PrgEnv-gnu/build_without_armpl_notool/build/JG/bin/sedov
+# neoverse-n1/PrgEnv-nvidia/build_without_armpl_notool/build/JG/bin/sedov
+# TX2/PrgEnv-arm-TX2/build_without_armpl_notool/build/JG/bin/sedov
+# TX2/PrgEnv-gnu/build_without_armpl_notool/build/JG/bin/sedov
+# TX2/PrgEnv-nvidia/build_without_armpl_notool/build/JG/bin/sedov
+            ]
+        else:
+            self.postrun_cmds += [
+                # octree_perf
+                'echo octree_perf:',
+                't0=`date +%s` ;'
+                f'{mysrun} {self.mypath}/octree_perf ;'
+                'done; t1=`date +%s`',
+                "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
+                'echo "octree_perf_t=$tt"',
+                #'echo peers:',
+                #f'{mysrun} {self.mypath}/peers_perf',
+                # hilbert_perf
+                'echo hilbert_perf:',
+                't0=`date +%s` ;'
+                f'{mysrun} {self.mypath}/hilbert_perf ;'
+                'done; t1=`date +%s`',
+                "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
+                'echo "hilbert_perf_t=$tt"',
+            ]
 #{{{
 #         if self.current_environ.name not in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
 #             self.postrun_cmds += [
@@ -519,20 +584,25 @@ class run_tests(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_sanity(self):
-        regex01 = r'octree_perf_t=\d+'
-        regex02 = r'hilbert_perf_t=\d+'
-        # regex03 = r'scan_perf_t=\d+'
-        regex1 = r'compute time for \d+ hilbert keys: \S+ s on CPU'
-        regex2 = r'compute time for \d+ morton keys: \S+ s on CPU'
-        # regex3 = r'(serial scan|parallel scan|parallel inplace scan) test: PASS'
-        return sn.all([
-            sn.assert_found(regex01, self.stdout),
-            sn.assert_found(regex1, self.stdout),
-            sn.assert_found(regex02, self.stdout),
-            sn.assert_found(regex2, self.stdout),
-            # sn.assert_found(regex03, self.stdout),
-            # sn.assert_found(regex3, self.stdout),
-        ])
+        if self.analytical in ['analytical']:
+            return sn.all([
+                sn.assert_found('Total execution time of \d+ iterations', self.stdout),
+            ])
+        else:
+            regex01 = r'octree_perf_t=\d+'
+            regex02 = r'hilbert_perf_t=\d+'
+            # regex03 = r'scan_perf_t=\d+'
+            regex1 = r'compute time for \d+ hilbert keys: \S+ s on CPU'
+            regex2 = r'compute time for \d+ morton keys: \S+ s on CPU'
+            # regex3 = r'(serial scan|parallel scan|parallel inplace scan) test: PASS'
+            return sn.all([
+                sn.assert_found(regex01, self.stdout),
+                sn.assert_found(regex1, self.stdout),
+                sn.assert_found(regex02, self.stdout),
+                sn.assert_found(regex2, self.stdout),
+                # sn.assert_found(regex03, self.stdout),
+                # sn.assert_found(regex3, self.stdout),
+            ])
 
     #{{{ timers
     @performance_function('cn', perf_key='compute_nodes')
@@ -666,17 +736,51 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
     #}}}
     #}}}
+    #{{{ L1 errors
+    @performance_function('-s', perf_key='L1_s')
+    def report_L1_s(self):
+        regex = r'sedov: analytical_s=(\d+) analytical_n='
+        return sn.extractsingle(regex, self.stdout, 1, int)
+
+    @performance_function('-n', perf_key='L1_n')
+    def report_L1_n(self):
+        regex = r'sedov: analytical_s=\d+ analytical_n=(\d+)'
+        return sn.extractsingle(regex, self.stdout, 1, int)
+
+    @performance_function('np', perf_key='L1_particles')
+    def report_L1_np(self):
+        regex = r'Loaded (\S+) particles'
+        return sn.extractsingle(regex, self.stdout, 1, int)
+
+    @performance_function('', perf_key='L1_error_density')
+    def report_L1_density(self):
+        regex = r'Density L1 error (\S+)'
+        return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
+
+    @performance_function('', perf_key='L1_error_pressure')
+    def report_L1_pressure(self):
+        regex = r'Pressure L1 error (\S+)'
+        return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
+
+    @performance_function('', perf_key='L1_error_velocity')
+    def report_L1_velocity(self):
+        regex = r'Velocity L1 error (\S+)'
+        return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
+    #}}}
 #}}}
 
 
-# ./R -c sedov_cuda.py -n build -r --module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles # -p PrgEnv-arm-N1 -p PrgEnv-nvidia -p PrgEnv-gnu
+# x='--module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles'
+# ./R -c sedov_cuda.py -n build -r $x # -p PrgEnv-arm-N1 -p PrgEnv-nvidia -p PrgEnv-gnu
 # dom: ~/R -c sedov_cuda.py -n build -r -m cudatoolkit/21.5_11.3 -m gcc/9.3.0
 # mo use /apps/daint/UES/eurohack/software/nvhpc/2021_219-cuda-11.4/modulefiles
 # dom: ~/R -c sedov_cuda.py -n build -r -m nvhpc-nompi/21.5 -p PrgEnv-cray
+# dom: ~/R -c sedov_cuda.py -n build -r -m nvhpc-nompi/21.9 -m gcc/9.3.0 -p PrgEnv-gnu
 #{{{ build
 @rfm.simple_test
 class build(rfm.CompileOnlyRegressionTest):
-    # use_armpl = variable(bool, value=False)
+    analytical = parameter(['analytical'])
+    use_info = parameter([False])
     use_armpl = parameter(['without_armpl'])
     # use_armpl = parameter(['with_armpl', 'without_armpl'])
     # use_tool = parameter([False, True])
@@ -716,6 +820,7 @@ class build(rfm.CompileOnlyRegressionTest):
     @run_before('compile')
     def set_compile(self):
         self.build_system = 'CMake'
+        self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
         compiler_flags = {
             'gpu':
                 {'PrgEnv-cray': '',
@@ -742,7 +847,7 @@ class build(rfm.CompileOnlyRegressionTest):
             'A64FX':
                 {'PrgEnv-arm-A64FX': '-g -mcpu=a64fx',
                  'PrgEnv-gnu-A64FX': '-g -mcpu=a64fx',
-                # i.e -march=armv8.2-a+sve -mtune=a64fx
+                # i.e -march=armv8.2-a+sve -mtune=a64fx (Wael Elwasif)
                  'PrgEnv-nvidia-A64FX': '',
                 },
         }
@@ -793,13 +898,28 @@ class build(rfm.CompileOnlyRegressionTest):
                 'sed -i "s@inline static constexpr std::array fieldNames@inline static std::array fieldNames@" include/particles_data.hpp',
             ]
 
+        info_flag = {
+            'PrgEnv-gnu': '-fopt-info-vec-missed',
+            'PrgEnv-gnu-A64FX': '-fopt-info-vec-missed',
+            #
+            'PrgEnv-arm-N1': '-Rpass-analysis=loop-vectorize',
+            'PrgEnv-arm-TX2': '-Rpass-analysis=loop-vectorize',
+            'PrgEnv-arm-A64FX': '-Rpass-analysis=loop-vectorize',
+            #
+            'PrgEnv-nvidia': '-Minfo',
+            'PrgEnv-nvidia-A64FX': '-Minfo',
+        }
+        compiler_info_flag = ''
+        if self.use_info:
+            compiler_info_flag = info_flag[self.current_environ.name]
+
         self.prebuild_cmds += [
             'module list',
             'mpicxx --version || true',
             'nvcc --version',
             'rm -fr docs LICENSE Makefile README.* scripts test tools',
             'sed -i "s@project(sphexa CXX C)@project(sphexa CXX)@" CMakeLists.txt',
-            f'sed -i "s@-march=native@{compiler_flags[self.current_partition.name][self.current_environ.name]}@" CMakeLists.txt',
+            f'sed -i "s@-march=native@{compiler_flags[self.current_partition.name][self.current_environ.name]} {compiler_info_flag}@" CMakeLists.txt',
             'sed -i "s@constexpr operator MPI_Datatype@operator MPI_Datatype@" domain/include/cstone/primitives/mpi_wrappers.hpp',
         ]
 # --partition=Ampere --> -mcpu=neoverse-n1
@@ -864,8 +984,11 @@ class build(rfm.CompileOnlyRegressionTest):
         else:
             self.build_system.config_opts += ['-DUSE_PROFILING=OFF']
 
-        self.build_system.max_concurrency = 30
+        self.build_system.max_concurrency = 10
         self.build_system.make_opts = ['install']
+        if self.use_info:
+            self.build_system.make_opts = ['hilbert_perf']
+
 #{{{
 #         if self.current_environ.name in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
 #             self.build_system.make_opts = ['octree_perf', 'hilbert_perf', 'scan_perf']
