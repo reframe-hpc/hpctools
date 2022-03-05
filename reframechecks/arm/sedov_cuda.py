@@ -423,8 +423,8 @@ class run_tests(rfm.RunOnlyRegressionTest):
     compute_nodes = parameter([1])
     # compute_nodes = parameter([1])
     # openmp_threads = parameter([6])
-    # mpi_ranks = parameter([1, 2])
-    # openmp_threads = parameter([64])
+#    mpi_ranks = parameter([1])
+#    openmp_threads = parameter([12])
     mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 48, 64])
     openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
@@ -441,28 +441,28 @@ class run_tests(rfm.RunOnlyRegressionTest):
     strict_check = False
 
     #{{{ skip
-    @run_before('run')
-    def set_skip(self):
-        max_ranks = {
-            'dom': {'gpu': 1},
-            #'daint': {'gpu': 12, 'mc': 36},
-            'wombat': {'neoverse-n1': 1, 'TX2': 2, 'A64FX': 4},
-            'lumi': {'gpu': 64},
-        }
-        max_threads = {
-            'dom': {'gpu': 12, 'mc': 36},
-            'daint': {'gpu': 12, 'mc': 36},
-            'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
-            'lumi': {'gpu': 64},
-        }
-        self.skip_if(
-            self.mpi_ranks > max_ranks[self.current_system.name][self.current_partition.name],
-            f'{self.mpi_ranks} > max mpi ranks'
-        )
-        self.skip_if(
-            self.openmp_threads > max_threads[self.current_system.name][self.current_partition.name],
-            f'{self.openmp_threads} > max openmp threads'
-        )
+#     @run_before('run')
+#     def set_skip(self):
+#         max_ranks = {
+#             'dom': {'gpu': 1},
+#             #'daint': {'gpu': 12, 'mc': 36},
+#             'wombat': {'neoverse-n1': 1, 'TX2': 2, 'A64FX': 4},
+#             'lumi': {'gpu': 64},
+#         }
+#         max_threads = {
+#             'dom': {'gpu': 12, 'mc': 36},
+#             'daint': {'gpu': 12, 'mc': 36},
+#             'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
+#             'lumi': {'gpu': 64},
+#         }
+#         self.skip_if(
+#             self.mpi_ranks > max_ranks[self.current_system.name][self.current_partition.name],
+#             f'{self.mpi_ranks} > max mpi ranks'
+#         )
+#         self.skip_if(
+#             self.openmp_threads > max_threads[self.current_system.name][self.current_partition.name],
+#             f'{self.openmp_threads} > max openmp threads'
+#         )
     #}}}
     #{{{ run
     @run_before('run')
@@ -470,7 +470,11 @@ class run_tests(rfm.RunOnlyRegressionTest):
         if hdf5_mod[self.current_partition.name][self.current_environ.name]:
             self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
         else:
-            self.prerun_cmds = ['module load hdf5/1.13.0']
+            self.prerun_cmds = [
+                'export CMAKE_PREFIX_PATH=/users/piccinal/bin/hdf5/1.13.0:$CMAKE_PREFIX_PATH',
+                # 'module load cray-hdf5-parallel',
+                # 'module load hdf5/1.13.0',
+            ]
 
     @run_before('run')
     def set_run(self):
@@ -506,10 +510,12 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'lumi': {'gpu': 64},
         }
         mpixomp = self.num_tasks_per_node * self.num_cpus_per_task
+        current_max_mpixomp = max_mpixomp[self.current_system.name][self.current_partition.name]
         # skip if too many/too few processes:
         self.skip_if(
-            mpixomp != max_mpixomp[self.current_system.name][self.current_partition.name],
-            f'{mpixomp} != max mpi*openmp'
+            # mpixomp != current_max_mpixomp,
+            mpixomp > current_max_mpixomp,
+            f'{self.num_tasks_per_node}*{self.num_cpus_per_task}={mpixomp} != {current_max_mpixomp} max mpi*openmp'
         )
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
@@ -520,6 +526,10 @@ class run_tests(rfm.RunOnlyRegressionTest):
         mpi_type = ''
         if self.current_system.name in ['wombat']:
             mpi_type = '--mpi=pmix'
+            self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
+            mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
+        elif self.current_system.name in ['dom']:
+            mpi_type = ''
             self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
         else:
@@ -881,7 +891,6 @@ class build(rfm.CompileOnlyRegressionTest):
                  'PrgEnv-nvidia-A64FX': '',
                 },
         }
-# 
 # module load /ccsopen/home/piccinal/bin/nvidia/hpc_sdk/modulefiles/nvhpc/22.2
 # module load nvhpc/22.2
 # NVIDIA: remove -fno-math-errno / neoverse-n1/PrgEnv-nvidia/build_with_armpl_notool
@@ -892,7 +901,9 @@ class build(rfm.CompileOnlyRegressionTest):
         if self.current_environ.name in ['PrgEnv-gnu', 'PrgEnv-gnu-A64FX']:
             self.prebuild_cmds = [
                 'module rm gnu10/10.2.0 binutils/10.2.0',
-                'module load hdf5/1.13.0',
+                # dom: 
+                'module load cray-hdf5-parallel',
+                #'module load hdf5/1.13.0',
             ]
         elif self.current_environ.name in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
             self.prebuild_cmds = [
@@ -973,17 +984,12 @@ class build(rfm.CompileOnlyRegressionTest):
         self.build_system.builddir = 'build'
         # self.executable = f'{self.mypath}/sedov-cuda'
         # self.executable_name = self.executable.split("/")[-1]
-#del        if self.current_environ.name in ['PrgEnv-arm-A64FX']:
-#del            self.executable_name = 'sedov'
-#del        else:
-#del            self.executable_name = 'sedov-cuda'
-
-        #     self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=mpicxx',
+        # self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=mpicxx',
         self.build_system.config_opts = [
-            #'-DCMAKE_CXX_COMPILER=CC',
-            #"-DCMAKE_CUDA_FLAGS='-ccbin cc'",
-            '-DCMAKE_CXX_COMPILER=mpicxx',
-            "-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
+            '-DCMAKE_CXX_COMPILER=CC',
+            "-DCMAKE_CUDA_FLAGS='-ccbin cc'",
+            #'-DCMAKE_CXX_COMPILER=mpicxx',
+            #"-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
             '-DCMAKE_CUDA_COMPILER=`which nvcc`',
             # f'-DCMAKE_CUDA_COMPILER={self.hasnvcc}',
             '-DBUILD_TESTING=ON',
