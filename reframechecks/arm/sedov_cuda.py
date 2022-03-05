@@ -417,6 +417,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
     sourcesdir = None
     # use_tool = parameter(['notool'])
     analytical = parameter(['analytical'])
+    cubeside = parameter(['300'])
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
@@ -424,9 +425,9 @@ class run_tests(rfm.RunOnlyRegressionTest):
     # compute_nodes = parameter([1])
     # openmp_threads = parameter([6])
 #    mpi_ranks = parameter([1])
-#    openmp_threads = parameter([12])
-    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 48, 64])
-    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 48, 64])
+#    openmp_threads = parameter([40])
+    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
+    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
     valid_systems = ['wombat:gpu', 'dom:gpu']
     valid_prog_environs = [
@@ -436,7 +437,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
         'PrgEnv-gnu', 'PrgEnv-gnu-A64FX',
         'PrgEnv-cray'
     ]
-    time_limit = '10m'
+    time_limit = '25m'
     use_multithreading = False
     strict_check = False
 
@@ -471,9 +472,9 @@ class run_tests(rfm.RunOnlyRegressionTest):
             self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
         else:
             self.prerun_cmds = [
-                'export CMAKE_PREFIX_PATH=/users/piccinal/bin/hdf5/1.13.0:$CMAKE_PREFIX_PATH',
+                # 'export CMAKE_PREFIX_PATH=/users/piccinal/bin/hdf5/1.13.0:$CMAKE_PREFIX_PATH',
                 # 'module load cray-hdf5-parallel',
-                # 'module load hdf5/1.13.0',
+                'module load hdf5/1.13.0',
             ]
 
     @run_before('run')
@@ -513,8 +514,8 @@ class run_tests(rfm.RunOnlyRegressionTest):
         current_max_mpixomp = max_mpixomp[self.current_system.name][self.current_partition.name]
         # skip if too many/too few processes:
         self.skip_if(
-            # mpixomp != current_max_mpixomp,
-            mpixomp > current_max_mpixomp,
+            mpixomp != current_max_mpixomp,
+            # mpixomp > current_max_mpixomp,
             f'{self.num_tasks_per_node}*{self.num_cpus_per_task}={mpixomp} != {current_max_mpixomp} max mpi*openmp'
         )
         self.variables = {
@@ -548,14 +549,14 @@ class run_tests(rfm.RunOnlyRegressionTest):
             # 14 variables: c,grad_P_x,grad_P_y,grad_P_z,h,p,rho,u,vx,vy,vz,x,y,z
             # 14 variables * 64e6 particles * 8 b
             # 14*64*1000000*8 = 7'168'000'000
-            cubeside = 100 # 50
-            steps = 30 # 200
+            # cubeside = 100 # 50
+            steps = 14 # 200
             output_frequency = -1 # steps
             self.postrun_cmds += [
                 # sedov
-                f'echo sedov: analytical_s={steps} analytical_n={cubeside}',
+                f'echo sedov: -s={steps} -n={self.cubeside}',
                 't0=`date +%s` ;'
-                f'{mysrun} {self.mypath}/sedov -n {cubeside} -s {steps} -w {output_frequency};'
+                f'{mysrun} {self.mypath}/sedov -n {self.cubeside} -s {steps} -w {output_frequency};'
                 'done; t1=`date +%s`',
                 "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
                 'echo "sedov_t=$tt"',
@@ -652,6 +653,16 @@ class run_tests(rfm.RunOnlyRegressionTest):
     def report_repeat(self):
         return self.repeat
 
+    @performance_function('', perf_key='-n')
+    def report_L1_n(self):
+        regex = r'sedov: -s=\d+ -n=(\d+)'
+        return sn.extractsingle(regex, self.stdout, 1, int)
+
+    @performance_function('steps', perf_key='-s')
+    def report_L1_s(self):
+        regex = r'sedov: -s=(\d+) -n='
+        return sn.extractsingle(regex, self.stdout, 1, int)
+
     @performance_function('s', perf_key='elapsed_internal')
     def report_elapsed_internal(self):
         # Total execution time of 0 iterations of Sedov: 0.373891s
@@ -659,152 +670,146 @@ class run_tests(rfm.RunOnlyRegressionTest):
         sec = sn.extractsingle(regex, self.stdout, 's', float)
         return sn.round(sec, 1)
 
-    #{{{ avg elapsed time
-    @performance_function('s', perf_key='octree_perf_t')
-    def report_cput_octree_perf(self):
-        regex = r'octree_perf_t=(\d+)'
-        return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
-
-    @performance_function('s', perf_key='hilbert_perf_t')
-    def report_cput_hilbert_perf(self):
-        regex = r'hilbert_perf_t=(\d+)'
-        return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
-
-#     @performance_function('s', perf_key='scan_perf_t')
-#     def report_cput_scan_perf(self):
-#         regex = r'scan_perf_t=(\d+)'
+# 
+#     #{{{ unittests
+#     @performance_function('s', perf_key='octree_perf_t')
+#     def report_cput_octree_perf(self):
+#         regex = r'octree_perf_t=(\d+)'
 #         return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
-    #}}}
-    #{{{ hilbert_perf (hilbert, morton)
-    # compute time for 32000000 hilbert keys: 13.2216 s on CPU
-    # compute time for 32000000 morton keys: 0.11014 s on CPU
-    @performance_function('', perf_key='hilbert_perf_keys')
-    def report_keys(self):
-        regex = r'compute time for (\d+) hilbert keys: \S+ s on CPU'
-        return sn.extractsingle(regex, self.stdout, 1, int)
-
-    @performance_function('s', perf_key='hilbert_perf_hilbert')
-    def report_cput_hilbert(self):
-        regex = r'compute time for \d+ hilbert keys: (\S+) s on CPU'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 5)
-
-    @performance_function('s', perf_key='hilbert_perf_morton')
-    def report_cput_morton(self):
-        regex = r'compute time for \d+ morton keys: (\S+) s on CPU'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 5)
-    #}}}
-    #{{{ octree_perf
-#{{{There are actually three interesting metrics to extract from this test:
-#   - build time from scratch 0.0577186 nNodes(tree): 441365 count: 2000000 cornerstone construction time
-#   - first td-update: 0.0285318 construction of the internal octree
-#   - td-octree halo discovery: 0.0378064 collidingNodes: 8042 octree-based halo-discovery, a tree traversal benchmark
-#   the other metrics are not adding much in addition, for example the 2nd time you
-#   see build time from scratch it s for a slightly different particle distribution
-#   (plummer instead of gaussian)
-# octree_perf:
-#*build time from scratch 0.174687 nNodes(tree): 441365 count: 2000000
-# build time with guess 0.00604045 nNodes(tree): 441365 count: 2000000 empty nodes: 16309
-# binary tree halo discovery: 0.105535 collidingNodes: 8042
-#*first td-update: 0.0232271
-# second td-update: 0.0231308
-#*td-octree halo discovery: 0.0720088 collidingNodes: 8042
-# plummer box: -55.4645 56.2188 -54.7943 53.6066 -56.9695 57.3319
-# build time from scratch 0.161216 nNodes(tree): 434211 count: 2000000
-# build time with guess 0.00580249 nNodes(tree): 434211 count: 2000000 empty nodes: 15510
-#}}}
-    @performance_function('s', perf_key='octree_perf_cstone_construction')
-    def report_octree_perf_0(self):
-        regex = r'build time from scratch (\S+) nNodes'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
-
-    @performance_function('s', perf_key='octree_perf_internal_octree')
-    def report_octree_perf_1(self):
-        regex = r'first td-update: (\S+)'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
-
-    @performance_function('s', perf_key='octree_perf_tree_traversal')
-    def report_octree_perf_2(self):
-        regex = r'td-octree halo discovery: (\S+) collidingNodes'
-        return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
-
-    #{{{
-#     @performance_function('s', perf_key='octree_perf_scratch_max')
-#     def report_octree_perf_0(self):
-#         regex = r'build time from scratch (\S+) nNodes'
-#         return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
 # 
-#     @performance_function('s', perf_key='octree_perf_scratch_min')
-#     def report_octree_perf_1(self):
-#         regex = r'build time from scratch (\S+) nNodes'
-#         return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+#     @performance_function('s', perf_key='hilbert_perf_t')
+#     def report_cput_hilbert_perf(self):
+#         regex = r'hilbert_perf_t=(\d+)'
+#         return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
 # 
-#     @performance_function('s', perf_key='octree_perf_guess_max')
-#     def report_octree_perf_2(self):
-#         regex = r'build time with guess (\S+) nNodes'
-#         return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
-# 
-#     @performance_function('s', perf_key='octree_perf_guess_min')
-#     def report_octree_perf_3(self):
-#         regex = r'build time with guess (\S+) nNodes'
-#         return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
-    #}}}
-    #}}}
-    #{{{ scan_perf
-#     # serial benchmark bandwidth: 2035.05 MB/s
-#     # parallel benchmark bandwidth: 8181.65 MB/s
-#     # parallel inplace benchmark bandwidth: 31884.3 MB/s
-#     @performance_function('', perf_key='scan_perf_elements')
-#     def report_scan_perf_0(self):
-#         regex = r'scanning (\d+) elements'
+# #     @performance_function('s', perf_key='scan_perf_t')
+# #     def report_cput_scan_perf(self):
+# #         regex = r'scan_perf_t=(\d+)'
+# #         return sn.round(sn.extractsingle(regex, self.stdout, 1, int) / self.repeat, 2)
+#     #}}}
+#     #{{{ hilbert_perf (hilbert, morton)
+#     # compute time for 32000000 hilbert keys: 13.2216 s on CPU
+#     # compute time for 32000000 morton keys: 0.11014 s on CPU
+#     @performance_function('', perf_key='hilbert_perf_keys')
+#     def report_keys(self):
+#         regex = r'compute time for (\d+) hilbert keys: \S+ s on CPU'
 #         return sn.extractsingle(regex, self.stdout, 1, int)
 # 
-#     @performance_function('MB/s', perf_key='scan_perf_serial')
-#     def report_scan_perf_1(self):
-#         regex = r'serial benchmark bandwidth: (\S+) MB/s'
-#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+#     @performance_function('s', perf_key='hilbert_perf_hilbert')
+#     def report_cput_hilbert(self):
+#         regex = r'compute time for \d+ hilbert keys: (\S+) s on CPU'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 5)
 # 
-#     @performance_function('MB/s', perf_key='scan_perf_parallel')
-#     def report_scan_perf_2(self):
-#         regex = r'parallel benchmark bandwidth: (\S+) MB/s'
-#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+#     @performance_function('s', perf_key='hilbert_perf_morton')
+#     def report_cput_morton(self):
+#         regex = r'compute time for \d+ morton keys: (\S+) s on CPU'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 5)
+#     #}}}
+#     #{{{ octree_perf
+# #{{{There are actually three interesting metrics to extract from this test:
+# #   - build time from scratch 0.0577186 nNodes(tree): 441365 count: 2000000 cornerstone construction time
+# #   - first td-update: 0.0285318 construction of the internal octree
+# #   - td-octree halo discovery: 0.0378064 collidingNodes: 8042 octree-based halo-discovery, a tree traversal benchmark
+# #   the other metrics are not adding much in addition, for example the 2nd time you
+# #   see build time from scratch it s for a slightly different particle distribution
+# #   (plummer instead of gaussian)
+# # octree_perf:
+# #*build time from scratch 0.174687 nNodes(tree): 441365 count: 2000000
+# # build time with guess 0.00604045 nNodes(tree): 441365 count: 2000000 empty nodes: 16309
+# # binary tree halo discovery: 0.105535 collidingNodes: 8042
+# #*first td-update: 0.0232271
+# # second td-update: 0.0231308
+# #*td-octree halo discovery: 0.0720088 collidingNodes: 8042
+# # plummer box: -55.4645 56.2188 -54.7943 53.6066 -56.9695 57.3319
+# # build time from scratch 0.161216 nNodes(tree): 434211 count: 2000000
+# # build time with guess 0.00580249 nNodes(tree): 434211 count: 2000000 empty nodes: 15510
+# #}}}
+#     @performance_function('s', perf_key='octree_perf_cstone_construction')
+#     def report_octree_perf_0(self):
+#         regex = r'build time from scratch (\S+) nNodes'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
 # 
-#     @performance_function('MB/s', perf_key='scan_perf_parallel_inplace')
-#     def report_scan_perf_3(self):
-#         regex = r'parallel inplace benchmark bandwidth: (\S+) MB/s'
-#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+#     @performance_function('s', perf_key='octree_perf_internal_octree')
+#     def report_octree_perf_1(self):
+#         regex = r'first td-update: (\S+)'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
+# 
+#     @performance_function('s', perf_key='octree_perf_tree_traversal')
+#     def report_octree_perf_2(self):
+#         regex = r'td-octree halo discovery: (\S+) collidingNodes'
+#         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 6)
+# 
+#     #{{{
+# #     @performance_function('s', perf_key='octree_perf_scratch_max')
+# #     def report_octree_perf_0(self):
+# #         regex = r'build time from scratch (\S+) nNodes'
+# #         return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
+# # 
+# #     @performance_function('s', perf_key='octree_perf_scratch_min')
+# #     def report_octree_perf_1(self):
+# #         regex = r'build time from scratch (\S+) nNodes'
+# #         return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+# # 
+# #     @performance_function('s', perf_key='octree_perf_guess_max')
+# #     def report_octree_perf_2(self):
+# #         regex = r'build time with guess (\S+) nNodes'
+# #         return sn.round(sn.max(sn.extractall(regex, self.stdout, 1, float)), 6)
+# # 
+# #     @performance_function('s', perf_key='octree_perf_guess_min')
+# #     def report_octree_perf_3(self):
+# #         regex = r'build time with guess (\S+) nNodes'
+# #         return sn.round(sn.min(sn.extractall(regex, self.stdout, 1, float)), 6)
+#     #}}}
+#     #}}}
+#     #{{{ scan_perf
+# #     # serial benchmark bandwidth: 2035.05 MB/s
+# #     # parallel benchmark bandwidth: 8181.65 MB/s
+# #     # parallel inplace benchmark bandwidth: 31884.3 MB/s
+# #     @performance_function('', perf_key='scan_perf_elements')
+# #     def report_scan_perf_0(self):
+# #         regex = r'scanning (\d+) elements'
+# #         return sn.extractsingle(regex, self.stdout, 1, int)
+# # 
+# #     @performance_function('MB/s', perf_key='scan_perf_serial')
+# #     def report_scan_perf_1(self):
+# #         regex = r'serial benchmark bandwidth: (\S+) MB/s'
+# #         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+# # 
+# #     @performance_function('MB/s', perf_key='scan_perf_parallel')
+# #     def report_scan_perf_2(self):
+# #         regex = r'parallel benchmark bandwidth: (\S+) MB/s'
+# #         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+# # 
+# #     @performance_function('MB/s', perf_key='scan_perf_parallel_inplace')
+# #     def report_scan_perf_3(self):
+# #         regex = r'parallel inplace benchmark bandwidth: (\S+) MB/s'
+# #         return sn.round(sn.avg(sn.extractall(regex, self.stdout, 1, float)), 2)
+#     #}}}
+# 
     #}}}
-    #}}}
-    #{{{ L1 errors
-    @performance_function('-s', perf_key='L1_s')
-    def report_L1_s(self):
-        regex = r'sedov: analytical_s=(\d+) analytical_n='
-        return sn.extractsingle(regex, self.stdout, 1, int)
-
-    @performance_function('-n', perf_key='L1_n')
-    def report_L1_n(self):
-        regex = r'sedov: analytical_s=\d+ analytical_n=(\d+)'
-        return sn.extractsingle(regex, self.stdout, 1, int)
-
-    @performance_function('np', perf_key='L1_particles')
-    def report_L1_np(self):
-        regex = r'Loaded (\S+) particles'
-        return sn.extractsingle(regex, self.stdout, 1, int)
-
-    @performance_function('', perf_key='L1_error_density')
-    def report_L1_density(self):
-        regex = r'Density L1 error (\S+)'
-        return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
-
-    @performance_function('', perf_key='L1_error_pressure')
-    def report_L1_pressure(self):
-        regex = r'Pressure L1 error (\S+)'
-        return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
-
-    @performance_function('', perf_key='L1_error_velocity')
-    def report_L1_velocity(self):
-        regex = r'Velocity L1 error (\S+)'
-        return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
-    #}}}
+# 
+#     #{{{ L1 errors
+#     @performance_function('np', perf_key='L1_particles')
+#     def report_L1_np(self):
+#         regex = r'Loaded (\S+) particles'
+#         return sn.extractsingle(regex, self.stdout, 1, int)
+# 
+#     @performance_function('', perf_key='L1_error_density')
+#     def report_L1_density(self):
+#         regex = r'Density L1 error (\S+)'
+#         return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
+# 
+#     @performance_function('', perf_key='L1_error_pressure')
+#     def report_L1_pressure(self):
+#         regex = r'Pressure L1 error (\S+)'
+#         return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
+# 
+#     @performance_function('', perf_key='L1_error_velocity')
+#     def report_L1_velocity(self):
+#         regex = r'Velocity L1 error (\S+)'
+#         return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
+#     #}}}
+# 
 #}}}
 
 
@@ -901,8 +906,7 @@ class build(rfm.CompileOnlyRegressionTest):
         if self.current_environ.name in ['PrgEnv-gnu', 'PrgEnv-gnu-A64FX']:
             self.prebuild_cmds = [
                 'module rm gnu10/10.2.0 binutils/10.2.0',
-                # dom: 
-                'module load cray-hdf5-parallel',
+                # dom: 'module load cray-hdf5-parallel',
                 #'module load hdf5/1.13.0',
             ]
         elif self.current_environ.name in ['PrgEnv-nvidia', 'PrgEnv-nvidia-A64FX']:
@@ -986,10 +990,10 @@ class build(rfm.CompileOnlyRegressionTest):
         # self.executable_name = self.executable.split("/")[-1]
         # self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=mpicxx',
         self.build_system.config_opts = [
-            '-DCMAKE_CXX_COMPILER=CC',
-            "-DCMAKE_CUDA_FLAGS='-ccbin cc'",
-            #'-DCMAKE_CXX_COMPILER=mpicxx',
-            #"-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
+            #'-DCMAKE_CXX_COMPILER=CC',
+            #"-DCMAKE_CUDA_FLAGS='-ccbin cc'",
+            '-DCMAKE_CXX_COMPILER=mpicxx',
+            "-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
             '-DCMAKE_CUDA_COMPILER=`which nvcc`',
             # f'-DCMAKE_CUDA_COMPILER={self.hasnvcc}',
             '-DBUILD_TESTING=ON',
@@ -1022,7 +1026,7 @@ class build(rfm.CompileOnlyRegressionTest):
             self.build_system.config_opts += ['-DUSE_PROFILING=OFF']
 
         self.build_system.max_concurrency = 10
-        self.build_system.make_opts = ['install']
+        self.build_system.make_opts = ['sedov'] # ['install']
         if self.use_info:
             self.build_system.make_opts = ['hilbert_perf']
 
