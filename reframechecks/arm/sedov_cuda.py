@@ -26,11 +26,27 @@ hdf5_mod = {
         'PrgEnv-nvidia': 'hdf5/1.13.0-TX2+NVHPC',
     },
     'gpu': {
-        #'PrgEnv-arm-TX2': 'hdf5/1.13.0-TX2+ARM',
         'PrgEnv-gnu': '' # 'hdf5/1.13.0',
-        #'PrgEnv-nvidia': 'hdf5/1.13.0-TX2+NVHPC',
+    },
+    'mc': {
+        'PrgEnv-gnu': '' # 'hdf5/1.13.0',
     },
 }
+max_mpixomp = {
+    'dom': {'gpu': 12, 'mc': 36},
+    'daint': {'gpu': 12, 'mc': 36},
+    'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
+    'lumi': {'gpu': 64},
+}
+topology_mpixomp = {
+    'dom': {'gpu': {'cps': 12, 's': 1}, 'mc': {'cps': 18, 's': 2}},
+    'lumi': {'gpu': {'cps': 64, 's': 1}},
+    'wombat': {
+        'neoverse-n1': {'cps': 40, 's': 1},
+        'TX2': {'cps': 32, 's': 2},
+        'A64FX': {'cps': 12, 's': 4},
+        },
+    }
 # cmake -S SPH-EXA.git -B build -DBUILD_TESTING=OFF -DBUILD_ANALYTICAL=OFF \
 # -DSPH_EXA_WITH_HIP=OFF -DBUILD_RYOANJI=OFF -DCMAKE_BUILD_TYPE=Release \
 # -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_CUDA_COMPILER=nvcc
@@ -58,8 +74,8 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
     # compute_nodes = parameter([1, 2, 4, 6, 8, 12, 16, 24, 48])
     compute_nodes = parameter([1, 2, 4, 6, 8, 12, 16, 24, 48])
     steps = parameter([0]) # 10
-    cube = parameter([400]) # variable(int, value=100)
-    valid_systems = ['wombat:gpu', 'dom:gpu']
+    cube = parameter([100]) # variable(int, value=100)
+    valid_systems = ['wombat:gpu', 'dom:gpu', 'dom:mc']
     valid_prog_environs = ['builtin', 'PrgEnv-gnu', 'PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-gnu-A64FX', 'PrgEnv-arm-A64FX', 'PrgEnv-nvidia']
     #{{{ compute_nodes = parameter([0, 1, 2, 4])
     # steps = parameter([13]) # 10
@@ -353,19 +369,19 @@ class run_tests(rfm.RunOnlyRegressionTest):
     sourcesdir = None
     # use_tool = parameter(['notool'])
     analytical = parameter(['analytical'])
-    cubeside = parameter(['200'])
+    cubeside = parameter([200])
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
-    compute_nodes = parameter([1])
+    compute_nodes = parameter([0])
     # compute_nodes = parameter([1])
     # openmp_threads = parameter([6])
-    mpi_ranks = parameter([16, 32])
-    openmp_threads = parameter([2, 4])
+#    mpi_ranks = parameter([16, 32])
+#    openmp_threads = parameter([2, 4])
 #    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
 #    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
-    valid_systems = ['wombat:gpu', 'dom:gpu']
+    valid_systems = ['wombat:gpu', 'dom:gpu', 'dom:mc']
     valid_prog_environs = [
         # 'builtin',
         'PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-arm-A64FX',
@@ -373,7 +389,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
         'PrgEnv-gnu', 'PrgEnv-gnu-A64FX',
         'PrgEnv-cray'
     ]
-    time_limit = '25m'
+    time_limit = '90m'
     use_multithreading = False
     strict_check = False
 
@@ -426,12 +442,19 @@ class run_tests(rfm.RunOnlyRegressionTest):
         self.prerun_cmds += [
             'module list',
             'mpicxx --version || true',
-            'nvcc --version',
+            'nvcc --version || true',
             'module rm gnu10/10.2.0 binutils/10.2.0'
         ]
-        self.num_tasks = self.mpi_ranks # 1
-        self.num_tasks_per_node = self.mpi_ranks
-        self.num_cpus_per_task = self.openmp_threads
+        self.num_tasks = topology_mpixomp[self.current_system.name][self.current_partition.name]['s']
+        self.num_tasks_per_node = self.num_tasks
+        self.num_cpus_per_task = topology_mpixomp[self.current_system.name][self.current_partition.name]['cps']
+        # self.num_tasks = self.mpi_ranks # 1
+        # self.num_tasks_per_node = self.mpi_ranks
+        # self.num_cpus_per_task = self.openmp_threads
+        #
+        # self.num_tasks_per_node = self.mpi_ranks if \
+        #     self.mpi_ranks < max_mpixomp[self.current_system.name][self.current_partition.name] \
+        #     else max_mpixomp[self.current_system.name][self.current_partition.name]
         #self.num_cpus_per_task = self.openmp_threads // self.mpi_ranks
         #if self.num_cpus_per_task < 1:
         #    self.num_cpus_per_task = 1
@@ -440,12 +463,6 @@ class run_tests(rfm.RunOnlyRegressionTest):
         # LauncherWrapper(self.job.launcher, 'time', ['-p'])
         # self.skip_if_no_procinfo()
         # procinfo = self.current_partition.processor.info
-        max_mpixomp = {
-            'dom': {'gpu': 12, 'mc': 36},
-            'daint': {'gpu': 12, 'mc': 36},
-            'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
-            'lumi': {'gpu': 64},
-        }
         mpixomp = self.num_tasks_per_node * self.num_cpus_per_task
         current_max_mpixomp = max_mpixomp[self.current_system.name][self.current_partition.name]
         # skip if too many/too few processes:
@@ -486,13 +503,13 @@ class run_tests(rfm.RunOnlyRegressionTest):
             # 14 variables * 64e6 particles * 8 b
             # 14*64*1000000*8 = 7'168'000'000
             # cubeside = 100 # 50
-            steps = 800 # 200
+            # steps = 30 # 200
             output_frequency = -1 # steps
             self.postrun_cmds += [
                 # sedov
-                f'echo sedov: -s={steps} -n={self.cubeside}',
+                f'echo sedov: -s={self.steps} -n={self.cubeside}',
                 't0=`date +%s` ;'
-                f'{mysrun} {self.mypath}/sedov -n {self.cubeside} -s {steps} -w {output_frequency};'
+                f'{mysrun} {self.mypath}/sedov -n {self.cubeside} -s {self.steps} -w {output_frequency};'
                 'done; t1=`date +%s`',
                 "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
                 'echo "sedov_t=$tt"',
@@ -859,7 +876,7 @@ class build(rfm.CompileOnlyRegressionTest):
     #donotscale np_per_c = parameter([47e5]) # OK <------------- -n572 = 187'149'248/2gpu
     # 47e5 ok  / 48e5 ko
     # ----
-    valid_systems = ['wombat:gpu', 'dom:gpu', 'lumi:gpu']
+    valid_systems = ['wombat:gpu', 'dom:gpu', 'dom:mc', 'lumi:gpu']
     valid_prog_environs = [
         # 'builtin',
         'PrgEnv-arm-N1', 'PrgEnv-arm-TX2', 'PrgEnv-arm-A64FX',
@@ -883,6 +900,12 @@ class build(rfm.CompileOnlyRegressionTest):
             self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
 
         compiler_flags = {
+            'mc':
+                {'PrgEnv-cray': '',
+                 'PrgEnv-gnu': '',
+                 'PrgEnv-intel': '',
+                 'PrgEnv-nvidia': '',
+                },
             'gpu':
                 {'PrgEnv-cray': '',
                  'PrgEnv-gnu': '',
@@ -978,7 +1001,7 @@ class build(rfm.CompileOnlyRegressionTest):
         self.prebuild_cmds += [
             'module list',
             'mpicxx --version || true',
-            'nvcc --version',
+            'nvcc --version || true',
             'rm -fr docs LICENSE Makefile README.* scripts test tools',
             'sed -i "s@project(sphexa CXX C)@project(sphexa CXX)@" CMakeLists.txt',
             f'sed -i "s@-march=native@{compiler_flags[self.current_partition.name][self.current_environ.name]} {compiler_info_flag}@" CMakeLists.txt',
@@ -1010,7 +1033,7 @@ class build(rfm.CompileOnlyRegressionTest):
             #"-DCMAKE_CUDA_FLAGS='-ccbin cc'",
             '-DCMAKE_CXX_COMPILER=mpicxx',
             "-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
-            '-DCMAKE_CUDA_COMPILER=`which nvcc`',
+            #'-DCMAKE_CUDA_COMPILER=`which nvcc`',
             # f'-DCMAKE_CUDA_COMPILER={self.hasnvcc}',
             '-DBUILD_TESTING=ON',
             '-DBUILD_ANALYTICAL=ON',
