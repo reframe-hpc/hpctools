@@ -370,7 +370,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
     # use_tool = parameter(['notool'])
     analytical = parameter(['analytical'])
     cubeside = parameter([200])
-    steps = parameter([0]) # 10
+    steps = parameter([800]) # 10
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
@@ -390,7 +390,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
         'PrgEnv-gnu', 'PrgEnv-gnu-A64FX',
         'PrgEnv-cray'
     ]
-    time_limit = '90m'
+    time_limit = '120m'
     use_multithreading = False
     strict_check = False
 
@@ -446,9 +446,10 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'nvcc --version || true',
             'module rm gnu10/10.2.0 binutils/10.2.0'
         ]
-        self.num_tasks = topology_mpixomp[self.current_system.name][self.current_partition.name]['s']
+        self.num_tasks = 1 # topology_mpixomp[self.current_system.name][self.current_partition.name]['s']
         self.num_tasks_per_node = self.num_tasks
-        self.num_cpus_per_task = topology_mpixomp[self.current_system.name][self.current_partition.name]['cps']
+        self.num_cpus_per_task = max_mpixomp[self.current_system.name][self.current_partition.name]
+        # self.num_cpus_per_task = topology_mpixomp[self.current_system.name][self.current_partition.name]['cps']
         # self.num_tasks = self.mpi_ranks # 1
         # self.num_tasks_per_node = self.mpi_ranks
         # self.num_cpus_per_task = self.openmp_threads
@@ -477,6 +478,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
             # 'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
             'OMP_PLACES': 'sockets',
             'OMP_PROC_BIND': 'close',
+            'CUDA_VISIBLE_DEVICES': '0',
         }
         mpi_type = ''
         if self.current_system.name in ['wombat']:
@@ -510,7 +512,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
                 # sedov
                 f'echo sedov: -s={self.steps} -n={self.cubeside}',
                 't0=`date +%s` ;'
-                f'{mysrun} {self.mypath}/sedov -n {self.cubeside} -s {self.steps} -w {output_frequency};'
+                f'{mysrun} {self.mypath}/sedov-cuda -n {self.cubeside} -s {self.steps} -w {output_frequency};'
                 'done; t1=`date +%s`',
                 "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
                 'echo "sedov_t=$tt"',
@@ -988,6 +990,7 @@ class build(rfm.CompileOnlyRegressionTest):
             'PrgEnv-gnu': '-fopt-info-vec-missed',
             'PrgEnv-gnu-A64FX': '-fopt-info-vec-missed',
             #
+            # -fsave-optimization-record
             'PrgEnv-arm-N1': '-Rpass-analysis=loop-vectorize',
             'PrgEnv-arm-TX2': '-Rpass-analysis=loop-vectorize',
             'PrgEnv-arm-A64FX': '-Rpass-analysis=loop-vectorize',
