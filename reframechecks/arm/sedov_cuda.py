@@ -370,6 +370,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
     # use_tool = parameter(['notool'])
     analytical = parameter(['analytical'])
     cubeside = parameter([200])
+    steps = parameter([0]) # 10
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
