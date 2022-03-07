@@ -333,70 +333,6 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
     def report_steps(self):
         return self.steps
 
-    def report_region(self, index):
-        regex = {
-            1: r'^# domain::sync:\s+(?P<sec>.*)s',
-            2: r'^# updateTasks:\s+(?P<sec>.*)s',
-            3: r'^# FindNeighbors:\s+(?P<sec>.*)s',
-            4: r'^# Density:\s+(?P<sec>.*)s',
-            5: r'^# EquationOfState:\s+(?P<sec>.*)s',
-            6: r'^# mpi::synchronizeHalos:\s+(?P<sec>.*)s',
-            7: r'^# IAD:\s+(?P<sec>.*)s',
-            8: r'^# MomentumEnergyIAD:\s+(?P<sec>.*)s',
-            9: r'^# Timestep:\s+(?P<sec>.*)s',
-            10: r'^# UpdateQuantities:\s+(?P<sec>.*)s',
-            11: r'^# EnergyConservation:\s+(?P<sec>.*)s',
-            12: r'^# UpdateSmoothingLength:\s+(?P<sec>.*)s',
-        }
-        return sn.round(sn.sum(sn.extractall(regex[index], self.stdout, 'sec', float)), 4)
-
-    @performance_function('s')
-    def t_domain_sync(self):
-        return self.report_region(1)
-
-    @performance_function('s')
-    def t_updateTasks(self):
-        return self.report_region(2)
-
-    @performance_function('s')
-    def t_FindNeighbors(self):
-        return self.report_region(3)
-
-    @performance_function('s')
-    def t_Density(self):
-        return self.report_region(4)
-
-    @performance_function('s')
-    def t_EquationOfState(self):
-        return self.report_region(5)
-
-    @performance_function('s')
-    def t_mpi_synchronizeHalos(self):
-        return self.report_region(6)
-
-    @performance_function('s')
-    def t_IAD(self):
-        return self.report_region(7)
-
-    @performance_function('s')
-    def t_MomentumEnergyIAD(self):
-        return self.report_region(8)
-
-    @performance_function('s')
-    def t_Timestep(self):
-        return self.report_region(9)
-
-    @performance_function('s')
-    def t_UpdateQuantities(self):
-        return self.report_region(10)
-
-    @performance_function('s')
-    def t_EnergyConservation(self):
-        return self.report_region(11)
-
-    @performance_function('s')
-    def t_UpdateSmoothingLength(self):
-        return self.report_region(12)
     #}}}
 
 # 00_init
@@ -417,17 +353,17 @@ class run_tests(rfm.RunOnlyRegressionTest):
     sourcesdir = None
     # use_tool = parameter(['notool'])
     analytical = parameter(['analytical'])
-    cubeside = parameter(['300'])
+    cubeside = parameter(['200'])
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
     compute_nodes = parameter([1])
     # compute_nodes = parameter([1])
     # openmp_threads = parameter([6])
-#    mpi_ranks = parameter([1])
-#    openmp_threads = parameter([40])
-    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
-    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
+    mpi_ranks = parameter([16, 32])
+    openmp_threads = parameter([2, 4])
+#    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
+#    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
     valid_systems = ['wombat:gpu', 'dom:gpu']
     valid_prog_environs = [
@@ -550,7 +486,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
             # 14 variables * 64e6 particles * 8 b
             # 14*64*1000000*8 = 7'168'000'000
             # cubeside = 100 # 50
-            steps = 14 # 200
+            steps = 800 # 200
             output_frequency = -1 # steps
             self.postrun_cmds += [
                 # sedov
@@ -669,6 +605,86 @@ class run_tests(rfm.RunOnlyRegressionTest):
         regex = r'Total execution time of \d+ iterations of \S+: (?P<s>\S+)s$'
         sec = sn.extractsingle(regex, self.stdout, 's', float)
         return sn.round(sec, 1)
+
+    #{{{ report_regions
+    def report_region(self, index):
+        # domain::sync: 0.109453s
+        # FindNeighbors: 0.781538s
+        # Density: 0.13732s
+        # EquationOfState: 0.000330948s
+        # mpi::synchronizeHalos: 0.00315571s
+        # IAD: 0.230027s
+        # mpi::synchronizeHalos: 0.0174127s
+        # MomentumEnergyIAD: 0.560612s
+        # Timestep: 0.0533516s
+        # UpdateQuantities: 0.0130277s
+        # EnergyConservation: 0.00435739s
+        # UpdateSmoothingLength: 0.00656605s
+        regex = {
+            1: r'^# domain::sync:\s+(?P<sec>.*)s',
+            2: r'^# updateTasks:\s+(?P<sec>.*)s',
+            3: r'^# FindNeighbors:\s+(?P<sec>.*)s',
+            4: r'^# Density:\s+(?P<sec>.*)s',
+            5: r'^# EquationOfState:\s+(?P<sec>.*)s',
+            6: r'^# mpi::synchronizeHalos:\s+(?P<sec>.*)s',
+            7: r'^# IAD:\s+(?P<sec>.*)s',
+            8: r'^# MomentumEnergyIAD:\s+(?P<sec>.*)s',
+            9: r'^# Timestep:\s+(?P<sec>.*)s',
+            10: r'^# UpdateQuantities:\s+(?P<sec>.*)s',
+            11: r'^# EnergyConservation:\s+(?P<sec>.*)s',
+            12: r'^# UpdateSmoothingLength:\s+(?P<sec>.*)s',
+        }
+        return sn.round(sn.sum(sn.extractall(regex[index], self.stdout, 'sec', float)), 4)
+
+    @performance_function('s')
+    def t_domain_sync(self):
+        return self.report_region(1)
+
+    @performance_function('s')
+    def t_updateTasks(self):
+        return self.report_region(2)
+
+    @performance_function('s')
+    def t_FindNeighbors(self):
+        return self.report_region(3)
+
+    @performance_function('s')
+    def t_Density(self):
+        return self.report_region(4)
+
+    @performance_function('s')
+    def t_EquationOfState(self):
+        return self.report_region(5)
+
+    @performance_function('s')
+    def t_mpi_synchronizeHalos(self):
+        return self.report_region(6)
+
+    @performance_function('s')
+    def t_IAD(self):
+        return self.report_region(7)
+
+    @performance_function('s')
+    def t_MomentumEnergyIAD(self):
+        return self.report_region(8)
+
+    @performance_function('s')
+    def t_Timestep(self):
+        return self.report_region(9)
+
+    @performance_function('s')
+    def t_UpdateQuantities(self):
+        return self.report_region(10)
+
+    @performance_function('s')
+    def t_EnergyConservation(self):
+        return self.report_region(11)
+
+    @performance_function('s')
+    def t_UpdateSmoothingLength(self):
+        return self.report_region(12)
+
+#}}}
 
 # 
 #     #{{{ unittests
