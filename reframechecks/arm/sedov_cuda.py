@@ -31,12 +31,16 @@ hdf5_mod = {
     'mc': {
         'PrgEnv-gnu': '' # 'hdf5/1.13.0',
     },
+    'a100': {
+        'PrgEnv-gnu': '' # 'hdf5/1.13.0',
+    },
 }
 max_mpixomp = {
     'dom': {'gpu': 12, 'mc': 36},
     'daint': {'gpu': 12, 'mc': 36},
     'wombat': {'neoverse-n1': 40, 'TX2': 64, 'A64FX': 48},
     'lumi': {'gpu': 64},
+    'dmi': {'a100': 112},
 }
 topology_mpixomp = {
     'dom': {'gpu': {'cps': 12, 's': 1}, 'mc': {'cps': 18, 's': 2}},
@@ -46,6 +50,7 @@ topology_mpixomp = {
         'TX2': {'cps': 32, 's': 2},
         'A64FX': {'cps': 12, 's': 4},
         },
+    'dmi': {'a100': {'cps': 28, 's': 2}},
     }
 # cmake -S SPH-EXA.git -B build -DBUILD_TESTING=OFF -DBUILD_ANALYTICAL=OFF \
 # -DSPH_EXA_WITH_HIP=OFF -DBUILD_RYOANJI=OFF -DCMAKE_BUILD_TYPE=Release \
@@ -363,22 +368,24 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
 # ./R -c sedov_cuda.py -n run_tests -r -S repeat=3 $x -S mypath='../build_with_armpl_notool/build/JG/sbin/performance'
 # dom:
 # ~/R -c sedov_cuda.py -n run_tests -r -m nvhpc-nompi/21.9 -m gcc/9.3.0 -S repeat=1 -S mypath='../build_without_armpl_notool/build/JG/sbin/performance' -p PrgEnv-gnu
+# dmi: salloc -pgpu -t 6:0:0 ; ssh cl-node027
 #{{{ run_tests
 @rfm.simple_test
 class run_tests(rfm.RunOnlyRegressionTest):
     sourcesdir = None
     # use_tool = parameter(['notool'])
     analytical = parameter(['analytical'])
-    cubeside = parameter([200])
-    steps = parameter([800]) # 10
+    cubeside = parameter([200]) # 200
+    steps = parameter([800]) # 800
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
     compute_nodes = parameter([0])
     # compute_nodes = parameter([1])
-    # openmp_threads = parameter([6])
-#    mpi_ranks = parameter([16, 32])
-#    openmp_threads = parameter([2, 4])
+    mpi_ranks = parameter([1])
+    openmp_threads = parameter([56])
+#    mpi_ranks = parameter([1, 2, 4, 7, 8, 14, 28, 56])
+#    openmp_threads = parameter([1, 2, 4, 7, 8, 14, 28, 56])
 #    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
 #    openmp_threads = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
     # openmp_threads = parameter([1, 2, 4])
@@ -421,14 +428,17 @@ class run_tests(rfm.RunOnlyRegressionTest):
     #{{{ run
     @run_before('run')
     def set_hdf5(self):
+        # print(self.current_partition.name)
+        # print(self.current_environ.name)
+        # print(hdf5_mod[self.current_partition.name][self.current_environ.name])
         if hdf5_mod[self.current_partition.name][self.current_environ.name]:
             self.modules = [hdf5_mod[self.current_partition.name][self.current_environ.name]]
-        else:
-            self.prerun_cmds = [
-                # 'export CMAKE_PREFIX_PATH=/users/piccinal/bin/hdf5/1.13.0:$CMAKE_PREFIX_PATH',
-                # 'module load cray-hdf5-parallel',
-                'module load hdf5/1.13.0',
-            ]
+#         else:
+#             self.prerun_cmds = [
+#                 # 'export CMAKE_PREFIX_PATH=/users/piccinal/bin/hdf5/1.13.0:$CMAKE_PREFIX_PATH',
+#                 # 'module load cray-hdf5-parallel',
+#                 'module load hdf5/1.13.0',
+#             ]
 
     @run_before('run')
     def set_run(self):
@@ -446,9 +456,15 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'nvcc --version || true',
             'module rm gnu10/10.2.0 binutils/10.2.0'
         ]
-        self.num_tasks = 1 # topology_mpixomp[self.current_system.name][self.current_partition.name]['s']
-        self.num_tasks_per_node = self.num_tasks
-        self.num_cpus_per_task = max_mpixomp[self.current_system.name][self.current_partition.name]
+#        self.num_tasks = 1 # topology_mpixomp[self.current_system.name][self.current_partition.name]['s']
+#        self.num_tasks_per_node = self.num_tasks
+#        self.num_cpus_per_task = max_mpixomp[self.current_system.name][self.current_partition.name]
+
+        self.num_tasks = self.mpi_ranks
+        self.num_tasks_per_node = self.mpi_ranks
+        self.num_cpus_per_task = self.openmp_threads
+        # print(self.num_tasks, self.num_tasks_per_node, self.num_cpus_per_task)
+
         # self.num_cpus_per_task = topology_mpixomp[self.current_system.name][self.current_partition.name]['cps']
         # self.num_tasks = self.mpi_ranks # 1
         # self.num_tasks_per_node = self.mpi_ranks
@@ -469,8 +485,8 @@ class run_tests(rfm.RunOnlyRegressionTest):
         current_max_mpixomp = max_mpixomp[self.current_system.name][self.current_partition.name]
         # skip if too many/too few processes:
         self.skip_if(
-            mpixomp != current_max_mpixomp,
-            # mpixomp > current_max_mpixomp,
+            #mpixomp != current_max_mpixomp / 2,
+            mpixomp > current_max_mpixomp,
             f'{self.num_tasks_per_node}*{self.num_cpus_per_task}={mpixomp} != {current_max_mpixomp} max mpi*openmp'
         )
         self.variables = {
@@ -489,6 +505,12 @@ class run_tests(rfm.RunOnlyRegressionTest):
             mpi_type = ''
             self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
+        elif self.current_system.name in ['dmi']:
+            # MUST: salloc THEN ssh THEN rfm -r
+            # '--use-hwthread-cpus'
+            self.job.launcher.options = [f'-np {self.mpi_ranks}', '--hostfile $OMPI_HOSTFILE', f'--map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS', 'numactl', '--interleave=all']
+            mysrun = f'for ii in `seq {self.repeat}` ;do mpirun {" ".join(self.job.launcher.options)}'
+            # self.postrun_cmds += [f'mpirun {" ".join(self.job.launcher.options)} {self.executable}']
         else:
             self.job.launcher.options = ['numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do mpirun -np {self.mpi_ranks} --map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS {" ".join(self.job.launcher.options)}'
@@ -508,11 +530,18 @@ class run_tests(rfm.RunOnlyRegressionTest):
             # cubeside = 100 # 50
             # steps = 30 # 200
             output_frequency = -1 # steps
+            #                  r'-o %h.%q{SLURM_NODEID}.%q{SLURM_PROCID}.qdstrm '
+            #                  r'--trace=cuda,mpi,nvtx --mpi-impl=mpich '
+            #                  r'--delay=2')
+            self.tool_opts = (r'nsys profile --force-overwrite=true '
+                              r'-o %h.qdstrm '
+                              r'--trace=cuda,mpi,nvtx '
+                              r'--stats=true ')
             self.postrun_cmds += [
                 # sedov
                 f'echo sedov: -s={self.steps} -n={self.cubeside}',
                 't0=`date +%s` ;'
-                f'{mysrun} {self.mypath}/sedov-cuda -n {self.cubeside} -s {self.steps} -w {output_frequency};'
+                f'{mysrun} {self.tool_opts} {self.mypath}/sedov-cuda -n {self.cubeside} -s {self.steps} -w {output_frequency};'
                 'done; t1=`date +%s`',
                 "tt=`echo $t0 $t1 |awk '{print $2-$1}'`",
                 'echo "sedov_t=$tt"',
@@ -569,7 +598,21 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'echo "SLURM_JOBID=$SLURM_JOBID"',
         ]
     #}}}
+    #{{{ nsys
+    @run_before('run')
+    def get_nsys_rpt(self):
+        self.postrun_cmds += [
+            f'nsys stats --report nvtxsum -f csv --timeunit sec *.nsys-rep > nvtxsum.rpt',
+            f'nsys stats --report gpumemsizesum -f csv *.nsys-rep > gpumemsizesum.rpt',
+        ]
+    #}}}
 
+#     @run_before('run')
+#     def set_mpirun(self):
+#         if self.current_system.name in ['dmi']:
+#             self.job.launcher.options = ['--mca btl_openib_warn_default_gid_prefix 0', '--hostfile ~/jgphpc.git/hpc/reframe/sites/minihpc/hostfile.A100']
+
+    #{{{ sanity
     @sanity_function
     def assert_sanity(self):
         if self.analytical in ['analytical']:
@@ -591,6 +634,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
                 # sn.assert_found(regex03, self.stdout),
                 # sn.assert_found(regex3, self.stdout),
             ])
+    #}}}
 
     #{{{ timers
     @performance_function('cn', perf_key='compute_nodes')
@@ -599,11 +643,17 @@ class run_tests(rfm.RunOnlyRegressionTest):
 
     @performance_function('mpi', perf_key='mpi_ranks')
     def report_mpi(self):
-        return self.num_tasks
+        regex = r'# (\d+) MPI-\S+ process\(es\) with \d+ OpenMP-\S+ thread\(s\)/process'
+        return sn.extractsingle(regex, self.stdout, 1, int)
+        # return self.num_tasks
 
     @performance_function('openmp', perf_key='openmp_threads')
     def report_omp(self):
-        return self.num_cpus_per_task
+        regex = r'# \d+ MPI-\S+ process\(es\) with (\d+) OpenMP-\S+ thread\(s\)/process'
+        return sn.extractsingle(regex, self.stdout, 1, int)
+        # return self.num_cpus_per_task
+
+    # 1 MPI-3.1 process(es) with 112 OpenMP-201511 thread(s)/process
 
     @performance_function('', perf_key='repeat')
     def report_repeat(self):
@@ -823,6 +873,81 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #     #}}}
 # 
     #}}}
+    #{{{ nsys
+    #{{{ nvtxsum
+    def report_nvtxsum(self, region='___01_domain.sync'):
+        regex = r'(?P<pct>\S+),(\S+,){7}PushPop,' + region
+        return sn.round(sn.sum(sn.extractall(regex, 'nvtxsum.rpt', 'pct', float)), 2)
+        # return sn.extractsingle(regex, 'nvtxsum.rpt', 'pct', float)
+
+    @performance_function('%', perf_key='nsys_domain.sync')
+    def nsys_p01(self):
+        return self.report_nvtxsum('___01_domain.sync')
+
+    @performance_function('%', perf_key='nsys_FindNeighbors')
+    def nsys_p02(self):
+        return self.report_nvtxsum('___02_FindNeighbors')
+
+    @performance_function('%', perf_key='nsys_computeDensity')
+    def nsys_p03(self):
+        return self.report_nvtxsum('___03_computeDensity')
+
+    @performance_function('%', perf_key='nsys_EquationOfState')
+    def nsys_p04(self):
+        return self.report_nvtxsum('___04_EquationOfState')
+
+    @performance_function('%', perf_key='nsys_synchronizeHalos1')
+    def nsys_p05(self):
+        return self.report_nvtxsum('___05_synchronizeHalos1')
+
+    @performance_function('%', perf_key='nsys_IAD')
+    def nsys_p06(self):
+        return self.report_nvtxsum('___06_IAD')
+
+    @performance_function('%', perf_key='nsys_synchronizeHalos2')
+    def nsys_p07(self):
+        return self.report_nvtxsum('___07_synchronizeHalos2')
+
+    @performance_function('%', perf_key='nsys_MomentumEnergyIAD')
+    def nsys_p08(self):
+        return self.report_nvtxsum('___08_MomentumEnergyIAD')
+
+    @performance_function('%', perf_key='nsys_Timestep')
+    def nsys_p09(self):
+        return self.report_nvtxsum('___09_Timestep')
+
+    @performance_function('%', perf_key='nsys_UpdateQuantities')
+    def nsys_p10(self):
+        return self.report_nvtxsum('___10_UpdateQuantities')
+
+    @performance_function('%', perf_key='nsys_EnergyConservation')
+    def nsys_p11(self):
+        return self.report_nvtxsum('___11_EnergyConservation')
+
+    @performance_function('%', perf_key='nsys_UpdateSmoothingLength')
+    def nsys_p12(self):
+        return self.report_nvtxsum('___12_UpdateSmoothingLength')
+
+    @performance_function('%', perf_key='nsys_printIterationTimings')
+    def nsys_p13(self):
+        return self.report_nvtxsum('___13_printIterationTimings')
+
+    @performance_function('%', perf_key='nsys_MPI')
+    def nsys_p14(self):
+        return self.report_nvtxsum('MPI:')
+    #}}}
+    #{{{ gpumemsizesum
+    @performance_function('MB')
+    def nsys_H2D(self):
+        regex = r'(?P<mb>\S+),(\S+,){6}\[CUDA memcpy HtoD\]'
+        return sn.extractsingle(regex, 'gpumemsizesum.rpt', 'mb', float)
+
+    @performance_function('MB')
+    def nsys_D2H(self):
+        regex = r'(?P<mb>\S+),(\S+,){6}\[CUDA memcpy DtoH\]'
+        return sn.extractsingle(regex, 'gpumemsizesum.rpt', 'mb', float)
+    #}}}
+
 # 
 #     #{{{ L1 errors
 #     @performance_function('np', perf_key='L1_particles')
@@ -845,7 +970,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #         regex = r'Velocity L1 error (\S+)'
 #         return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
 #     #}}}
-# 
+#
 #}}}
 
 
@@ -912,6 +1037,12 @@ class build(rfm.CompileOnlyRegressionTest):
             'gpu':
                 {'PrgEnv-cray': '',
                  'PrgEnv-gnu': '',
+                 'PrgEnv-intel': '',
+                 'PrgEnv-nvidia': '',
+                },
+            'a100':
+                {'PrgEnv-cray': '',
+                 'PrgEnv-gnu': '-mcpu=cascadelake',
                  'PrgEnv-intel': '',
                  'PrgEnv-nvidia': '',
                 },
