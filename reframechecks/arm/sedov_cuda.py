@@ -11,14 +11,20 @@ import reframe.utility.sanity as sn
 
 hdf5_mod = {
     'A64FX': {
-        'PrgEnv-arm-A64FX': 'hdf5/1.13.0-A64FX+ARM',
-        'PrgEnv-gnu-A64FX': 'hdf5/1.13.0-A64FX+GNU',
-        'PrgEnv-nvidia-A64FX': 'hdf5/1.13.0-A64FX+NVHPC',
+        'PrgEnv-arm-A64FX': '',
+        'PrgEnv-gnu-A64FX': '',
+        'PrgEnv-nvidia-A64FX': '',
+        #'PrgEnv-arm-A64FX': 'hdf5/1.13.0-A64FX+ARM',
+        #'PrgEnv-gnu-A64FX': 'hdf5/1.13.0-A64FX+GNU',
+        #'PrgEnv-nvidia-A64FX': 'hdf5/1.13.0-A64FX+NVHPC',
     },
     'neoverse-n1': {
-        'PrgEnv-arm-N1': 'hdf5/1.13.0-N1+ARM',
-        'PrgEnv-gnu': 'hdf5/1.13.0-N1+GNU',
-        'PrgEnv-nvidia': 'hdf5/1.13.0-N1+NVHPC',
+        'PrgEnv-arm-N1': '',
+        'PrgEnv-gnu': '',
+        'PrgEnv-nvidia': '',
+        #'PrgEnv-arm-N1': 'hdf5/1.13.0-N1+ARM',
+        #'PrgEnv-gnu': 'hdf5/1.13.0-N1+GNU',
+        #'PrgEnv-nvidia': 'hdf5/1.13.0-N1+NVHPC',
     },
     'TX2': {
         'PrgEnv-arm-TX2': 'hdf5/1.13.0-TX2+ARM',
@@ -373,17 +379,21 @@ class run_sedov_cuda(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class run_tests(rfm.RunOnlyRegressionTest):
     sourcesdir = None
-    # use_tool = parameter(['notool'])
+    #use_tool = parameter(['notool'])
+    #use_tool = parameter(['nsys'])
+    use_tool = parameter(['ncu'])
+    kernel_name = parameter(['cudaDensity', 'cudaGradP', 'cudaIAD'])
+    # kernel_name = parameter(['cudaIAD'])
     analytical = parameter(['analytical'])
     cubeside = parameter([200]) # 200
-    steps = parameter([800]) # 800
+    steps = parameter([100]) # 800
     #mypath = variable(str, value='../build_notool/build/JG/sbin/performance')
     mypath = variable(str, value='../build_analytical_False_without_armpl_notool/build/JG/bin')
     repeat = variable(int, value=1)
     compute_nodes = parameter([0])
     # compute_nodes = parameter([1])
     mpi_ranks = parameter([1])
-    openmp_threads = parameter([56])
+    openmp_threads = parameter([40])
 #    mpi_ranks = parameter([1, 2, 4, 7, 8, 14, 28, 56])
 #    openmp_threads = parameter([1, 2, 4, 7, 8, 14, 28, 56])
 #    mpi_ranks = parameter([1, 2, 4, 8, 12, 16, 32, 40, 48, 64])
@@ -456,6 +466,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'nvcc --version || true',
             'module rm gnu10/10.2.0 binutils/10.2.0'
         ]
+        #{{{ mpi:
 #        self.num_tasks = 1 # topology_mpixomp[self.current_system.name][self.current_partition.name]['s']
 #        self.num_tasks_per_node = self.num_tasks
 #        self.num_cpus_per_task = max_mpixomp[self.current_system.name][self.current_partition.name]
@@ -501,20 +512,24 @@ class run_tests(rfm.RunOnlyRegressionTest):
             mpi_type = '--mpi=pmix'
             self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
+
         elif self.current_system.name in ['dom']:
             mpi_type = ''
             self.job.launcher.options = [mpi_type, 'numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do srun {" ".join(self.job.launcher.options)}'
+
         elif self.current_system.name in ['dmi']:
             # MUST: salloc THEN ssh THEN rfm -r
             # '--use-hwthread-cpus'
             self.job.launcher.options = [f'-np {self.mpi_ranks}', '--hostfile $OMPI_HOSTFILE', f'--map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS', 'numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do mpirun {" ".join(self.job.launcher.options)}'
             # self.postrun_cmds += [f'mpirun {" ".join(self.job.launcher.options)} {self.executable}']
+
         else:
             self.job.launcher.options = ['numactl', '--interleave=all']
             mysrun = f'for ii in `seq {self.repeat}` ;do mpirun -np {self.mpi_ranks} --map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS {" ".join(self.job.launcher.options)}'
             self.postrun_cmds += [f'mpirun -np {self.mpi_ranks} --map-by ppr:{self.mpi_ranks}:node:pe=$OMP_NUM_THREADS {self.executable}']
+        #}}}
 
         #if self.current_system.name in {'daint', 'dom'}:
         #    self.job.launcher.options = ['numactl', '--interleave=all']
@@ -533,10 +548,140 @@ class run_tests(rfm.RunOnlyRegressionTest):
             #                  r'-o %h.%q{SLURM_NODEID}.%q{SLURM_PROCID}.qdstrm '
             #                  r'--trace=cuda,mpi,nvtx --mpi-impl=mpich '
             #                  r'--delay=2')
-            self.tool_opts = (r'nsys profile --force-overwrite=true '
-                              r'-o %h.qdstrm '
-                              r'--trace=cuda,mpi,nvtx '
-                              r'--stats=true ')
+            #{{{ nsys
+            if self.use_tool in ['nsys']:
+                self.tool_opts = (r'nsys profile --force-overwrite=true '
+                                  r'-o %h.qdstrm '
+                                  r'--trace=cuda,mpi,nvtx '
+                                  r'--stats=true ')
+            #}}}
+            #{{{ ncu
+            elif self.use_tool in ['ncu']:
+                # {{{ roofline metrics
+                # /users/staff/dmi-dmi/piccinal/.local/easybuild/software/nvidia-nsight-compute/2021.1.0.18/sections/SpeedOfLight_Roofline.py
+                # /users/staff/dmi-dmi/piccinal/.local/easybuild/software/nvidia-nsight-compute/2021.1.0.18/sections/SpeedOfLight_RooflineChart.section
+                # https://developer.nvidia.com/blog/accelerating-hpc-applications-with-nsight-compute-roofline-analysis/
+                # https://gitlab.com/NERSC/roofline-on-nvidia-gpus/-/blob/cuda11.0.2-ncu/ncu-section-files/SpeedOfLight_HierarchicalDoubleRooflineChart.section
+                # curl https://gitlab.com/NERSC/roofline-on-nvidia-gpus/-/raw/master/ncu-section-files/SpeedOfLight.section
+                roof_metrics = (
+                    # NOTE:
+                    # from https://gitlab.com/NERSC/roofline-on-nvidia-gpus/-/blob/master/custom-scripts/run.gpp.customized
+                    # run with: ncu -k <kernel_name> --metrics $metrics --csv
+                    # Time
+                    r'sm__cycles_elapsed.avg,sm__cycles_elapsed.avg.per_second,'
+                    # DP
+                    r'sm__sass_thread_inst_executed_op_dadd_pred_on.sum,'
+                    r'sm__sass_thread_inst_executed_op_dfma_pred_on.sum,'
+                    r'sm__sass_thread_inst_executed_op_dmul_pred_on.sum,'
+                    # SP
+                    r'sm__sass_thread_inst_executed_op_fadd_pred_on.sum,'
+                    r'sm__sass_thread_inst_executed_op_ffma_pred_on.sum,'
+                    r'sm__sass_thread_inst_executed_op_fmul_pred_on.sum,'
+                    # HP
+                    r'sm__sass_thread_inst_executed_op_hadd_pred_on.sum,'
+                    r'sm__sass_thread_inst_executed_op_hfma_pred_on.sum,'
+                    r'sm__sass_thread_inst_executed_op_hmul_pred_on.sum,'
+                    # Tensor Core
+                    r'sm__inst_executed_pipe_tensor.sum,'
+                    # DRAM, L2 and L1
+                    'dram__bytes.sum,'
+                    'lts__t_bytes.sum,'
+                    'l1tex__t_bytes.sum'
+                )
+                #}}}
+                # --- Occupancy: ok
+                # kernel_name = rf'--kernel-id ::regex:^{self.kernel_name}:"24|49|74|99" '
+                # metrics = r'--metrics sm__throughput.avg.pct_of_peak_sustained_elapsed,gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed '
+
+                # --- SpeedOfLight: ok
+                # kernel_name = rf'--kernel-id ::regex:^{self.kernel_name}:"24|49|74|99" '
+                # metrics = '--section SpeedOfLight'
+
+                # --- Roofline: ok
+                # no need to set roof_metrics, use section instead!
+                # kernel_name = rf'--kernel-id ::regex:^{self.kernel_name}:"24|49|74|99" '
+                # metrics = '--section SpeedOfLight_RooflineChart'
+
+                # --- Source/SAAS: ok
+                kernel_name = rf'--kernel-id ::regex:^{self.kernel_name}:"24|49|74|99" '
+                metrics = '--set full'
+                self.tool_opts = (rf'ncu {kernel_name} {metrics} '
+                                  r'--force-overwrite -o rpt ' # -> rpt.ncu-rep
+                                  # r'--launch-skip 1 --launch-count 2 '
+                                  # r'--section SpeedOfLight_RooflineChart '
+                                  # -> .../sections/SpeedOfLight_RooflineChart.section
+                                  # r'--import-source on '  # compile with -lineinfo (but not -G)
+                                  # r'-o %h.%q{SLURM_NODEID}.%q{SLURM_PROCID} '
+# ok: --kernel-id ::regex:^cudaIAD:"2|6|8" = -s1,-s5,-s7
+# or: --kernel-name "cudaIAD"
+#  --kernel-id arg Set the identifier to use for matching the kernel to profile. The identifier is
+#                  of the format "context-id:stream-id:[name-operator:]kernel-name:invocation-nr".
+#                  Skip entries that shouldn't be matched, e.g. use "::foobar:2" to match the
+#                  second invocation of "foobar" in any context or stream. Use ":7:regex:^foo:" to
+#                  match any kernel in stream 7 beginning with "foo" (according to
+#                  --kernel-name-base).
+                                 )
+#{{{ simplest:
+# --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed,gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed
+# ncu -i rpt.ncu-rep --csv
+# "ID","Process ID","Process Name","Host Name","Kernel Name","Kernel Time","Context","Stream","Section Name","Metric Name","Metric Unit","Metric Value"
+# 
+# "0","51043","sedov-cuda","127.0.0.1","void sphexa::sph::cuda::cudaIAD<double, unsigned long>(T1, T1, int, cstone::Box<T1>, int, int, int, const T2 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, T1 *, T1 *, T1 *, T1 *, T1 *, T1 *)","2022-Mar-14 09:33:09","1","7","Command line profiler metrics","gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed","%","20.06"
+# 
+# "0","51043","sedov-cuda","127.0.0.1","void sphexa::sph::cuda::cudaIAD<double, unsigned long>(T1, T1, int, cstone::Box<T1>, int, int, int, const T2 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, const T1 *, T1 *, T1 *, T1 *, T1 *, T1 *, T1 *)","2022-Mar-14 09:33:09","1","7","Command line profiler metrics","sm__throughput.avg.pct_of_peak_sustained_elapsed","%","42.03"
+#}}}
+
+#{{{ help:
+# ls -1 ~/bin/nvidia/hpc_sdk/Linux_aarch64/22.2/profilers/Nsight_Compute/sections/ |grep section
+# ComputeWorkloadAnalysis.section
+# InstructionStatistics.section
+# LaunchStatistics.section
+# MemoryWorkloadAnalysis_Chart.section
+# MemoryWorkloadAnalysis_Deprecated.section
+# MemoryWorkloadAnalysis.section
+# MemoryWorkloadAnalysis_Tables.section
+# Nvlink.section
+# Nvlink_Tables.section
+# Nvlink_Topology.section
+# Occupancy.section
+# SchedulerStatistics.section
+# SourceCounters.section
+# SpeedOfLight_HierarchicalDoubleRooflineChart.section
+# SpeedOfLight_HierarchicalHalfRooflineChart.section
+# SpeedOfLight_HierarchicalSingleRooflineChart.section
+# SpeedOfLight_HierarchicalTensorRooflineChart.section
+# SpeedOfLight_RooflineChart.section                    <---
+# SpeedOfLight.section                                  <---
+# WarpStateStatistics.section
+# ncu --list-sections
+#-------------------------------------------- ----------------------------------------------------------------- ------- --------------------------------------------------
+#Identifier                                   Display Name                                                      Enabled Filename
+#-------------------------------------------- ----------------------------------------------------------------- ------- --------------------------------------------------
+#ComputeWorkloadAnalysis                      Compute Workload Analysis                                         no      ...22.1.0/Sections/ComputeWorkloadAnalysis.section
+#InstructionStats                             Instruction Statistics                                            no      ...2022.1.0/Sections/InstructionStatistics.section
+#LaunchStats                                  Launch Statistics                                                 yes     ...pute/2022.1.0/Sections/LaunchStatistics.section
+#MemoryWorkloadAnalysis                       Memory Workload Analysis                                          no      ...022.1.0/Sections/MemoryWorkloadAnalysis.section
+#MemoryWorkloadAnalysis_Chart                 Memory Workload Analysis Chart                                    no      ...0/Sections/MemoryWorkloadAnalysis_Chart.section
+#MemoryWorkloadAnalysis_Deprecated            (Deprecated) Memory Workload Analysis                             no      ...tions/MemoryWorkloadAnalysis_Deprecated.section
+#MemoryWorkloadAnalysis_Tables                Memory Workload Analysis Tables                                   no      .../Sections/MemoryWorkloadAnalysis_Tables.section
+#Nvlink                                       NVLink                                                            no      ...Nsight Compute/2022.1.0/Sections/Nvlink.section
+#Nvlink_Tables                                NVLink Tables                                                     no      ...Compute/2022.1.0/Sections/Nvlink_Tables.section
+#Nvlink_Topology                              NVLink Topology                                                   no      ...mpute/2022.1.0/Sections/Nvlink_Topology.section
+#Occupancy                                    Occupancy                                                         yes     ...ght Compute/2022.1.0/Sections/Occupancy.section
+#SchedulerStats                               Scheduler Statistics                                              no      ...e/2022.1.0/Sections/SchedulerStatistics.section
+#SourceCounters                               Source Counters                                                   no      ...ompute/2022.1.0/Sections/SourceCounters.section
+#SpeedOfLight                                 GPU Speed Of Light Throughput                                     yes     ... Compute/2022.1.0/Sections/SpeedOfLight.section
+#SpeedOfLight_HierarchicalDoubleRooflineChart GPU Speed Of Light Hierarchical Roofline Chart (Double Precision) no      ...OfLight_HierarchicalDoubleRooflineChart.section
+#SpeedOfLight_HierarchicalHalfRooflineChart   GPU Speed Of Light Hierarchical Roofline Chart (Half Precision)   no      ...edOfLight_HierarchicalHalfRooflineChart.section
+#SpeedOfLight_HierarchicalSingleRooflineChart GPU Speed Of Light Hierarchical Roofline Chart (Single Precision) no      ...OfLight_HierarchicalSingleRooflineChart.section
+#SpeedOfLight_HierarchicalTensorRooflineChart GPU Speed Of Light Hierarchical Roofline Chart (Tensor Core)      no      ...OfLight_HierarchicalTensorRooflineChart.section
+#SpeedOfLight_RooflineChart                   GPU Speed Of Light Roofline Chart                                 no      ...1.0/Sections/SpeedOfLight_RooflineChart.section
+#WarpStateStats                               Warp State Statistics                                             no      ...e/2022.1.0/Sections/WarpStateStatistics.section
+#}}}
+            #}}}
+            else:
+                self.tool_opts = ''
+
             self.postrun_cmds += [
                 # sedov
                 f'echo sedov: -s={self.steps} -n={self.cubeside}',
@@ -598,13 +743,21 @@ class run_tests(rfm.RunOnlyRegressionTest):
             'echo "SLURM_JOBID=$SLURM_JOBID"',
         ]
     #}}}
-    #{{{ nsys
+     #{{{ nsys / ncu
     @run_before('run')
-    def get_nsys_rpt(self):
-        self.postrun_cmds += [
-            f'nsys stats --report nvtxsum -f csv --timeunit sec *.nsys-rep > nvtxsum.rpt',
-            f'nsys stats --report gpumemsizesum -f csv *.nsys-rep > gpumemsizesum.rpt',
-        ]
+    def get_rpt(self):
+        if self.use_tool in ['nsys']:
+            self.postrun_cmds += [
+                f'nsys stats --report nvtxsum -f csv --timeunit sec *.nsys-rep > nvtxsum.rpt',
+                f'nsys stats --report gpumemsizesum -f csv *.nsys-rep > gpumemsizesum.rpt',
+            ]
+        elif self.use_tool in ['ncu']:
+            self.postrun_cmds += [
+                '#',
+                #'ncu --csv -i rpt.ncu-rep > rpt.csv',
+                # roofline: 
+                'ncu --page raw --csv -i rpt.ncu-rep > rpt.csv',
+            ]
     #}}}
 
 #     @run_before('run')
@@ -654,7 +807,6 @@ class run_tests(rfm.RunOnlyRegressionTest):
         # return self.num_cpus_per_task
 
     # 1 MPI-3.1 process(es) with 112 OpenMP-201511 thread(s)/process
-
     @performance_function('', perf_key='repeat')
     def report_repeat(self):
         return self.repeat
@@ -873,82 +1025,131 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #     #}}}
 # 
     #}}}
-    #{{{ nsys
-    #{{{ nvtxsum
-    def report_nvtxsum(self, region='___01_domain.sync'):
-        regex = r'(?P<pct>\S+),(\S+,){7}PushPop,' + region
-        return sn.round(sn.sum(sn.extractall(regex, 'nvtxsum.rpt', 'pct', float)), 2)
-        # return sn.extractsingle(regex, 'nvtxsum.rpt', 'pct', float)
 
-    @performance_function('%', perf_key='nsys_domain.sync')
-    def nsys_p01(self):
-        return self.report_nvtxsum('___01_domain.sync')
-
-    @performance_function('%', perf_key='nsys_FindNeighbors')
-    def nsys_p02(self):
-        return self.report_nvtxsum('___02_FindNeighbors')
-
-    @performance_function('%', perf_key='nsys_computeDensity')
-    def nsys_p03(self):
-        return self.report_nvtxsum('___03_computeDensity')
-
-    @performance_function('%', perf_key='nsys_EquationOfState')
-    def nsys_p04(self):
-        return self.report_nvtxsum('___04_EquationOfState')
-
-    @performance_function('%', perf_key='nsys_synchronizeHalos1')
-    def nsys_p05(self):
-        return self.report_nvtxsum('___05_synchronizeHalos1')
-
-    @performance_function('%', perf_key='nsys_IAD')
-    def nsys_p06(self):
-        return self.report_nvtxsum('___06_IAD')
-
-    @performance_function('%', perf_key='nsys_synchronizeHalos2')
-    def nsys_p07(self):
-        return self.report_nvtxsum('___07_synchronizeHalos2')
-
-    @performance_function('%', perf_key='nsys_MomentumEnergyIAD')
-    def nsys_p08(self):
-        return self.report_nvtxsum('___08_MomentumEnergyIAD')
-
-    @performance_function('%', perf_key='nsys_Timestep')
-    def nsys_p09(self):
-        return self.report_nvtxsum('___09_Timestep')
-
-    @performance_function('%', perf_key='nsys_UpdateQuantities')
-    def nsys_p10(self):
-        return self.report_nvtxsum('___10_UpdateQuantities')
-
-    @performance_function('%', perf_key='nsys_EnergyConservation')
-    def nsys_p11(self):
-        return self.report_nvtxsum('___11_EnergyConservation')
-
-    @performance_function('%', perf_key='nsys_UpdateSmoothingLength')
-    def nsys_p12(self):
-        return self.report_nvtxsum('___12_UpdateSmoothingLength')
-
-    @performance_function('%', perf_key='nsys_printIterationTimings')
-    def nsys_p13(self):
-        return self.report_nvtxsum('___13_printIterationTimings')
-
-    @performance_function('%', perf_key='nsys_MPI')
-    def nsys_p14(self):
-        return self.report_nvtxsum('MPI:')
-    #}}}
-    #{{{ gpumemsizesum
-    @performance_function('MB')
-    def nsys_H2D(self):
-        regex = r'(?P<mb>\S+),(\S+,){6}\[CUDA memcpy HtoD\]'
-        return sn.extractsingle(regex, 'gpumemsizesum.rpt', 'mb', float)
-
-    @performance_function('MB')
-    def nsys_D2H(self):
-        regex = r'(?P<mb>\S+),(\S+,){6}\[CUDA memcpy DtoH\]'
-        return sn.extractsingle(regex, 'gpumemsizesum.rpt', 'mb', float)
-    #}}}
-
+#     #{{{ nsys
+#     #{{{ nvtxsum
+#     def report_nvtxsum(self, region='___01_domain.sync'):
+#         regex = r'(?P<pct>\S+),(\S+,){7}PushPop,' + region
+#         return sn.round(sn.sum(sn.extractall(regex, 'nvtxsum.rpt', 'pct', float)), 2)
+#         # return sn.extractsingle(regex, 'nvtxsum.rpt', 'pct', float)
 # 
+#     @performance_function('%', perf_key='nsys_domain.sync')
+#     def nsys_p01(self):
+#         return self.report_nvtxsum('___01_domain.sync')
+# 
+#     @performance_function('%', perf_key='nsys_FindNeighbors')
+#     def nsys_p02(self):
+#         return self.report_nvtxsum('___02_FindNeighbors')
+# 
+#     @performance_function('%', perf_key='nsys_computeDensity')
+#     def nsys_p03(self):
+#         return self.report_nvtxsum('___03_computeDensity')
+# 
+#     @performance_function('%', perf_key='nsys_EquationOfState')
+#     def nsys_p04(self):
+#         return self.report_nvtxsum('___04_EquationOfState')
+# 
+#     @performance_function('%', perf_key='nsys_synchronizeHalos1')
+#     def nsys_p05(self):
+#         return self.report_nvtxsum('___05_synchronizeHalos1')
+# 
+#     @performance_function('%', perf_key='nsys_IAD')
+#     def nsys_p06(self):
+#         return self.report_nvtxsum('___06_IAD')
+# 
+#     @performance_function('%', perf_key='nsys_synchronizeHalos2')
+#     def nsys_p07(self):
+#         return self.report_nvtxsum('___07_synchronizeHalos2')
+# 
+#     @performance_function('%', perf_key='nsys_MomentumEnergyIAD')
+#     def nsys_p08(self):
+#         return self.report_nvtxsum('___08_MomentumEnergyIAD')
+# 
+#     @performance_function('%', perf_key='nsys_Timestep')
+#     def nsys_p09(self):
+#         return self.report_nvtxsum('___09_Timestep')
+# 
+#     @performance_function('%', perf_key='nsys_UpdateQuantities')
+#     def nsys_p10(self):
+#         return self.report_nvtxsum('___10_UpdateQuantities')
+# 
+#     @performance_function('%', perf_key='nsys_EnergyConservation')
+#     def nsys_p11(self):
+#         return self.report_nvtxsum('___11_EnergyConservation')
+# 
+#     @performance_function('%', perf_key='nsys_UpdateSmoothingLength')
+#     def nsys_p12(self):
+#         return self.report_nvtxsum('___12_UpdateSmoothingLength')
+# 
+#     @performance_function('%', perf_key='nsys_printIterationTimings')
+#     def nsys_p13(self):
+#         return self.report_nvtxsum('___13_printIterationTimings')
+# 
+#     @performance_function('%', perf_key='nsys_MPI')
+#     def nsys_p14(self):
+#         return self.report_nvtxsum('MPI:')
+#     #}}}
+#     #{{{ gpumemsizesum
+#     @performance_function('MB')
+#     def nsys_H2D(self):
+#         regex = r'(?P<mb>\S+),(\S+,){6}\[CUDA memcpy HtoD\]'
+#         return sn.extractsingle(regex, 'gpumemsizesum.rpt', 'mb', float)
+# 
+#     @performance_function('MB')
+#     def nsys_D2H(self):
+#         regex = r'(?P<mb>\S+),(\S+,){6}\[CUDA memcpy DtoH\]'
+#         return sn.extractsingle(regex, 'gpumemsizesum.rpt', 'mb', float)
+#     #}}}
+#     #}}} 
+
+    #{{{ ncu
+    #{{{ occupancy metrics:
+    # void sphexa::sph::cuda::cudaDensity
+    # void sphexa::sph::cuda::cudaGradP
+    # void sphexa::sph::cuda::cudaIAD
+
+    #{{{ compute_peak
+    @performance_function('%')
+    def ncu_compute_peak_min(self):
+        '''Compute (SM) Througput (minimum)'''
+        regex = r'sphexa::sph::cuda::' + self.kernel_name + r'.*\"sm__throughput.avg.pct_of_peak_sustained_elapsed\",\"%\",\"(?P<pct>\S+)\"$'
+        return sn.round(sn.min(sn.extractall(regex, 'rpt.csv', 'pct', float)), 2)
+
+    @performance_function('%')
+    def ncu_compute_peak_avg(self):
+        '''Compute (SM) Througput (avg)'''
+        regex = r'sphexa::sph::cuda::' + self.kernel_name + r'.*\"sm__throughput.avg.pct_of_peak_sustained_elapsed\",\"%\",\"(?P<pct>\S+)\"$'
+        return sn.round(sn.avg(sn.extractall(regex, 'rpt.csv', 'pct', float)), 2)
+
+    @performance_function('%')
+    def ncu_compute_peak_max(self):
+        '''Compute (SM) Througput (maximum)'''
+        regex = r'sphexa::sph::cuda::' + self.kernel_name + r'.*\"sm__throughput.avg.pct_of_peak_sustained_elapsed\",\"%\",\"(?P<pct>\S+)\"$'
+        return sn.round(sn.max(sn.extractall(regex, 'rpt.csv', 'pct', float)), 2)
+    #}}}
+    #{{{ memory_peak
+    @performance_function('%')
+    def ncu_mem_peak_min(self):
+        '''Memory Througput (min)'''
+        regex = r'sphexa::sph::cuda::' + self.kernel_name + r'.*\"gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed\",\"%\",\"(?P<pct>\S+)\"$'
+        return sn.round(sn.min(sn.extractall(regex, 'rpt.csv', 'pct', float)), 2)
+
+    @performance_function('%')
+    def ncu_mem_peak_avg(self):
+        '''Memory Througput (avg)'''
+        regex = r'sphexa::sph::cuda::' + self.kernel_name + r'.*\"gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed\",\"%\",\"(?P<pct>\S+)\"$'
+        return sn.round(sn.avg(sn.extractall(regex, 'rpt.csv', 'pct', float)), 2)
+
+    @performance_function('%')
+    def ncu_mem_peak_max(self):
+        '''Memory Througput (max)'''
+        regex = r'sphexa::sph::cuda::' + self.kernel_name + r'.*\"gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed\",\"%\",\"(?P<pct>\S+)\"$'
+        return sn.round(sn.max(sn.extractall(regex, 'rpt.csv', 'pct', float)), 2)
+    #}}}
+
+    #}}}
+    #}}}
+
 #     #{{{ L1 errors
 #     @performance_function('np', perf_key='L1_particles')
 #     def report_L1_np(self):
@@ -970,9 +1171,8 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #         regex = r'Velocity L1 error (\S+)'
 #         return sn.round(sn.extractsingle(regex, self.stdout, 1, float), 6)
 #     #}}}
-#
-#}}}
 
+#}}}
 
 # x='--module-path +/sw/wombat/ARM_Compiler/21.1/modulefiles --module-path +$HOME/modulefiles'
 # ./R -c sedov_cuda.py -n build -r $x # -p PrgEnv-arm-N1 -p PrgEnv-nvidia -p PrgEnv-gnu
@@ -983,7 +1183,7 @@ class run_tests(rfm.RunOnlyRegressionTest):
 #{{{ build
 @rfm.simple_test
 class build(rfm.CompileOnlyRegressionTest):
-    analytical = parameter(['analytical'])
+    # analytical = parameter(['analytical'])
     use_info = parameter([False])
     use_armpl = parameter(['without_armpl'])
     # use_armpl = parameter(['with_armpl', 'without_armpl'])
@@ -992,7 +1192,7 @@ class build(rfm.CompileOnlyRegressionTest):
     # use_tool = parameter(['Score-P'])
     #sourcepath = '$HOME'
     sourcesdir = 'SPH-EXA.git'
-    use_tool = parameter(['notool'])
+    # use_tool = parameter(['notool'])
     # mypath = variable(str, value='.')
     # compute_nodes = parameter([1])
     # compute_nodes = parameter([1, 2, 4, 8, 16])
@@ -1139,6 +1339,7 @@ class build(rfm.CompileOnlyRegressionTest):
             'nvcc --version || true',
             'rm -fr docs LICENSE Makefile README.* scripts test tools',
             'sed -i "s@project(sphexa CXX C)@project(sphexa CXX)@" CMakeLists.txt',
+            # C needed with h5part
             f'sed -i "s@-march=native@{compiler_flags[self.current_partition.name][self.current_environ.name]} {compiler_info_flag}@" CMakeLists.txt',
             'sed -i "s@constexpr operator MPI_Datatype@operator MPI_Datatype@" domain/include/cstone/primitives/mpi_wrappers.hpp',
         ]
@@ -1167,13 +1368,13 @@ class build(rfm.CompileOnlyRegressionTest):
             #'-DCMAKE_CXX_COMPILER=CC',
             #"-DCMAKE_CUDA_FLAGS='-ccbin cc'",
             '-DCMAKE_CXX_COMPILER=mpicxx',
-            "-DCMAKE_CUDA_FLAGS='-ccbin mpicxx'",
+            "-DCMAKE_CUDA_FLAGS='-ccbin mpicxx -arch=sm_80'",
             #'-DCMAKE_CUDA_COMPILER=`which nvcc`',
             # f'-DCMAKE_CUDA_COMPILER={self.hasnvcc}',
             '-DBUILD_TESTING=ON',
-            '-DBUILD_ANALYTICAL=ON',
+            '-DBUILD_ANALYTICAL=OFF',
             '-DSPH_EXA_WITH_HIP=OFF',
-            '-DBUILD_RYOANJI=ON',
+            #'-DBUILD_RYOANJI=ON',
             '-DCMAKE_INSTALL_PREFIX=$PWD/JG',
             #'-DCMAKE_BUILD_TYPE=Debug',
             '-DCMAKE_BUILD_TYPE=Release',
@@ -1194,13 +1395,13 @@ class build(rfm.CompileOnlyRegressionTest):
                 else:
                     self.build_system.config_opts += ["-DCMAKE_EXE_LINKER_FLAGS='-larmpl'"]
 
-        if self.use_tool:
-            self.build_system.config_opts += ['-DUSE_PROFILING=ON']
-        else:
-            self.build_system.config_opts += ['-DUSE_PROFILING=OFF']
+#         if self.use_tool:
+#             self.build_system.config_opts += ['-DUSE_PROFILING=ON']
+#         else:
+#             self.build_system.config_opts += ['-DUSE_PROFILING=OFF']
 
         self.build_system.max_concurrency = 10
-        self.build_system.make_opts = ['sedov'] # ['install']
+        self.build_system.make_opts = ['sphexa', 'sphexa-cuda', 'hilbert_perf', 'hilbert_perf_gpu'] # ['install']
         if self.use_info:
             self.build_system.make_opts = ['hilbert_perf']
 
@@ -1222,9 +1423,9 @@ class build(rfm.CompileOnlyRegressionTest):
 #             # 'sedov_solution',
 #}}}
 
-        self.postbuild_cmds += [
-            'ldd domain/test/performance/octree_perf |grep armpl || true',
-        ]
+#         self.postbuild_cmds += [
+#             'ldd domain/test/performance/octree_perf |grep armpl || true',
+#         ]
     #}}}
 
     @sanity_function
