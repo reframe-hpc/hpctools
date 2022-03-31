@@ -1,0 +1,2 @@
+Scientific Python @SciPyTip
+sp.interpolate.interp1d does one-dimensional interpolation. The 'kind' option lets you specify linear, quadratic, cubic, etc.
