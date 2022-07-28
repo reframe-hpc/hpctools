@@ -1,0 +1,293 @@
+# built on dom with: buildah bud  --format=docker --tag sph-exa_base:cuda -f Dockerfile_base .
+# mac:~/jgphpc.git/hpc/containers/buildah/readme
+FROM nvidia/cuda:11.7.0-base-ubuntu20.04
+
+#{{{ src: TODO: --volume /home/test:xx
+ENV TZ Europe/Zurich
+
+# cd /usr/local/games
+# export JG_DEPS_PATH=ftp://ftp.cscs.ch/out/jgp/hpc/containers
+# wget --quiet $JG_DEPS_PATH/c/CMake/cmake-3.22.2-linux-x86_64.tar.gz
+# wget --quiet $JG_DEPS_PATH/m/MPICH/mpich-3.1.4.tar.gz
+# wget --quiet $JG_DEPS_PATH/h/hdf5/hdf5-1.13.0.tar.bz2
+# wget --quiet $JG_DEPS_PATH/g/googletest/release-1.11.0.tar.gz
+# wget --quiet $JG_DEPS_PATH/in/glass.h5
+COPY src/cmake-3.22.2-linux-x86_64.tar.gz /usr/local/games/
+COPY src/hdf5-1.13.0.tar.bz2 /usr/local/games/
+COPY src/mpich-3.1.4.tar.gz /usr/local/games/
+COPY src/release-1.11.0.tar.gz /usr/local/games/
+COPY src/glass.h5 /usr/local/games/
+# COPY src/ascent-v0.8.0-src-with-blt.tar.gz /usr/local/games/
+# COPY src/conduit-v0.8.3-src-with-blt.tar.gz /usr/local/games/
+# COPY src/v0.8.1.tar.gz /usr/local/games/
+# COPY src/v1.7.1.tar.gz /usr/local/games/
+# COPY src/v0.5.1.tar.gz /usr/local/games/
+# = https://github.com/LLNL/blt/archive/refs/tags/v0.5.1.tar.gz
+#}}}
+
+#{{{ apt:
+#no: ENV DEBIAN_FRONTEND noninteractive
+# Need to get 84.2 MB
+RUN sed -i 's@archive.ubuntu.com@ubuntu.ethz.ch@' /etc/apt/sources.list \
+    && apt update --quiet \
+    && DEBIAN_FRONTEND=noninteractive \
+       apt install -y --no-install-recommends \
+       cuda-nvcc-11-7 \
+       make gcc-10 g++-10 \
+       zlib1g-dev file wget vim-tiny \
+       python-is-python3 python3-pip libpython3.8-dev python3-numpy python3-matplotlib \
+    && apt clean autoremove
+       
+#{{{ vis
+#       libtbb-dev zlib1g-dev git file wget vim-tiny \
+#       python-is-python3 python3-pip libpython3.8-dev python3-numpy python3-matplotlib \
+#       cuda-nvcc-11-7 clang-12 libomp-12-dev \
+#    && apt clean autoremove
+#}}}
+#}}}
+
+#{{{ cmake:
+RUN echo \
+    && echo "## cmake-3.22.2:" \
+    && cd /usr/local/games \
+    && tar xf cmake-3.22.2-linux-x86_64.tar.gz \
+    && cp -a cmake-3.22.2-linux-x86_64/bin/* /usr/bin/ \
+    && cp -a cmake-3.22.2-linux-x86_64/share/cmake-3.22 /usr/share/cmake-3.22 \
+    && rm -fr cmake-3.22.2-linux-x86_64.tar.gz cmake-3.22.2-linux-x86_64/bin/cmake-gui
+#}}}
+
+#{{{ mpich:
+# RUN echo \
+#     && echo "## mpich-3.1.4:" \
+#     && which make \
+#     && make --version
+RUN echo \
+    && echo "## mpich-3.1.4:" \
+    && cd /usr/local/games \
+    && tar xf mpich-3.1.4.tar.gz \
+    && cd mpich-3.1.4/ \
+    && CC=gcc-10 CXX=g++-10 ./configure --prefix=/usr --enable-fortran=no > /dev/null \
+    && make --quiet -j `grep processor /proc/cpuinfo | wc -l` install > /dev/null \
+    && cd /usr/local/games \
+    && rm -fr mpich-3.1.4 mpich-3.1.4.tar.gz \
+    && ldconfig
+
+#    && CC=gcc-10 CXX=g++-10 ./configure --prefix=/usr --enable-fortran=no \
+#    && make -j `grep processor /proc/cpuinfo | wc -l` install \
+#}}}
+
+# export CMAKE_PREFIX_PATH=/usr/local/HDF_Group/HDF5/1.13.0/share/cmake:$CMAKE_PREFIX_PATH
+#{{{ hdf5:
+RUN echo \
+    && echo "## hdf5-1.13.0:" \
+    && cd /usr/local/games \
+    && tar xf hdf5-1.13.0.tar.bz2 \
+    && cmake \
+    -DCMAKE_C_COMPILER:STRING=mpicc \
+    -DCMAKE_C_FLAGS:STRING=-w \
+    -DONLY_SHARED_LIBS:BOOL=ON \
+    -DHDF5_BUILD_HL_LIB:BOOL=ON \
+    -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON \
+    -DBUILD_SHARED_LIBS:BOOL=ON \
+    -DHDF5_ENABLE_PARALLEL:BOOL=ON \
+    -DHDF5_BUILD_TOOLS:BOOL=OFF \
+    -DBUILD_STATIC_LIBS=OFF \
+    -DHDF5_BUILD_EXAMPLES:BOOL=OFF \
+    -DBUILD_TESTING:BOOL=OFF \
+    -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF \
+    -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF \
+    -DHDF5_ENABLE_THREADSAFE:BOOL=OFF \
+    -DHDF5_BUILD_CPP_LIB:BOOL=OFF \
+    -DHDF5_BUILD_FORTRAN:BOOL=OFF \
+    -DHDF5_BUILD_JAVA:BOOL=OFF \
+    -S hdf5-1.13.0 -B build-hdf5 > /dev/null \
+    && cmake --build build-hdf5 -t install -j \
+    && cd /usr/local/games \
+    && rm -fr hdf5-1.13.0.tar.bz2 hdf5-1.13.0 build-hdf5
+
+#ln -fs /usr/lib/x86_64-linux-gnu/libdl.so.2 /usr/lib/x86_64-linux-gnu/libdl.so
+#ln -fs /usr/lib/x86_64-linux-gnu/libpthread.so.0 /usr/lib/x86_64-linux-gnu/libpthread.so
+#}}}
+
+#{{{ googletest:
+RUN echo \
+    && echo "## googletest:" \
+    && date \
+    && cd /usr/local/games \
+    && tar xf release-1.11.0.tar.gz \
+    && rm -f release-1.11.0.tar.gz
+#}}}
+
+#{{{ analytical_solutions:
+RUN echo \
+    && echo "## analytical_solutions + reframe:" \
+    && date \
+    && pip install ReFrame-HPC h5py matplotlib \
+    && echo "## done"
+#}}}
+
+#{{{ test with:
+# apt install -y --no-install-recommends git
+# git clone https://github.com/unibas-dmi-hpc/SPH-EXA.git SPH-EXA.git
+# cd SPH-EXA.git ;git checkout halo-gpu ;cd -
+#     - cmake -S . -B build
+#       -DCMAKE_CXX_COMPILER=mpicxx
+#       -DCMAKE_C_COMPILER=mpicc
+#       -DBUILD_TESTING=$BUILD_TESTING
+#       -DBUILD_ANALYTICAL=$BUILD_ANALYTICAL
+#       -DSPH_EXA_WITH_HIP=$SPH_EXA_WITH_HIP
+#       -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+# 
+# 
+# cd /usr/local/games
+# export CMAKE_PREFIX_PATH=/usr/local/HDF_Group/HDF5/1.13.0/share/cmake:$CMAKE_PREFIX_PATH
+# cmake -S SPH-EXA.git -B build \
+# -DGPU_DIRECT=OFF \
+# -DCMAKE_CXX_COMPILER=mpicxx \
+# -DBUILD_TESTING=ON \
+# -DBUILD_ANALYTICAL=ON \
+# -DSPH_EXA_WITH_HIP=OFF \
+# -DCMAKE_BUILD_TYPE=Debug
+# 
+# cmake --build build -j
+# cmake --build build -t install
+
+#{{{ -> installed:
+# -- Installing: /usr/local/sbin/coord_samples/coordinate_test
+# -- Installing: /usr/local/sbin/integration_mpi/globaloctree
+# -- Installing: /usr/local/sbin/integration_mpi/exchange_halos
+# -- Installing: /usr/local/sbin/integration_mpi/box_mpi
+# -- Installing: /usr/local/sbin/integration_mpi/exchange_focus
+# -- Installing: /usr/local/sbin/integration_mpi/exchange_keys
+# -- Installing: /usr/local/sbin/integration_mpi/focus_transfer
+# -- Installing: /usr/local/sbin/integration_mpi/domain_2ranks
+# -- Installing: /usr/local/sbin/integration_mpi/treedomain
+# -- Installing: /usr/local/sbin/integration_mpi/exchange_general
+# -- Installing: /usr/local/sbin/integration_mpi/exchange_domain
+# -- Installing: /usr/local/sbin/integration_mpi/focus_tree
+# -- Installing: /usr/local/sbin/integration_mpi/domain_nranks
+# -- Installing: /usr/local/sbin/integration_mpi/exchange_halos_gpu
+# -- Installing: /usr/local/sbin/performance/octree_perf
+# -- Installing: /usr/local/sbin/performance/peers_perf
+# -- Installing: /usr/local/sbin/performance/scan_perf
+# -- Installing: /usr/local/sbin/performance/hilbert_perf
+# -- Installing: /usr/local/sbin/performance/cudaNeighborsTest
+# -- Installing: /usr/local/sbin/performance/octree_perf_gpu
+# -- Installing: /usr/local/sbin/performance/hilbert_perf_gpu
+# -- Installing: /usr/local/sbin/unit/component_units
+# -- Installing: /usr/local/sbin/unit/component_units_omp
+# -- Installing: /usr/local/sbin/unit_cuda/component_units_cuda
+# -- Installing: /usr/local/sbin/ryoanji/ryoanji_demo/ryoanji_demo
+# -- Installing: /usr/local/sbin/ryoanji/cpu_unit_tests/ryoanji_cpu_unit_tests
+# -- Installing: /usr/local/sbin/ryoanji/unit_tests/ryoanji_unit_tests
+# -- Installing: /usr/local/sbin/ryoanji/global_upsweep_cpu
+# -- Installing: /usr/local/sbin/ryoanji/global_upsweep_gpu
+# -- Installing: /usr/local/sbin/hydro/kernel_tests_std
+# -- Installing: /usr/local/sbin/hydro/kernel_tests_ve
+# -- Installing: /usr/local/bin/sphexa
+# -- Installing: /usr/local/bin/sphexa-cuda
+# -- Installing: /usr/local/bin/sedov_solution
+# -- Installing: /usr/local/bin/compare_solutions.py
+# -- Installing: /usr/local/bin/compare_noh.py
+#}}}
+#}}}
+
+#{{{ visu
+# #{{{ VTK-m-1.7.1-cpeGNU-21.12.eb
+# RUN echo \
+#     && cd /usr/local/games \
+#     && tar xf v1.7.1.tar.gz \
+#     && cmake -S VTK-m-1.7.1 -B build-vtkm \
+#     -DCMAKE_BUILD_TYPE=Debug \
+#     -DVTKm_ENABLE_MPI:BOOL=ON \
+#     -DVTKm_ENABLE_OPENMP:BOOL=ON \
+#     -DVTKm_USE_64BIT_IDS=OFF \
+#     -DVTKm_USE_DOUBLE_PRECISION=ON \
+#     -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
+#     -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
+#     -DVTKm_ENABLE_TBB:BOOL=OFF > /dev/null \
+#     && cmake --build build-vtkm -t install -j \
+#     && cd /usr/local/games \
+#     && rm -fr v1.7.1.tar.gz VTK-m-1.7.1 build-vtkm
+# #}}}
+# 
+# # export CMAKE_PREFIX_PATH=/usr/local/share/vtkm-1.7
+# #{{{ VTK-h/VTK-h-0.8.1-cpeGNU-21.12.eb
+# RUN echo \
+#     && cd /usr/local/games \
+#     && tar xf v0.8.1.tar.gz \
+#     && cd vtk-h-0.8.1/src \
+#     && rmdir blt \
+#     && tar xf /usr/local/games/v0.5.1.tar.gz \
+#     && ln -s blt-0.5.1/ blt \
+#     && cd - \
+#     && cmake -S vtk-h-0.8.1/src -B build-vtkh \
+#     -DCMAKE_BUILD_TYPE=Debug \
+#     -DENABLE_FORTRAN:BOOL=OFF \
+#     -DVTKM_DIR=/usr/local/ \
+#     -DENABLE_TESTS:BOOL=OFF -DBUILD_TESTING:BOOL=OFF \
+#     -DTBB_INCLUDE_DIR:PATH=/usr/include \
+#     -DTBB_LIBRARY_DEBUG:FILEPATH=/usr/lib/x86_64-linux-gnu/libtbb.so \
+#     -DTBB_MALLOC_LIBRARY_DEBUG:FILEPATH=/usr/lib/x86_64-linux-gnu/libtbbmalloc.so \
+#     -DTBB_MALLOC_LIBRARY_RELEASE:FILEPATH=/usr/lib/x86_64-linux-gnu/libtbbmalloc.so \
+#     && cmake --build build-vtkh -t install -j \
+#     && rm -fr v0.8.1.tar.gz vtk-h-0.8.1 build-vtkh v0.5.1.tar.gz
+# #}}}
+# 
+# #{{{ Conduit/Conduit-0.8.3-cpeGNU-21.12-python3.eb -> /usr/local/lib/cmake/conduit/
+# # wget https://github.com/LLNL/conduit/releases/download/v0.8.3/conduit-v0.8.3-src-with-blt.tar.gz
+# # libpython3.8-dev python3-numpy python3-matplotlib
+# RUN echo \
+#     && cd /usr/local/games \
+#     && tar xf conduit-v0.8.3-src-with-blt.tar.gz \
+#     && cmake -S conduit-v0.8.3/src -B build-conduit \
+#     -DCMAKE_BUILD_TYPE=Debug \
+#     -DENABLE_PYTHON:BOOL=ON \
+#     -DENABLE_MPI:BOOL=ON \
+#     -DENABLE_FORTRAN:BOOL=OFF \
+#     -DENABLE_GTEST:BOOL=ON \
+#     -DHDF5_DIR=/usr/local/HDF_Group/HDF5/1.13.0 \
+#     -DHDF5_INCLUDE_DIR=/usr/local/HDF_Group/HDF5/1.13.0/include \
+#     -DHDF5_LIBRARIES=/usr/local/HDF_Group/HDF5/1.13.0/lib/libhdf5.so \
+#     -DCMAKE_CXX_FLAGS=-w \
+#     && cmake --build build-conduit -t install -j \
+#     && rm -fr conduit-v0.8.3-src-with-blt.tar.gz conduit-v0.8.3 build-conduit
+# 
+# #    && export PYTHONPATH=/usr/local/python-modules:$PYTHONPATH
+# #}}}
+# 
+# #{{{ Ascent-0.8.0-cpeGNU-21.12.eb
+# RUN echo \
+#     && cd /usr/local/games \
+#     && tar xf ascent-v0.8.0-src-with-blt.tar.gz \
+#     && cmake -S ascent-v0.8.0/src -B build-ascent \
+#     -DCMAKE_BUILD_TYPE=Debug \
+#     -DENABLE_MPI:BOOL=ON \
+#     -DENABLE_PYTHON:BOOL=ON \
+#     -DENABLE_OPENMP:BOOL=ON \
+#     -DENABLE_FORTRAN:BOOL=OFF \
+#     -DENABLE_TESTS:BOOL=OFF \
+#     -DVTKM_DIR=/usr/local/ \
+#     -DVTKH_DIR=/usr/local/ \
+#     -DCONDUIT_DIR=/usr/local/ \
+#     -DHDF5_INCLUDE_DIR=/usr/local/HDF_Group/HDF5/1.13.0/include \
+#     -DTBB_INCLUDE_DIR:PATH=/usr/include \
+#     -DTBB_LIBRARY_DEBUG:FILEPATH=/usr/lib/x86_64-linux-gnu/libtbb.so \
+#     -DTBB_MALLOC_LIBRARY_DEBUG:FILEPATH=/usr/lib/x86_64-linux-gnu/libtbbmalloc.so \
+#     -DTBB_MALLOC_LIBRARY_RELEASE:FILEPATH=/usr/lib/x86_64-linux-gnu/libtbbmalloc.so \
+#     && cmake --build build-ascent -t install -j \
+#     && rm -fr ascent-v0.8.0-src-with-blt.tar.gz ascent-v0.8.0 build-ascent
+# #}}}
+
+# test visu: 
+# # ----> see https://github.com/unibas-dmi-hpc/SPH-EXA/pull/276 -> readme_insitu.md
+# cmake -S SPH-EXA.git -B build \
+# -DINSITU=Ascent -DSPH_EXA_WITH_H5PART=OFF \
+# -DHDF5_INCLUDE_DIR=/include \
+# -DCMAKE_CXX_COMPILER=CC -DBUILD_ANALYTICAL=OFF -DBUILD_TESTING=OFF \
+# -DCMAKE_BUILD_TYPE=Debug \
+# -DCMAKE_CUDA_FLAGS='-arch=sm_60 -G' -DCMAKE_CXX_FLAGS_DEBUG="-g -w" \
+# -DTBB_INCLUDE_DIR=/opt/intel/compilers_and_libraries/linux/tbb/include \
+# -DTBB_LIBRARY_DEBUG=/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64/gcc4.8/libtbb_debug.so \
+# -DTBB_LIBRARY_RELEASE=/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64/gcc4.8/libtbb.so
+#}}}
