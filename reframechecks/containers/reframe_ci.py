@@ -5,6 +5,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 
 
+# {{{
 # gpu_unittests = [
 #     'domain/test/unit_cuda/component_units_cuda'
 # ]
@@ -25,6 +26,7 @@ import reframe.utility.udeps as udeps
 #     'domain/test/unit/component_units',
 #     # 'unit/component_units_omp'
 # ]
+# }}}
 
 # TODO: MUST RUN WITH RFM_TRAP_JOB_ERRORS=1 ~/R -c reframe_unittest.py -n ci -r
 _unittests = [
@@ -117,12 +119,15 @@ class ci_unittests(rfm.RunOnlyRegressionTest):
     valid_systems = ['dom:gpu']
     valid_prog_environs = ['builtin']
     image = variable(str,
-                     value='art.cscs.ch/contbuild/testing/jg/sph-exa_install')
+                     value='jfrog.svc.cscs.ch/contbuild/testing/anfink/9590261141699040/pasc/sphexa/sph-exa_install')
+                     # 'art.cscs.ch/contbuild/testing/jg/sph-exa_install')
     # NOTE: MUST RUN sarus/1.4.2:
     # mll sarus/1.4.2 # do not use 1.5 to pull images
+    # sarus pull --login jfrog.svc.cscs.ch/contbuild/testing/anfink/9590261141699040/pasc/sphexa/sph-exa_install
     # sarus pull --login art.cscs.ch/contbuild/testing/jg/sph-exa_install:xx
-    build_type = parameter(['cuda_debug-gpud', 'cuda_release-gpud',
-                            'cuda_debug_plus_gpud', 'cuda_release_plus_gpud'])
+    build_type = parameter(['cuda'])
+    # build_type = parameter(['cuda_debug-gpud', 'cuda_release-gpud',
+    #                         'cuda_debug_plus_gpud', 'cuda_release_plus_gpud'])
     unittest = parameter(unittests)
     sourcesdir = None
     num_tasks = 1
@@ -166,7 +171,6 @@ class ci_unittests(rfm.RunOnlyRegressionTest):
     #}}}
 #}}}
 
-
 #{{{ 2022/08: cpu tests
 @rfm.simple_test
 class ci_cputests(rfm.RunOnlyRegressionTest):
@@ -177,8 +181,10 @@ class ci_cputests(rfm.RunOnlyRegressionTest):
     valid_systems = ['dom:gpu']
     valid_prog_environs = ['builtin']
     image = variable(str,
-                     value='art.cscs.ch/contbuild/testing/jg/sph-exa_install')
-    build_type = parameter(['cuda_debug-gpud', 'cuda_release-gpud'])
+                     value='jfrog.svc.cscs.ch/contbuild/testing/anfink/9590261141699040/pasc/sphexa/sph-exa_install')
+                     # value='art.cscs.ch/contbuild/testing/jg/sph-exa_install')
+    build_type = parameter(['cuda'])
+    # build_type = parameter(['cuda_debug-gpud', 'cuda_release-gpud'])
     unittest = parameter(['sedov', 'sedov --ve', 'noh'])
     sourcesdir = None
     num_tasks = 1
@@ -214,119 +220,130 @@ class ci_cputests(rfm.RunOnlyRegressionTest):
     #}}}
 #}}}
 
-    #{{{ 2022/08: gpu tests
-    @rfm.simple_test
-    class ci_gputests(rfm.RunOnlyRegressionTest):
-        # ms sarus/1.4.2 # do not use 1.5 to pull images
-        # sarus pull --login art.cscs.ch/contbuild/testing/jg/ \
-        #                    sph-exa_install:cuda_debug-gpud
-        # descr = 'run unittests'
-        valid_systems = ['dom:gpu']
-        valid_prog_environs = ['builtin']
-        jfrog = 'art.cscs.ch/contbuild/testing/jg'
-        image = variable(str, value=f'{jfrog}/sph-exa_install')
-        # build_type = parameter(['cuda_debug-gpud'])
-        build_type = parameter(['cuda_debug-gpud', 'cuda_release-gpud',
-                                'cuda_debug_plus_gpud',
-                                'cuda_release_plus_gpud'])
-        unittest = parameter(['sedov', 'noh', 'evrard'])
-        sourcesdir = None
-        num_tasks = 1
-        # num_tasks_per_node = 1
-        modules = ['sarus']
+#{{{ 2022/08: gpu tests
+@rfm.simple_test
+class ci_gputests(rfm.RunOnlyRegressionTest):
+    # ms sarus/1.4.2 # do not use 1.5 to pull images
+    # sarus pull --login art.cscs.ch/contbuild/testing/jg/ \
+    #                    sph-exa_install:cuda_debug-gpud
+    # descr = 'run unittests'
+    valid_systems = ['dom:gpu']
+    valid_prog_environs = ['builtin']
+    # jfrog = 'art.cscs.ch/contbuild/testing/jg'
+    jfrog = 'jfrog.svc.cscs.ch/contbuild/testing/anfink'
+    image = variable(str, value=f'{jfrog}/9590261141699040/pasc/sphexa/sph-exa_install')
+    build_type = parameter(['cuda'])
+    # build_type = parameter(['cuda_debug-gpud', 'cuda_release-gpud',
+    #                         'cuda_debug_plus_gpud',
+    #                         'cuda_release_plus_gpud'])
+    unittest = parameter(['sedov', 'noh', 'evrard'])
+    sourcesdir = None
+    num_tasks = 1
+    # num_tasks_per_node = 1
+    modules = ['sarus']
 
-        @run_before('run')
-        def set_sarus(self):
-            mpiflag = '--mpi'
-            hdf5path = '/usr/local/HDF_Group/HDF5/1.13.0/lib'
-            mountflag = ('--mount=type=bind,source="$PWD",'
-                         'destination="/scratch"')
-            self.job.launcher.options = [
-                'sarus', 'run', mpiflag, mountflag,
-                f'{self.image}:{self.build_type}',
-                'bash', '-c',
-                f'"LD_LIBRARY_PATH={hdf5path}:$LD_LIBRARY_PATH ',
-                # note the space
-                'MPICH_RDMA_ENABLED_CUDA=1 ',
-                'LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libcuda.so ',
-                '/usr/local/bin/sphexa-cuda', '--init',  # NOTE: -cuda
-            ]
-            self.executable = self.unittest
-            opts = {
-                # 'sedov': '-s 200 -n 50 -w 200 --quiet;',
-                'sedov': '-s 200 -n 50 -w 200 --outDir /scratch/ ',
-                'noh': '-s 200 -n 50 -w 200 --outDir /scratch/ ',
-                'evrard': ('--glass /usr/local/games/glass.h5 -s 10 -n 50 '
-                           '-w 10 --outDir /scratch/ '),  # NOTE: no "
-            }
-            compare_executable = ';ln -fs /usr/local/bin/sedov_solution .;'
-            compare = {
-                'sedov': ('python3 /usr/local/bin/compare_solutions.py -s 200 '
-                          '/scratch/dump_sedov.h5part > /scratch/sedov.rpt "'),
-                'noh': ('python3 /usr/local/bin/compare_noh.py -s 200 '
-                        '/scratch/dump_noh.h5part > /scratch/noh.rpt "'),
-                'evrard': ('echo -e \\"Density L1 error 0.0\\nPressure L1 '
-                           'error 0.0\\nVelocity L1 error 0.0\\n\\" > '
-                           '/scratch/evrard.rpt "')
-            }
-            self.executable_opts = [
-                opts[self.unittest],
-                compare_executable,
-                compare[self.unittest]
-            ]
-            self.postrun_cmds = [
-                'cat *.rpt',
-                '# "https://reframe-hpc.readthedocs.io/en/stable/manpage.html?'
-                'highlight=RFM_TRAP_JOB_ERRORS',
-            ]
+    @run_before('run')
+    def set_sarus(self):
+        mpiflag = '--mpi'
+        hdf5path = '/usr/local/HDF_Group/HDF5/1.13.1/lib'   # <------------
+        mountflag = ('--mount=type=bind,source="$PWD",'
+                     'destination="/scratch"')
+        if self.unittest in ['evrard']:
+            glass_cp = 'cp /scratch/glass.h5 . ;'
+        else:
+            glass_cp = ''
 
-        @performance_function('')
-        def extract_L1(self, metric='Density'):
-            if metric not in ('Density', 'Pressure', 'Velocity', 'Energy'):
-                raise ValueError(f'illegal value (L1 metric={metric!r})')
+        self.job.launcher.options = [
+            'sarus', 'run', mpiflag, mountflag,
+            f'{self.image}:{self.build_type}',
+            'bash', '-c',
+            f'"{glass_cp} LD_LIBRARY_PATH={hdf5path}:$LD_LIBRARY_PATH ',
+            # note the space
+            'MPICH_RDMA_ENABLED_CUDA=1 ',
+            'LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libcuda.so ',
+            '/usr/local/bin/sphexa-cuda', '--init',  # NOTE: -cuda
+        ]
+        self.executable = self.unittest
+        in_path = 'ftp://ftp.cscs.ch/out/jgp/hpc/containers/in'
+        in_file = 'glass.h5'
+        if self.unittest in ['evrard']:
+            self.prerun_cmds = [f'wget --quiet {in_path}/{in_file}']
 
-            return sn.extractsingle(rf'{metric} L1 error (\S+)$',
-                                    f'{self.unittest}.rpt', 1, float)
+        opts = {
+            # 'sedov': '-s 200 -n 50 -w 200 --quiet;',
+            'sedov': '-s 200 -n 50 -w 200 --outDir /scratch/ ',
+            'noh': '-s 200 -n 50 -w 200 --outDir /scratch/ ',
+            'evrard': (f'--glass {in_file} -s 10 -n 50 '
+                       '-w 10 --outDir /scratch/ '),  # NOTE: no "
+        }
+        compare_executable = ';ln -fs /usr/local/bin/sedov_solution .;'
+        compare = {
+            'sedov': ('python3 /usr/local/bin/compare_solutions.py -s 200 '
+                      '/scratch/dump_sedov.h5part > /scratch/sedov.rpt "'),
+            'noh': ('python3 /usr/local/bin/compare_noh.py -s 200 '
+                    '/scratch/dump_noh.h5part > /scratch/noh.rpt "'),
+            'evrard': ('echo -e \\"Density L1 error 0.0\\nPressure L1 '
+                       'error 0.0\\nVelocity L1 error 0.0\\n\\" > '
+                       '/scratch/evrard.rpt "')
+        }
+        self.executable_opts = [
+            opts[self.unittest],
+            compare_executable,
+            compare[self.unittest]
+        ]
+        self.postrun_cmds = [
+            'cat *.rpt',
+            '# "https://reframe-hpc.readthedocs.io/en/stable/manpage.html?'
+            'highlight=RFM_TRAP_JOB_ERRORS',
+        ]
 
-        @run_before('performance')
-        def set_perf_variables(self):
-            self.perf_variables = {
-                'Density': self.extract_L1('Density'),
-                'Pressure': self.extract_L1('Pressure'),
-                'Velocity': self.extract_L1('Velocity'),
-                # 'Energy': self.extract_L1('Energy'),
-            }
+    @performance_function('')
+    def extract_L1(self, metric='Density'):
+        if metric not in ('Density', 'Pressure', 'Velocity', 'Energy'):
+            raise ValueError(f'illegal value (L1 metric={metric!r})')
 
-        @run_before('performance')
-        def set_reference(self):
-            reference_d = {
-                'sedov': {
-                    'Density':  (0.138, -0.01, 0.01, ''),
-                    'Pressure':  (0.902, -0.01, 0.01, ''),
-                    'Velocity':  (0.915, -0.01, 0.01, ''),
-                    # 'Energy':  (0., -0.05, 0.05, ''),
-                },
-                'noh': {
-                    'Density':  (0.955, -0.01, 0.01, ''),
-                    'Pressure':  (0.388, -0.01, 0.01, ''),
-                    'Velocity':  (0.0384, -0.05, 0.05, ''),
-                    # 'Energy':  (0.029, -0.05, 0.05, ''),
-                },
-                'evrard': {
-                    'Density':  (0.0, -0.01, 0.01, ''),
-                    'Pressure':  (0.0, -0.01, 0.01, ''),
-                    'Velocity':  (0.0, -0.05, 0.05, ''),
-                    # 'Energy':  (0.029, -0.05, 0.05, ''),
-                },
-            }
-            self.reference = {'*': reference_d[self.unittest]}
+        return sn.extractsingle(rf'{metric} L1 error (\S+)$',
+                                f'{self.unittest}.rpt', 1, float)
 
-        #{{{ sanity
-        @sanity_function
-        def assert_sanity(self):
-            regex1 = r'Total execution time of \d+ iterations of \S+ up to t ='
-            return sn.all([
-                sn.assert_found(regex1, self.stdout),
-            ])
-        #}}}
+    @run_before('performance')
+    def set_perf_variables(self):
+        self.perf_variables = {
+            'Density': self.extract_L1('Density'),
+            'Pressure': self.extract_L1('Pressure'),
+            'Velocity': self.extract_L1('Velocity'),
+            # 'Energy': self.extract_L1('Energy'),
+        }
+
+    @run_before('performance')
+    def set_reference(self):
+        reference_d = {
+            'sedov': {
+                'Density':  (0.138, -0.01, 0.01, ''),
+                'Pressure':  (0.902, -0.01, 0.01, ''),
+                'Velocity':  (0.915, -0.01, 0.01, ''),
+                # 'Energy':  (0., -0.05, 0.05, ''),
+            },
+            'noh': {
+                'Density':  (0.955, -0.01, 0.01, ''),
+                'Pressure':  (0.388, -0.01, 0.01, ''),
+                'Velocity':  (0.0384, -0.05, 0.05, ''),
+                # 'Energy':  (0.029, -0.05, 0.05, ''),
+            },
+            'evrard': {
+                'Density':  (0.0, -0.01, 0.01, ''),
+                'Pressure':  (0.0, -0.01, 0.01, ''),
+                'Velocity':  (0.0, -0.05, 0.05, ''),
+                # 'Energy':  (0.029, -0.05, 0.05, ''),
+            },
+        }
+        self.reference = {'*': reference_d[self.unittest]}
+
+    #{{{ sanity
+    @sanity_function
+    def assert_sanity(self):
+        regex1 = r'Total execution time of \d+ iterations of \S+ up to t ='
+        return sn.all([
+            sn.assert_found(regex1, self.stdout),
+        ])
     #}}}
+#}}}
