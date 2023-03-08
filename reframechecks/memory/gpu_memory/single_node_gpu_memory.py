@@ -185,37 +185,41 @@ class np_max_test_notool(rfm.RunOnlyRegressionTest):
 #}}}
 #{{{ A100/clariden: np_per_c<=e6 if > then cudaErrorMemoryAllocation: oom
 # cd /scratch/f1000/piccinal/DEL/clariden/notool/
-#a100 module load cray/22.12
-#a100 module swap PrgEnv-cray PrgEnv-gnu
-#a100 module use /apps/daint/UES/eurohack/modules/all # CUDAcore/11.8.0
-#a100 module load CUDAcore/11.8.0
-#a100 module swap gcc gcc/11.2.0
-#a100 # hdf5
-#a100 export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
-#a100 -DGPU_DIRECT=OFF \
-#a100 cmake -S SPH-EXA.git -B build \
-#a100 -DBUILD_ANALYTICAL=OFF \
-#a100 -DBUILD_TESTING=OFF \
-#a100 -DSPH_EXA_WITH_FFTW=OFF \
-#a100 -DCMAKE_BUILD_TYPE=Release \
-#a100 -DCMAKE_CXX_COMPILER=CC \
-#a100 -DCMAKE_C_COMPILER=cc \
-#a100 -DCMAKE_CUDA_COMPILER=nvcc \
-#a100 -DCMAKE_CUDA_ARCHITECTURES=80
+module load cray/22.12
+module swap PrgEnv-cray PrgEnv-gnu
+module use /apps/daint/UES/eurohack/modules/all # CUDAcore/11.8.0
+module load CUDAcore/11.8.0
+module swap gcc gcc/11.2.0
+# hdf5
+export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+# -DGPU_DIRECT=OFF \
+cmake -S SPH-EXA.git -B build \
+-DBUILD_ANALYTICAL=OFF \
+-DBUILD_TESTING=OFF \
+-DSPH_EXA_WITH_FFTW=OFF \
+-DCMAKE_BUILD_TYPE=Release \
+-DCMAKE_CXX_COMPILER=CC \
+-DCMAKE_C_COMPILER=cc \
+-DCMAKE_CUDA_COMPILER=nvcc \
+-DCMAKE_CUDA_ARCHITECTURES=80
 
-#a100 cmake --build build -t sphexa-cuda -j
-#a100 OMP_NUM_THREADS=64 \
-#a100 srun -pnvgpu -A`id -gn` -t2 -N2 -n2 \
-#a100 ./build/main/src/sphexa/sphexa-cuda --init sedov -s 1 -n 100 --ascii
+cmake --build build -t sphexa-cuda -j
+
+OMP_NUM_THREADS=64 \
+srun -pnvgpu -A`id -gn` -t2 -N2 -n2 \
+./build/main/src/sphexa/sphexa-cuda --init sedov -s 1 -n 100 --ascii
 
 # --glass ./glass.h5 -s 1 -n 400
 # nbody needs hdf5
 
-#a100 RFM_CONFIG=~/cscs-reframe-tests.git/config/systems/hohgant.py
-#a100 ~/R -c single_node_gpu_memory.py -n np_max_test_notool \
-#a100 --prgenv PrgEnv-gnu \
-#a100 --system hohgant:nvgpu -r -S exe_path=$PWD/build/main/src/sphexa \
-#a100 --module-path=+/apps/daint/UES/eurohack/modules/all
+vim ~/cscs-reframe-tests.git/config/systems/hohgant.py
+# 'modules': ['cray', 'PrgEnv-gnu', 'gcc/11.2.0', 'CUDAcore/11.8.0']
+
+RFM_CONFIG=~/cscs-reframe-tests.git/config/systems/hohgant.py \
+~/R -c single_node_gpu_memory.py -n np_max_test_notool \
+--prgenv PrgEnv-gnu \
+--system hohgant:nvgpu -r -S exe_path=$PWD/build/main/src/sphexa \
+--module-path=+/apps/daint/UES/eurohack/modules/all
 #TODO: -m cray/22.12 --non-default-craype <- LD_LIB_PATH
 #TODO: -m cdt/20.03 --non-default-craype
 
@@ -226,11 +230,54 @@ class np_max_test_notool(rfm.RunOnlyRegressionTest):
 #a100 P: nparticles: 437'245'479  (r:0, l:None, u:None) / -n758
 #a100 P: elapsed: 93.939 s (r:0, l:None, u:None)
 
+./single_node_gpu_memory.sh run-report-13.json |snk 1
+
 #daint: normal:MaxNodes=2400 large:MaxNodes=4400 / P100=-n413
 #       -> 2400*70e6 = 168'000'e6 = 168 billions
 #       -> 2400*71e6 = 170'400'e6 = 170 billions
 #  P100=71e6np/16GB ---6x---> A100=(16GB*6=96GB)=(71e6*6=426e6np) --> 438e6np !
 #}}}
+{{{ squashfs:
+cd /scratch/e1000/piccinal/DEL/hohgant/notool/
+# /store/csstaff/piccinal/cpe/base-cpe2208-gcc11-mpich8118-cuda118.squashfs
+#                             base-cpe2212-gcc11-mpich8121-cuda118.squashfs
+# squashfs-run base-cpe2208-gcc11-mpich8118-cuda118.squashfs bash
+squashfs-run base-cpe2212-gcc11-mpich8121-cuda118.squashfs bash
+
+module use /user-environment/modules
+module load gcc/11.3.0 cray-mpich cuda/11.8.0
+mpicxx --version # g++ (Spack GCC) 11.3.0
+nvcc --version # Cuda compilation tools, release 11.8, V11.8.89
+
+# cmake -S SPH-EXA.git -B build+sqfs2208 \
+cmake -S SPH-EXA.git -B build+sqfs2212 \
+-DBUILD_ANALYTICAL=OFF \
+-DBUILD_TESTING=OFF \
+-DSPH_EXA_WITH_FFTW=OFF \
+-DCMAKE_BUILD_TYPE=Release \
+-DCMAKE_CXX_COMPILER=mpicxx \
+-DCMAKE_C_COMPILER=mpicc \
+-DCMAKE_CUDA_COMPILER=nvcc \
+-DCMAKE_CUDA_ARCHITECTURES=80 \
+-DCMAKE_CUDA_FLAGS="-arch=sm_80 -I$(dirname `which mpicc`)/../include"
+
+# cmake --build build+sqfs2208 -t sphexa-cuda -j
+cmake --build build+sqfs2212 -t sphexa-cuda -j
+
+exit # /user-environment/ should be empty
+OMP_NUM_THREADS=64 srun -pnvgpu -A`id -gn` -t1 -N1 -n1 \
+--uenv-file=./base-cpe2208-gcc11-mpich8118-cuda118.squashfs \
+./build+sqfs2208/main/src/sphexa/sphexa-cuda --init sedov -s 1 -n 100 --ascii
+
+vim ~/cscs-reframe-tests.git/config/systems/hohgant.py
+RFM_CONFIG=~/cscs-reframe-tests.git/config/systems/hohgant.py \
+~/R -c single_node_gpu_memory.py -n np_max_test_notool \
+--prgenv builtin \
+--system hohgant:nvgpu -r -S exe_path=$PWD/build+sqfs2212/main/src/sphexa
+
+# --system hohgant:nvgpu -r -S exe_path=$PWD/build+sqfs2208/main/src/sphexa
+#no -S sqfs_path=$PWD
+}}}
     """
     # omp_threads = parameter([12, 24])
     # omp_threads = parameter([1, 2, 3, 4, 6, 8, 10, 12, 16, 32, 64])
@@ -253,25 +300,23 @@ class np_max_test_notool(rfm.RunOnlyRegressionTest):
 
     ])
     # dom:
-    compute_nodes = parameter([1, 2, 4, 6, 8])
-    mpi_per_cn = parameter([1])
-    mpi_rks = parameter([1, 2, 4, 6, 8])  # 16
-    steps = variable(str, value='40')
+    # compute_nodes = parameter([1, 2, 4, 6, 8])
+    # mpi_rks = parameter([1, 2, 4, 6, 8])  # 16
+    # mpi_per_cn = parameter([1])
+    # steps = variable(str, value='40')
     # hohgant:
     # compute_nodes = parameter([1, 2])
-    # mpi_per_cn = parameter([1, 2, 3, 4])
     # mpi_rks = parameter([1, 2, 4, 6, 8])  # 16
+    # mpi_per_cn = parameter([1, 2, 3, 4])
     # steps = variable(str, value='40')
     #
-    # compute_nodes = parameter([2])
-    # mpi_per_cn = parameter([4])
-    # mpi_rks = parameter([8])  # 16
-    # steps = variable(str, value='2')  # 40
+    compute_nodes = parameter([1, 2, 3, 4])
+    mpi_rks = parameter([1, 2, 3, 4, 6, 8, 9, 12, 16])
+    mpi_per_cn = parameter([1, 2, 3, 4])
+    steps = variable(str, value='40')  # 40
     #
-    # mpi_rks = parameter([8])
-    # mpi_rks = parameter([1, 2, 4])  # 16
-    # np_per_c = parameter([1e6])
     exe_path = variable(str, value='/home/jgpiccinal/git/SPH-EXA_mini-app.git')
+    # sqfs_path = variable(str, value='/scratch/e1000/piccinal')
 
     # --bind-to socket
     valid_systems = ['*']
@@ -297,10 +342,11 @@ class np_max_test_notool(rfm.RunOnlyRegressionTest):
             # (ntasks, cn, ntasks/cn):
             'dom:gpu': [(ii+1, ii+1, 1) for ii in range(self.compute_nodes)],
             'hohgant:nvgpu': [
-                (1, 1, 1), (2, 2, 1),
-                (2, 1, 2), (4, 2, 2),
-                (3, 1, 3), (6, 2, 3),
-                (4, 1, 4), (8, 2, 4),
+                #     1cn,       2cn,        3cn,        4cn,
+                (1, 1, 1), (2, 2, 1),  (3, 3, 1),  (4, 4, 1),
+                (2, 1, 2), (4, 2, 2),  (6, 3, 2),  (8, 4, 2),
+                (3, 1, 3), (6, 2, 3),  (9, 3, 3), (12, 4, 3),
+                (4, 1, 4), (8, 2, 4), (12, 3, 4), (16, 4, 4),
             ],
         }
         current_tuple = (self.mpi_rks, self.compute_nodes, self.mpi_per_cn)
@@ -320,6 +366,13 @@ class np_max_test_notool(rfm.RunOnlyRegressionTest):
                 'dom:gpu': {'tasks-per-cn': 1, 'omp': 12, 'visi': ''},
                 'daint:gpu': {'tasks-per-cn': 1, 'omp': 12, 'visi': ''},
                 'hohgant:nvgpu': {
+                    'tasks-per-cn':
+                        self.num_tasks if self.num_tasks < 4 else 4,
+                    'omp':
+                        int(64/self.num_tasks) if self.num_tasks < 3 else 16,
+                    'visi': '~/cuda_visible_devices.sh',
+                },
+                'hohgant:gpu-squashfs': {
                     'tasks-per-cn':
                         self.num_tasks if self.num_tasks < 4 else 4,
                     'omp':
@@ -373,6 +426,8 @@ class np_max_test_notool(rfm.RunOnlyRegressionTest):
             # --report-bindings
             # '--bind-to', 'none',
             # 'numactl', '--interleave=all',
+            # better to edit config file -> #SBATCH
+            # no: f'--uenv-file={self.sqfs_path}/0.sqfs,
             self.visible,
             # '--bind-to socket',
             f'{self.exe_path}/sphexa-cuda', '--init', 'sedov',
